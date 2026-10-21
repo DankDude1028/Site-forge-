@@ -1,14 +1,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { mkdir, mkdtemp, readFile, realpath, rm } from 'node:fs/promises';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 test('actual Astro preview and production outputs have separate complete SEO contracts', async () => {
-  const temporary = await mkdtemp(join(tmpdir(), 'siteforge-build-'));
+  // Astro renames prerendered assets, so output must share the template filesystem.
+  const temporaryParent = join(await realpath(root), 'test-results');
+  await mkdir(temporaryParent, { recursive: true });
+  assert.equal(await realpath(temporaryParent), temporaryParent, 'Build output parent must not be redirected');
+  const temporary = await mkdtemp(join(temporaryParent, 'astro-build-'));
   try {
     for (const mode of ['preview', 'production']) {
       const origin = mode === 'production' ? 'https://rollwise.net' : 'https://preview.invalid';
@@ -30,7 +33,10 @@ test('actual Astro preview and production outputs have separate complete SEO con
       assert.ok(sitemap.includes(`<loc>${origin}/privacy/</loc>`));
     }
   } finally {
-    // Only the fresh mkdtemp directory created above is removed; never a configured artifact root.
-    await rm(temporary, { recursive: true, force: true });
+    // Resolve and verify the exact fresh direct child before any recursive deletion.
+    const resolvedTemporary = await realpath(temporary);
+    assert.equal(dirname(resolvedTemporary), temporaryParent, 'Cleanup must stay inside the build test parent');
+    assert.ok(basename(resolvedTemporary).startsWith('astro-build-'), 'Cleanup requires the generated test prefix');
+    await rm(resolvedTemporary, { recursive: true, force: true });
   }
 });
