@@ -33,12 +33,18 @@ THRESHOLDS = {
     "lost_tasks": 0,
     "maximum_rss_growth_mib": 256,
     "maximum_queue_latency_seconds": 30,
+    "maximum_observed_heartbeat_gap_seconds": 15,
     "all_injected_failures_recovered": True,
 }
 
 
 def stamp() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def observed_interval(seconds: float) -> float:
+    """Suspend, scheduling stalls and clock gaps cannot count toward active soak time."""
+    return seconds if 0 <= seconds <= THRESHOLDS['maximum_observed_heartbeat_gap_seconds'] else 0
 
 
 def atomic_json(path: Path, value: dict) -> None:
@@ -264,7 +270,10 @@ def _run(args: argparse.Namespace) -> dict:
         while state['active_seconds'] < target_seconds:
             now = time.monotonic()
             # Only time actually observed by this process counts; downtime never does.
-            state['active_seconds'] += max(0, now-last)
+            elapsed=max(0,now-last)
+            observed=observed_interval(elapsed)
+            state['active_seconds'] += observed
+            state['unobserved_gap_seconds']=state.get('unobserved_gap_seconds',0)+(elapsed-observed)
             last = now
             if now >= next_cycle:
                 if state.get('implementation_sha256') != implementation_hash():

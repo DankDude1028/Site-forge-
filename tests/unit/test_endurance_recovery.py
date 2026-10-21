@@ -97,3 +97,11 @@ def test_source_change_during_soak_fails_instead_of_combining_evidence(tmp_path,
     assert report['status']=='failed'
     assert report['implementation_sha256']=='initial-source'
     assert report['completed_tasks']==0
+
+
+def test_sleep_or_unobserved_stall_cannot_satisfy_active_72_hour_requirement():
+    from siteforge.endurance import observed_interval
+    assert observed_interval(5)==5
+    assert observed_interval(3600)==0
+    assert observed_interval(259200)==0
+    assert observed_interval(-1)==0
