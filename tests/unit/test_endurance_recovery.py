@@ -85,3 +85,15 @@ def test_historical_failure_cannot_become_passed_on_resume(tmp_path):
     assert resumed["status"] == "failed"
     assert resumed["failures"] == state["failures"]
     assert resumed["full_acceptance_status"].startswith("PENDING")
+
+
+def test_source_change_during_soak_fails_instead_of_combining_evidence(tmp_path,monkeypatch):
+    import siteforge.endurance as endurance
+    values=iter(['initial-source','changed-source'])
+    monkeypatch.setattr(endurance,'implementation_hash',lambda:next(values))
+    with pytest.raises(AssertionError,match='Implementation changed'):
+        run(argparse.Namespace(root=tmp_path,hours=.01,interval=0,cycles=1))
+    report=json.loads((tmp_path/'report.json').read_text(encoding='utf-8'))
+    assert report['status']=='failed'
+    assert report['implementation_sha256']=='initial-source'
+    assert report['completed_tasks']==0

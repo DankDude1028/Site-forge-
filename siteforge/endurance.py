@@ -6,6 +6,7 @@ the report names these fixture injections instead of claiming real outages.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import time
@@ -45,6 +46,23 @@ def atomic_json(path: Path, value: dict) -> None:
     temporary = path.with_suffix('.tmp')
     temporary.write_text(json.dumps(value, indent=2, default=str) + '\n', encoding='utf-8')
     temporary.replace(path)
+
+
+def implementation_hash() -> str:
+    """Bind a soak to source bytes, including the trusted template dependency lock."""
+    from .site_factory import IGNORED, TEMPLATE_ROOT
+    base=Path(__file__).resolve().parent.parent
+    files=list((base/'siteforge').glob('*.py'))
+    for directory, folders, names in os.walk(TEMPLATE_ROOT,followlinks=False):
+        folders[:]=[name for name in folders if name not in IGNORED]
+        files.extend(Path(directory)/name for name in names if not name.startswith('.env'))
+    digest=hashlib.sha256()
+    for file in sorted(files):
+        if file.is_symlink() or not file.resolve().is_relative_to(base):
+            raise ValueError('Implementation snapshot must remain inside the repository')
+        digest.update(file.relative_to(base).as_posix().encode())
+        digest.update(hashlib.sha256(file.read_bytes()).digest())
+    return digest.hexdigest()
 
 
 class Simulation:
@@ -136,6 +154,7 @@ class Simulation:
             previous = [UUID(enqueued.id)]
         injected = self.guards(index)
         recovered = list(injected)
+        queue_waits: list[float] = []
         runner = AgentRunner(self.root / 'artifacts')
         for position, role in enumerate(role_order):
             started = time.monotonic()
@@ -153,6 +172,9 @@ class Simulation:
                 task = self.next_task()
             if task.id != ids[position]:
                 raise AssertionError('Queue returned a task from an unexpected workflow step')
+            queue_waits.append(max(0,(datetime.now(timezone.utc)-aware(task.available_at)).total_seconds()))
+            if queue_waits[-1] > THRESHOLDS['maximum_queue_latency_seconds']:
+                raise AssertionError('Queue latency exceeded threshold')
             claim = self.claim(task)
             self.queue.start(*claim)
             self.queue.checkpoint(*claim, {'phase': role, 'cycle': index})
@@ -211,7 +233,8 @@ class Simulation:
             statuses = list(session.scalars(select(Task.status).where(Task.id.in_(ids))))
             if statuses != ['completed'] * 3:
                 raise AssertionError('A durable task was lost')
-        return {'task_ids': ids, 'injected': injected, 'recovered': recovered}
+        return {'task_ids': ids, 'injected': injected, 'recovered': recovered,
+                'queue_latency_seconds': max(queue_waits,default=0)}
 
 
 def _run(args: argparse.Namespace) -> dict:
@@ -223,6 +246,7 @@ def _run(args: argparse.Namespace) -> dict:
             return state
     else:
         state = {'run_id': str(uuid4()), 'started_at': stamp(), 'status': 'running',
+                 'implementation_sha256': implementation_hash(),
                  'kind': '72-hour fixture endurance' if args.hours >= 72 else 'smoke',
                  'thresholds': THRESHOLDS, 'active_seconds': 0, 'cycles': 0,
                  'completed_tasks': 0, 'failures': [], 'injected': {}, 'recovered': {},
@@ -243,12 +267,16 @@ def _run(args: argparse.Namespace) -> dict:
             state['active_seconds'] += max(0, now-last)
             last = now
             if now >= next_cycle:
+                if state.get('implementation_sha256') != implementation_hash():
+                    raise AssertionError('Implementation changed during the soak; start a fresh run directory')
                 result = simulation.cycle(state['cycles'])
                 for key in ('injected', 'recovered'):
                     for name in result[key]:
                         state[key][name] = state[key].get(name, 0) + 1
                 state['cycles'] += 1
                 state['completed_tasks'] += len(result['task_ids'])
+                state['maximum_queue_latency_seconds_observed']=max(
+                    state.get('maximum_queue_latency_seconds_observed',0),result['queue_latency_seconds'])
                 next_cycle = now + args.interval
             state['pid'] = os.getpid()
             state['heartbeat_at'] = stamp()
@@ -263,6 +291,7 @@ def _run(args: argparse.Namespace) -> dict:
         real_elapsed = (datetime.now(timezone.utc)-datetime.fromisoformat(state['started_at'])).total_seconds()
         eligible = (state['active_seconds'] >= ACCEPTANCE_SECONDS and real_elapsed >= ACCEPTANCE_SECONDS
                     and state['completed_tasks'] >= THRESHOLDS['minimum_completed_tasks']
+                    and state.get('implementation_sha256') == implementation_hash()
                     and state['injected'] == state['recovered'] and not state['failures'])
         # A successful fixture soak still cannot certify untested production layers.
         state['status'] = 'failed' if state['failures'] else ('fixture_soak_passed' if eligible else 'smoke_passed')
