@@ -102,7 +102,7 @@ def test_context_mismatch_is_recorded_and_fails_closed(tmp_path, fake_environmen
 
 
 def test_exclusive_lock_prevents_concurrent_runs(tmp_path, fake_environment):
-    (tmp_path / ".run.lock").write_text('{"pid":123}')
+    (tmp_path / ".run.lock").write_text(json.dumps({"pid": os.getpid()}))
     with pytest.raises(RuntimeError, match="Another benchmark"):
         module.run(arguments(tmp_path))
     assert (tmp_path / ".run.lock").exists()

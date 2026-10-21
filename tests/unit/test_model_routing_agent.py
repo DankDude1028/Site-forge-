@@ -1,6 +1,8 @@
 """Measured routing integration uses recorded fixture evidence and mocked inference."""
 import copy
 import json
+import os
+import sys
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from types import SimpleNamespace
@@ -10,9 +12,9 @@ import httpx
 import pytest
 
 from siteforge.agents import AGENTS, MODEL_ROLES, AgentRunner
-from siteforge.contracts import AgentContext, AgentType
+from siteforge.contracts import AgentContext, AgentResult, AgentType
 from siteforge.model_router import ModelRouter
-from siteforge.site_factory import read_artifact
+from siteforge.site_factory import read_artifact, write_artifact
 from siteforge.worker import WindowsWorker, WorkerSettings
 
 
@@ -66,7 +68,7 @@ def test_each_agent_uses_qualified_role_winner_and_current_verified_alias(tmp_pa
     result = runner.run(role, context(role), {"mode": "local_model", "request": "Draft a useful utility"})
     assert result.status == "blocked"  # Proposal output never executes an action.
     assert client.completions[0]["model"] == "live-alias"
-    assert client.metadata_calls == 2
+    assert client.metadata_calls == 3
     proposal = read_artifact(runner.root, result.artifacts[0]["uri"])
     selection = proposal["model_selection"]
     assert selection["selection"] == "measured_role_winner"
@@ -150,7 +152,7 @@ def test_context_overflow_blocks_without_truncating_or_inference(tmp_path, route
 
 
 def test_running_benchmark_prevents_worker_inference(tmp_path, router):
-    router.results_path.with_name(".run.lock").write_text('{"pid":123}', encoding="utf-8")
+    router.results_path.with_name(".run.lock").write_text(json.dumps({"pid": os.getpid()}), encoding="utf-8")
     client = FixtureModelClient()
     runner = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router)
     result = runner.run("research", context("research"), {"mode": "local_model", "model": "live-alias"})
@@ -167,3 +169,231 @@ def test_worker_constructor_configures_real_router_from_environment(tmp_path, mo
         worker = WindowsWorker(settings, client=supervisor)
         assert isinstance(worker.runner.model_router, ModelRouter)
         assert worker.runner.model_router.results_path == configured
+
+
+@pytest.fixture
+def bounded_tool_runner(monkeypatch):
+    constructed = []
+
+    class ToolRunner:
+        failure = None
+
+        def __init__(self, root, model_client, model_id, docker_image=None, context_length=4096):
+            self.root, self.client, self.model = root, model_client, model_id
+            self.record = {"model": model_id, "docker_image": docker_image, "context_length": context_length,
+                           "root": root, "called": False}
+            constructed.append(self.record)
+
+        def run(self, role, agent_context, payload):
+            self.record.update(called=True, role=role, payload=payload)
+            if self.failure:
+                raise self.failure
+            # The fake completion records a call; it has no connection to LM Studio.
+            self.client.complete([], self.model)
+            artifact = write_artifact(self.root, f"bounded/{agent_context.task_id}.json", {"internal_only": True})
+            return AgentResult(status="completed", confidence=1, artifacts=[artifact])
+
+    monkeypatch.setitem(sys.modules, "siteforge.tool_agent", SimpleNamespace(ToolAgentRunner=ToolRunner))
+    return ToolRunner, constructed
+
+
+@pytest.mark.parametrize("role", list(AgentType))
+def test_bounded_agents_require_measured_winner_and_preserve_typed_result(tmp_path, router, bounded_tool_runner, role):
+    _, constructed = bounded_tool_runner
+    client = FixtureModelClient()
+    runner = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router)
+    result = runner.run(role, context(role), {"mode": "bounded_agent", "site_slug": "utility-draft", "request": "Perform permitted internal work"})
+    assert result.status == "completed"
+    assert len(constructed) == 1 and constructed[0]["called"]
+    assert constructed[0]["model"] == "live-alias"
+    assert constructed[0]["context_length"] == 4096
+    assert constructed[0]["role"] == role
+    assert client.metadata_calls == 3  # Before selection, after acquiring lock, after loop.
+    routing = read_artifact(runner.root, result.artifacts[-2]["uri"])
+    assert routing["output_accepted"] and routing["identity_verified_after"]
+    assert routing["model_selection"]["measured_routing_required"] is True
+    assert routing["model_selection"]["benchmark_route"]["role"] == MODEL_ROLES[role]
+    assert routing["model_selection"]["qualification_bypassed_for_draft_only"] is False
+    assert not router.results_path.with_name(".run.lock").exists()
+
+
+def test_bounded_explicit_model_cannot_bypass_missing_evidence(tmp_path, bounded_tool_runner):
+    _, constructed = bounded_tool_runner
+    client = FixtureModelClient()
+    runner = AgentRunner(tmp_path / "artifacts", model_client=client,
+        model_router=ModelRouter(tmp_path / "missing.json"))
+    result = runner.run("content", context("content"), {"mode": "bounded_agent", "model": "live-alias"})
+    assert result.status == "blocked" and not constructed and not client.completions
+    assert client.metadata_calls == 0
+
+
+def test_bounded_supplied_model_must_match_winner_even_if_other_model_loaded(tmp_path, router, bounded_tool_runner):
+    _, constructed = bounded_tool_runner
+    metadata = native_metadata()
+    metadata["response"]["models"] += native_metadata(source="publisher/other", alias="other-alias")["response"]["models"]
+    client = FixtureModelClient(metadata)
+    runner = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router)
+    result = runner.run("content", context("content"), {"mode": "bounded_agent", "model": "other-alias"})
+    assert result.status == "blocked" and not constructed and not client.completions
+    assert "cannot override" in result.risks[0]
+
+
+def test_bounded_docker_configuration_comes_only_from_trusted_environment(tmp_path, router, bounded_tool_runner, monkeypatch):
+    _, constructed = bounded_tool_runner
+    trusted_image = "siteforge-sandbox@sha256:" + "a" * 64
+    monkeypatch.setenv("SITEFORGE_SANDBOX_IMAGE", trusted_image)
+    client = FixtureModelClient()
+    result = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router).run("developer", context("developer"),
+        {"mode": "bounded_agent", "model": "publisher/winner", "docker_image": "attacker/image:latest", "sandbox_image": "untrusted"})
+    assert result.status == "completed"
+    assert constructed[0]["docker_image"] == trusted_image
+
+
+def test_bounded_alias_change_rejects_completion_but_retains_internal_artifacts(tmp_path, router, bounded_tool_runner):
+    client = FixtureModelClient(metadata_after=native_metadata(source="publisher/other"))
+    runner = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router)
+    result = runner.run("content", context("content"), {"mode": "bounded_agent"})
+    assert result.status == "failed" and result.confidence == 0
+    assert len(client.completions) == 1
+    assert read_artifact(runner.root, result.artifacts[0]["uri"])["internal_only"] is True
+    routing = read_artifact(runner.root, result.artifacts[-2]["uri"])
+    assert routing["output_accepted"] is False and routing["retained_artifacts_require_review"] is True
+    assert not router.results_path.with_name(".run.lock").exists()
+
+
+def test_bounded_model_failure_releases_exclusive_lock(tmp_path, router, bounded_tool_runner):
+    tool_runner, _ = bounded_tool_runner
+    from siteforge.lmstudio import LMStudioError
+    tool_runner.failure = LMStudioError("fixture transport failure")
+    client = FixtureModelClient()
+    result = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router).run(
+        "research", context("research"), {"mode": "bounded_agent"})
+    assert result.status == "failed"
+    assert not router.results_path.with_name(".run.lock").exists()
+
+
+def test_bounded_loop_holds_exclusive_benchmark_lock(tmp_path, router, bounded_tool_runner):
+    tool_runner, _ = bounded_tool_runner
+    original_run = tool_runner.run
+
+    def verify_lock(self, role, agent_context, payload):
+        lock = router.results_path.with_name(".run.lock")
+        assert json.loads(lock.read_text())["owner"] == "bounded_agent"
+        from benchmarks.runners.run import parser, run as benchmark_run
+        arguments = parser().parse_args(["--model", "live-alias", "--context", "4096", "--limit", "1", "--output", str(lock.parent)])
+        with pytest.raises(RuntimeError, match="Another benchmark"):
+            benchmark_run(arguments)
+        return original_run(self, role, agent_context, payload)
+
+    tool_runner.run = verify_lock
+    client = FixtureModelClient()
+    result = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router).run(
+        "content", context("content"), {"mode": "bounded_agent"})
+    assert result.status == "completed"
+
+
+def test_bounded_model_change_before_loop_does_not_start_internal_tools(tmp_path, router, bounded_tool_runner):
+    _, constructed = bounded_tool_runner
+    client = FixtureModelClient()
+    original = client.model_metadata
+
+    def changing_metadata():
+        metadata = original()
+        return metadata if client.metadata_calls == 1 else native_metadata(source="publisher/reassigned")
+
+    client.model_metadata = changing_metadata
+    result = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router).run(
+        "content", context("content"), {"mode": "bounded_agent"})
+    assert result.status == "blocked" and not constructed and not client.completions
+    assert not router.results_path.with_name(".run.lock").exists()
+
+
+def test_missing_bounded_runner_never_falls_back_to_proposals(tmp_path, router, monkeypatch):
+    monkeypatch.setitem(sys.modules, "siteforge.tool_agent", None)
+    client = FixtureModelClient()
+    result = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router).run(
+        "content", context("content"), {"mode": "bounded_agent"})
+    assert result.status == "blocked" and not client.completions
+    assert "unavailable" in result.risks[0]
+    assert not router.results_path.with_name(".run.lock").exists()
+
+
+def test_bounded_content_real_tool_runner_writes_cited_internal_draft(tmp_path, router):
+    class NativeContentClient(FixtureModelClient):
+        def complete(self, messages, model, **settings):
+            self.completions.append({"model": model, "settings": settings})
+            def call(name, arguments, identifier):
+                return {"id": identifier, "type": "function", "function": {
+                    "name": name, "arguments": json.dumps(arguments)}}
+            calls = [call("read_sources", {}, "read_1")] if len(self.completions) == 1 else [
+                call("write_draft", {"title": "Label planning", "paragraphs": [
+                    {"text": "Use two labels for each item.", "source_ids": ["source_1"]}]}, "draft_2"),
+                call("finish", {"summary": "Cited internal draft saved", "confidence": .8}, "finish_3")]
+            return SimpleNamespace(text=json.dumps({"tool_calls": calls}), finish_reason="tool_calls")
+
+    client = NativeContentClient()
+    runner = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router)
+    result = runner.run("content", context("content"), {"mode": "bounded_agent", "site_slug": "small-demo",
+        "sources": [{"id": "source_1", "text": "Use two labels for each item.", "kind": "reference"}]})
+    assert result.status == "completed", result.risks
+    assert len(client.completions) == 2
+    assert all(call["model"] == "live-alias" for call in client.completions)
+    artifact = next(item for item in result.artifacts if "/write_draft-" in item["uri"])
+    draft = read_artifact(runner.root, artifact["uri"])
+    assert draft["published"] is False and draft["status"] == "draft"
+    assert draft["paragraphs"][0]["source_ids"] == ["source_1"]
+    assert not router.results_path.with_name(".run.lock").exists()
+
+
+def test_required_8k_context_uses_qualified_8k_route_and_exact_loaded_context(tmp_path, router, bounded_tool_runner):
+    _, constructed = bounded_tool_runner
+    evidence = json.loads(router.results_path.read_text())
+    larger = copy.deepcopy(evidence["runs"][0])
+    larger.update(context=8192, actual_context=8192)
+    for row in larger["results"]:
+        row["wall_seconds"] = 2  # Faster 4K evidence must be excluded by the requirement.
+    evidence["runs"].append(larger)
+    router.results_path.write_text(json.dumps(evidence), encoding="utf-8")
+    client = FixtureModelClient(native_metadata(context_length=8192))
+    runner = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router)
+    result = runner.run("content", context("content"), {"mode": "bounded_agent", "required_context": 8192})
+    assert result.status == "completed"
+    assert constructed[0]["context_length"] == 8192
+    routing = read_artifact(runner.root, result.artifacts[-2]["uri"])
+    assert routing["model_selection"]["required_context"] == 8192
+    assert routing["model_selection"]["benchmark_route"]["context"] == 8192
+
+
+def test_required_8k_context_without_qualified_evidence_blocks_even_explicit_model(tmp_path, router, bounded_tool_runner):
+    _, constructed = bounded_tool_runner
+    client = FixtureModelClient(native_metadata(context_length=8192))
+    result = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router).run("content", context("content"),
+        {"mode": "bounded_agent", "model": "live-alias", "required_context": 8192})
+    assert result.status == "blocked" and not constructed and not client.completions
+    assert client.metadata_calls == 0
+
+
+@pytest.mark.parametrize("value", [True, "8192", 8192.0, 0, 32769, None])
+def test_task_required_context_rejects_noninteger_or_out_of_range(tmp_path, router, bounded_tool_runner, value):
+    _, constructed = bounded_tool_runner
+    client = FixtureModelClient()
+    result = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router).run("content", context("content"),
+        {"mode": "bounded_agent", "required_context": value})
+    assert result.status == "blocked" and not constructed and not client.completions
+    assert "required_context" in result.risks[0]
+
+
+def test_proposal_inference_also_holds_shared_mutex(tmp_path, router):
+    class LockedProposalClient(FixtureModelClient):
+        def complete(self, *args, **kwargs):
+            marker = router.results_path.with_name(".run.lock")
+            assert json.loads(marker.read_text())["owner"] == "local_model_proposal"
+            from siteforge.inference_lock import InferenceBusy, ensure_inference_available
+            with pytest.raises(InferenceBusy):
+                ensure_inference_available(marker)
+            return super().complete(*args, **kwargs)
+    client = LockedProposalClient()
+    result = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router).run("content", context("content"),
+        {"mode": "local_model", "request": "Draft only"})
+    assert result.status == "blocked" and len(client.completions) == 1
+    assert not router.results_path.with_name(".run.lock").exists()

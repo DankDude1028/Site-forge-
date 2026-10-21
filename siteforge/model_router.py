@@ -41,9 +41,11 @@ class ModelRouter:
         self.minimum_samples = minimum_samples
 
     def select(self, role: str, *, available_models: set[str] | None = None,
-               context: int | None = None) -> Route:
+               context: int | None = None, minimum_context: int | None = None) -> Route:
         if role not in ROLE_CATEGORIES:
             raise ValueError("Unknown model role; paid escalation requires separate approval")
+        if minimum_context is not None and (type(minimum_context) is not int or not 1024 <= minimum_context <= 32768):
+            raise ValueError("Minimum context must be an integer from 1024 through 32768")
         try:
             payload = json.loads(self.results_path.read_text(encoding="utf-8"))
         except (OSError, ValueError) as error:
@@ -64,6 +66,8 @@ class ModelRouter:
             if available_models is not None and model not in available_models:
                 continue
             if context is not None and setting != context:
+                continue
+            if minimum_context is not None and (type(setting) is not int or setting < minimum_context):
                 continue
             rows = [row for row in run.get("results", [])
                     if row.get("category") in ROLE_CATEGORIES[role] and not row.get("warmup")]

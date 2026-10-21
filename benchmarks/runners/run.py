@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from siteforge.lmstudio import LMStudioClient, LMStudioError
+from siteforge.inference_lock import InferenceBusy, InferenceLock
 
 from ..evaluators.grade import grade
 from .report import write_reports
@@ -90,30 +91,24 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     if args.limit:
         selected = selected[:args.limit]
     args.output.mkdir(parents=True, exist_ok=True)
-    lock = args.output / ".run.lock"
     try:
-        descriptor = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-    except FileExistsError as error:
-        raise RuntimeError(f"Another benchmark owns {lock}; inspect its PID before removing a stale lock") from error
-    os.write(descriptor, json.dumps({"pid": os.getpid(), "started_at": now()}).encode())
-    os.close(descriptor)
-    try:
-        try:
-            return _run_locked(args, tasks, selected, manifest)
-        except BaseException as error:
-            result_path = args.output / "results.json"
-            if result_path.exists():
-                saved = json.loads(result_path.read_text(encoding="utf-8"))
-                if saved.get("runs"):
-                    last = saved["runs"][-1]
-                    if last.get("status") == "running" and last.get("model") == args.model:
-                        last["status"] = "interrupted" if isinstance(error, KeyboardInterrupt) else "setup_failed"
-                        last["setup_error"] = {"type": type(error).__name__, "message": str(error)}
-                        last["finished_at"] = now()
-                        write_reports(args.output, saved)
-            raise
-    finally:
-        lock.unlink(missing_ok=True)
+        with InferenceLock(args.output / ".run.lock", owner="benchmark"):
+            try:
+                return _run_locked(args, tasks, selected, manifest)
+            except BaseException as error:
+                result_path = args.output / "results.json"
+                if result_path.exists():
+                    saved = json.loads(result_path.read_text(encoding="utf-8"))
+                    if saved.get("runs"):
+                        last = saved["runs"][-1]
+                        if last.get("status") == "running" and last.get("model") == args.model:
+                            last["status"] = "interrupted" if isinstance(error, KeyboardInterrupt) else "setup_failed"
+                            last["setup_error"] = {"type": type(error).__name__, "message": str(error)}
+                            last["finished_at"] = now()
+                            write_reports(args.output, saved)
+                raise
+    except InferenceBusy as error:
+        raise RuntimeError(f"Another benchmark or agent owns the inference lock: {error}") from error
 
 
 def _run_locked(args: argparse.Namespace, all_tasks: list[dict], tasks: list[dict], manifest: dict) -> dict[str, Any]:

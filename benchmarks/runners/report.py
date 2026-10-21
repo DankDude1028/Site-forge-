@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 from statistics import mean
 from typing import Any
+from siteforge.inference_lock import InferenceLock
 
 
 def atomic_write(path: Path, text: str) -> None:
@@ -120,10 +121,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Regenerate reports after all benchmark runs finish")
     parser.add_argument("--output", type=Path, default=Path("benchmarks/results"))
     args = parser.parse_args()
-    if (args.output / ".run.lock").exists():
-        raise RuntimeError("A benchmark is active; regenerate reports after it completes")
-    payload = json.loads((args.output / "results.json").read_text(encoding="utf-8"))
-    write_reports(args.output, payload)
+    with InferenceLock(args.output / ".run.lock", owner="report"):
+        payload = json.loads((args.output / "results.json").read_text(encoding="utf-8"))
+        write_reports(args.output, payload)
 
 
 if __name__ == "__main__":

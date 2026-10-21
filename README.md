@@ -2,8 +2,9 @@
 
 An approval-gated supervisor and outbound Windows worker for a small portfolio of useful sites.
 Built from the supplied [master prompt](SiteForge_Blueprint.md). This was an empty repository at
-inspection on October 21, 2026. The implementation includes a working local fixture pipeline;
-production publication remains disabled.
+inspection on October 21, 2026. The implementation includes a working local pipeline and measured,
+bounded local model execution. Protected staging and the complete 72-hour acceptance test remain
+pending; production publication remains disabled.
 
 ## Run on Windows
 
@@ -13,8 +14,8 @@ when the Windows Store `python` alias is not an installed interpreter.
 ```powershell
 .\scripts\Setup.ps1
 Push-Location apps/dashboard
-npm ci
-npm run build
+..\..\scripts\Invoke-Npm.ps1 ci
+..\..\scripts\Invoke-Npm.ps1 run build
 Pop-Location
 .\.venv\Scripts\python.exe -m siteforge.cli init
 .\scripts\Start-Local.ps1
@@ -91,8 +92,13 @@ is required to validate that stack.
 The scheduler recovers deadlines/leases and stale workers. Daily fixture scheduling is opt-in;
 its database idempotency keys survive restarts. Model and external research jobs wait when the
 Windows PC is offline. Seven typed roles have fixed tools, bounded retry rules, audited artifacts
-and owner escalation. Live-model mode produces structured proposals; it cannot execute arbitrary
-generated code, publish, or expand permissions.
+and owner escalation. `local_model` mode writes structured proposals. `bounded_agent` mode runs
+native tool calls for sourced evidence, drafts, trusted template previews, independent static QA,
+opportunity scores, experiments and ledger reconciliation. It requires a qualified measured model
+already loaded with matching quantization, context and parallelism. The loop has fixed role tools,
+strict argument schemas, deadline/context/call limits, durable internal receipts and audit artifacts.
+Executable tests require an operator-configured Docker image pinned by digest. Model-generated
+host code, provider mutations, publishing and paid fallback are unavailable to this tool loop.
 
 The API provides `/healthz`, `/readyz`, organization-scoped `/v1` catalogs, worker operations,
 task cancellation, candidate scoring, workflows, approvals, budget configuration, action intents,

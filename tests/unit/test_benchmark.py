@@ -160,3 +160,26 @@ def test_router_does_not_mix_candidates_sharing_alias(tmp_path):
     path.write_text(json.dumps({"runs": runs}))
     with pytest.raises(NoMeasuredModel):
         ModelRouter(path).select("primary")
+
+
+def test_router_minimum_context_excludes_faster_smaller_run_and_keeps_exact_filter(tmp_path):
+    path = tmp_path / "results.json"
+    common = {"source_model": "same-model", "model": "alias", "dataset_version": "1.2.0",
+              "status": "complete", "parallel_verified": True, "quantization": "Q4_K_M"}
+    path.write_text(json.dumps({"runs": [
+        {**common, "context": 4096, "actual_context": 4096, "results": [{"category": "coding", "passed": True, "wall_seconds": 1}] * 5},
+        {**common, "context": 8192, "actual_context": 8192, "results": [{"category": "coding", "passed": True, "wall_seconds": 2}] * 5}]}))
+    router = ModelRouter(path)
+    assert router.select("coding").context == 4096
+    assert router.select("coding", minimum_context=8192).context == 8192
+    assert router.select("coding", context=8192).context == 8192
+    with pytest.raises(NoMeasuredModel):
+        router.select("coding", context=4096, minimum_context=8192)
+    with pytest.raises(NoMeasuredModel):
+        router.select("coding", minimum_context=16384)
+
+
+@pytest.mark.parametrize("value", [True, False, "8192", 8192.0, 0, 32769])
+def test_router_rejects_invalid_minimum_context(value, tmp_path):
+    with pytest.raises(ValueError, match="Minimum context"):
+        ModelRouter(tmp_path / "missing.json").select("coding", minimum_context=value)
