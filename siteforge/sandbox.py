@@ -8,7 +8,7 @@ import os
 import re
 import shutil
 import subprocess
-import tempfile
+import threading
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
@@ -56,6 +56,7 @@ class GitWorktrees:
                    "-c", "protocol.file.allow=never", "-C", str(self.repository), *arguments]
         result = subprocess.run(command, env=sanitized_environment(), shell=False,
                                 capture_output=True, text=True, timeout=30,
+                                stdin=subprocess.DEVNULL,
                                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         if result.returncode and not (allow_missing and result.returncode == 1):
             raise SandboxError("Scoped Git operation failed; inspect the configured repository locally")
@@ -127,26 +128,34 @@ class DockerSandbox:
         if os.name == "nt" and Path(executable).suffix.lower() != ".exe":
             raise SandboxError("Use the native Docker executable, not a shell wrapper")
         command[0] = executable
-        # File-backed capture bounds parent-process memory even for malicious stdout floods.
-        with tempfile.TemporaryFile() as log:
-            process = subprocess.Popen(command, shell=False, env=sanitized_environment(),
-                stdout=log, stderr=subprocess.STDOUT,
-                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        # Drain excess output without retaining it in memory or filling a host log file.
+        process = subprocess.Popen(command, shell=False, env=sanitized_environment(), stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        output = bytearray()
+        truncated = threading.Event()
+        def drain() -> None:
+            assert process.stdout is not None
+            for block in iter(lambda: process.stdout.read(8192), b""):
+                remaining = max(0, 65_536 - len(output))
+                output.extend(block[:remaining])
+                if len(block) > remaining:
+                    truncated.set()
+        reader = threading.Thread(target=drain, daemon=True)
+        reader.start()
+        try:
+            returncode = process.wait(timeout=timeout_seconds)
+        except subprocess.TimeoutExpired as error:
+            name = next(item.split("=", 1)[1] for item in command if item.startswith("--name="))
             try:
-                returncode = process.wait(timeout=timeout_seconds)
-            except subprocess.TimeoutExpired as error:
-                name = next(item.split("=", 1)[1] for item in command if item.startswith("--name="))
-                # Only terminate the exact ephemeral container named by this invocation.
-                try:
-                    subprocess.run([executable, "container", "rm", "--force", name],
-                        shell=False, env=sanitized_environment(), stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL, timeout=15,
-                        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-                finally:
-                    process.kill()
-                    process.wait(timeout=10)
-                raise SandboxError("Sandbox timed out; operator must reconcile Docker container state") from error
-            log.seek(0)
-            output = log.read(65_537)
-        return SandboxResult(returncode, output[:65_536].decode("utf-8", errors="replace"),
-                             len(output) > 65_536, recipe)
+                subprocess.run([executable, "container", "rm", "--force", name],
+                    shell=False, env=sanitized_environment(), stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15,
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            finally:
+                process.kill()
+                process.wait(timeout=10)
+            raise SandboxError("Sandbox timed out; operator must reconcile Docker container state") from error
+        finally:
+            reader.join(timeout=3)
+        return SandboxResult(returncode, output.decode("utf-8", errors="replace"), truncated.is_set(), recipe)

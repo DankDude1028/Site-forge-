@@ -20,7 +20,21 @@ services:
       SITEFORGE_DATABASE_URL: postgresql+psycopg://siteforge:${POSTGRES_PASSWORD}@postgres:5432/siteforge
       SITEFORGE_OWNER_TOKEN: ${SITEFORGE_OWNER_TOKEN:?Set a random owner token}
       SITEFORGE_WORKER_TOKEN: ${SITEFORGE_WORKER_TOKEN:?Set a distinct random worker token}
+      SITEFORGE_ORG_ID: ${SITEFORGE_ORG_ID:?Set organization UUID}
+      SITEFORGE_WORKER_ID: ${SITEFORGE_WORKER_ID:?Set worker UUID}
+      SITEFORGE_WORKER_TOKEN_EXPIRES_AT: ${SITEFORGE_WORKER_TOKEN_EXPIRES_AT:?Set an expiry within 24 hours}
     ports: ["127.0.0.1:8080:8080"]
+    depends_on:
+      postgres: {condition: service_healthy}
+  scheduler:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile
+    command: ["python", "-m", "siteforge.scheduler", "--interval-seconds", "30"]
+    environment:
+      SITEFORGE_DATABASE_URL: postgresql+psycopg://siteforge:${POSTGRES_PASSWORD}@postgres:5432/siteforge
+      SITEFORGE_ORG_ID: ${SITEFORGE_ORG_ID}
+      SITEFORGE_SCHEDULE_FIXTURES: 'false'
     depends_on:
       postgres: {condition: service_healthy}
 volumes:

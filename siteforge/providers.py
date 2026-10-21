@@ -197,7 +197,8 @@ class NetlifyPreviewAdapter(_HTTPProvider):
                 relative = path.relative_to(directory).as_posix()
                 if path.is_symlink() or not path.resolve().is_relative_to(directory):
                     raise ValueError("Linked preview files are forbidden")
-                if name.startswith(".env") or path.suffix.lower() in {".pem", ".key", ".zip"}:
+                if (name.startswith(".env") or name in {".git", ".netlify"}
+                        or path.suffix.lower() in {".pem", ".key", ".zip"}):
                     raise ValueError("Sensitive or archive files are not allowed in preview output")
                 if path.stat().st_size > 4_000_000:
                     raise ValueError("Preview file exceeds size limit")

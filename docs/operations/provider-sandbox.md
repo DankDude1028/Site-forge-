@@ -1,0 +1,37 @@
+# Isolated execution and disconnected provider adapters
+
+Updated 2026-10-21. These modules have executable tests. A local Git worktree was actually created in a disposable test repository. Docker process isolation and live provider connections remain **PENDING**; no provider resource was created or modified during this implementation.
+
+## Git and container execution
+
+`siteforge.sandbox.GitWorktrees(repository, worktree_root).create(job_slug, full_commit_sha)` operates on an operator-configured existing Git repository. It verifies the top-level repository, an immutable commit object, a new path inside the configured worktree root, and a bounded slug. It disables checkout hooks and filesystem-monitor commands, ignores system/global Git config, strips inherited credentials/command overrides, disables interactive credential prompts, and rejects repositories with configured checkout filters. Git receives an argument array and no host shell. On Windows it requires the native executable rather than a batch wrapper.
+
+Worktrees have detached HEADs. The manager does not delete or reset existing paths, prune worktrees, create remote repositories, fetch untrusted remotes, or run arbitrary model-provided commands. Preserve changes for review; cleanup is an explicit operator action after checking Git state and the resolved target. The factory's default fixture mode copies trusted source into a scoped artifact directory; it does not claim to execute untrusted generated code on the host.
+
+`DockerSandbox(worktree_root, reviewed_image_digest)` accepts only `label_tests` and `python_tests` recipes from a fixed registry. The model cannot supply a command, image tag, extra mount, environment secret, Docker socket, network target, or privileged flag. Container commands use a digest-pinned image already installed locally (`--pull=never`), no network, no capabilities, no privilege escalation, a read-only root and job mount, a non-root user, limited CPU/RAM/swap/PIDs, and a small temporary filesystem. The only captured artifact is at most 64 KiB of text output; a reader drains and discards excess output without growing RAM or a host log file.
+
+The container timeout is 120 seconds by default and cannot exceed 300. On timeout the runner attempts to remove only its exact generated ephemeral container and kills its client; uncertain daemon cleanup still requires operator reconciliation. Missing Docker refuses execution and never falls back to the host. Container isolation depends on the host engine and operating system; before running untrusted jobs, verify resource enforcement, file permissions, engine mode and seccomp on the actual dedicated worker account. Current tests establish command construction and missing-engine behavior, not actual Docker enforcement.
+
+Primary implementation references: [Git worktrees](https://git-scm.com/docs/git-worktree) and [Docker run options](https://docs.docker.com/reference/cli/docker/container/run/), opened on the research date.
+
+## GitHub adapter
+
+`siteforge.providers.GitHubAdapter` has a single configured repository that must appear in an explicit allowlist. Its fixed API origin is `https://api.github.com`; redirects are refused even if an injected client would normally follow them. Credentials come from `GITHUB_TOKEN` and are neither passed to agents nor included in exceptions. Reads return only repository or branch identity fields. The REST version is pinned to `2026-03-10`, verified in current official examples.
+
+Writes default to disabled. `open_draft_pr` accepts bounded title/body/branch values, verifies the head branch's exact commit SHA, and always sends `draft: true`. It reconciles an existing draft using a hash bound to repository, title, body, branches, SHA, and idempotency key. A conflicting existing request blocks another creation. Uncertain network or malformed mutation responses raise `ProviderOutcomeUnknown`; do not blindly retry them. Re-read/reconcile provider state and persist a durable receipt before advancing the task. The adapter cannot merge, publish, create repositories, change permissions, or accept arbitrary provider URLs.
+
+Before enabling it, configure a repository-scoped GitHub App installation token or fine-grained token with only required metadata/contents read and pull-request write access. Confirm whether repository CI or Git-linked deploys consume credits; an internal PR capability does not grant spending authority. Policy checks, an exact-action audit intent, credential expiry, rate/budget limits, and result receipt persistence remain the supervisor caller's responsibility. No agent automatically invokes this adapter in fixture or proposal mode.
+
+Primary references: [repository API](https://docs.github.com/en/rest/repos/repos#get-a-repository), [branch API](https://docs.github.com/en/rest/branches/branches#get-a-branch), and [draft pull-request API](https://docs.github.com/en/rest/pulls/pulls#create-a-pull-request).
+
+## Netlify preview adapter
+
+`NetlifyPreviewAdapter` targets one preconfigured site UUID on the fixed Netlify API origin. It does not create a site. `plan(relative_directory)` is local and reviewable: it requires static `index.html`, noindex metadata on every HTML file, no linked paths or source/dependency directories, no environment/key/archive files, at most 1,000 files, at most 4 MB per file and 16 MB total. It hashes each file and binds the complete manifest to the site and draft mode. Files must remain unchanged before and during upload.
+
+`create_draft_preview(plan)` remains disabled unless an operator separately configures preview authorization, cost authorization, **and verified site protection**. A shareable noindex URL is not private access control. These booleans are trusted server/operator configuration, not model inputs or substitutes for the supervisor's policy and budget reservation. Unknown provider cost must block activation at the default $0 external budget.
+
+When enabled by a caller with the required policy/budget intent, the adapter uses Netlify's documented file-digest flow: create a deploy with `draft: true` and the complete SHA1 file map, then upload only requested known file digests. It cannot select production mode, alter the published deploy, provision paid services, or change site settings. Redirects are denied. Response site identity and deploy-specific HTTPS URL are checked. The returned receipt explicitly says processing, health and protection verification remain pending. No retry is automatic after an uncertain external result.
+
+Use a narrowly scoped `NETLIFY_AUTH_TOKEN` in protected operator configuration. Neither factory fixture tasks nor local model proposals call this adapter. Persist the request hash, provider deploy ID and URL in the durable deployment/audit tables; a transient returned Python dataclass alone is not an immutable audit log. Poll/read health with reviewed first-party tooling only after receipt reconciliation. First production launch, paid resources and production changes remain separately gated.
+
+Primary reference: [Netlify API file digests and draft deploys](https://docs.netlify.com/api-and-cli-guides/api-guides/get-started-with-api/). The `netlify:netlify-deploy` skill was read during implementation. Its rules require protecting preview access and preserving `.netlify` in `.gitignore`; this repository already ignores it. No deployment or rollback was performed.

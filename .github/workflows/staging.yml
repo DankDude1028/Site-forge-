@@ -1,0 +1,29 @@
+name: Protected preview
+on:
+  workflow_dispatch:
+    inputs:
+      ref: {description: 'Exact reviewed commit SHA', required: true}
+permissions: {contents: read}
+jobs:
+  preview:
+    if: vars.SITEFORGE_PREVIEWS_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: protected-preview
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ inputs.ref }}'}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci && npm test && npm run build
+        working-directory: packages/site-templates/label-roll-planner
+      - name: Deploy draft to configured protected Netlify site
+        env:
+          NETLIFY_AUTH_TOKEN: '${{ secrets.NETLIFY_AUTH_TOKEN }}'
+          NETLIFY_SITE_ID: '${{ vars.NETLIFY_SITE_ID }}'
+          PREVIEW_PROTECTION_VERIFIED: '${{ vars.PREVIEW_PROTECTION_VERIFIED }}'
+        run: |
+          test "$PREVIEW_PROTECTION_VERIFIED" = "true"
+          test -n "$NETLIFY_SITE_ID"
+          npx --yes netlify-cli@23 deploy --dir=packages/site-templates/label-roll-planner/dist --site="$NETLIFY_SITE_ID" --json > preview-receipt.json
+      - uses: actions/upload-artifact@v4
+        with: {name: preview-receipt, path: preview-receipt.json}

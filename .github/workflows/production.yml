@@ -1,0 +1,16 @@
+name: Production release gate
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha: {description: 'Exact reviewed commit', required: true}
+      approval_id: {description: 'SiteForge exact-action approval ID', required: true}
+permissions: {contents: read}
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Fail closed until production provider reconciliation is implemented
+        run: |
+          echo "Production is disabled. Configure exact approval consumption, provider reconciliation, health checks and a tested fix-forward release before enabling publication."
+          exit 1

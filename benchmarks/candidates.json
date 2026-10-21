@@ -1,0 +1,86 @@
+{
+  "schema_version": "1.0",
+  "inventory_date": "2026-10-21",
+  "inventory_source": "Actual local lms ls --json output; sizes are model artifact bytes, not VRAM measurements",
+  "contexts": [
+    4096,
+    8192,
+    16384,
+    32768
+  ],
+  "qualified_dataset_version": "1.2.0",
+  "candidates": [
+    {
+      "source_model": "google/gemma-4-e4b",
+      "downloaded_variant": "google/gemma-4-e4b@q4_k_m",
+      "quantization": "Q4_K_M",
+      "artifact_bytes": 5335366779,
+      "availability": "downloaded",
+      "hardware_note": "Benchmark one loaded model at a time; no extrapolation across context sizes"
+    },
+    {
+      "source_model": "google/gemma-4-12b-qat",
+      "downloaded_variant": "google/gemma-4-12b-qat@q4_0",
+      "quantization": "Q4_0",
+      "artifact_bytes": 7151067268,
+      "availability": "downloaded",
+      "hardware_note": "Actual installed QAT variant is Q4_0; do not label it Q4_K_M"
+    },
+    {
+      "source_model": "qwen/qwen3.5-9b",
+      "downloaded_variant": "qwen/qwen3.5-9b@q4_k_m",
+      "quantization": "Q4_K_M",
+      "artifact_bytes": 5627223231,
+      "availability": "downloaded",
+      "hardware_note": "Measure reasoning/output truncation and memory separately"
+    },
+    {
+      "source_model": "openai/gpt-oss-20b",
+      "downloaded_variant": "openai/gpt-oss-20b@mxfp4",
+      "quantization": "MXFP4",
+      "artifact_bytes": 12109664217,
+      "availability": "downloaded",
+      "hardware_note": "12GB GPU has little cache/runtime headroom; loading requires measured RAM/offload headroom"
+    },
+    {
+      "source_model": "qwen/qwen3.6-27b",
+      "downloaded_variant": "qwen/qwen3.6-27b@q4_k_m",
+      "quantization": "Q4_K_M",
+      "artifact_bytes": 17478734335,
+      "availability": "downloaded",
+      "hardware_note": "17.48GB artifact exceeds installed 16GB system RAM alone and 12GB VRAM alone; loading feasibility needs actual offload/headroom assessment"
+    },
+    {
+      "source_model": "qwen/qwen3.8-27b",
+      "downloaded_variant": "qwen/qwen3.8-27b@q4_k_m",
+      "quantization": "Q4_K_M",
+      "artifact_bytes": 17742040464,
+      "availability": "downloaded",
+      "hardware_note": "17.74GB artifact exceeds installed 16GB system RAM alone and 12GB VRAM alone; loading feasibility needs actual offload/headroom assessment"
+    }
+  ],
+  "requested_unavailable_identity": {
+    "requested_name": "Qwen3.6-35B-A3B",
+    "local_status": "not installed under this exact name",
+    "verification": "Verified official upstream identity and Apache-2.0 license; see docs/research/model-candidates.md. Local hardware results PENDING because this exact model is not installed.",
+    "local_replacement_candidate": "qwen/qwen3.6-27b"
+  },
+  "additional_quantization_sweep": [
+    {
+      "variant_family": "Q5",
+      "status": "PENDING",
+      "reason": "No Q5 variant exists in captured local inventory; verify actual variant availability/license before downloading"
+    },
+    {
+      "variant_family": "Q6",
+      "status": "PENDING",
+      "reason": "No Q6 variant exists in captured local inventory; verify actual variant availability/license before downloading"
+    },
+    {
+      "variant_family": "justified lower-bit",
+      "status": "PENDING",
+      "reason": "Only installed Q4/MXFP4 candidates are measured; any lower-bit candidate requires separate artifact/license verification and complete quality run"
+    }
+  ],
+  "execution_policy": "Never download implicitly. One loaded LLM at a time. Unmeasured context/quant combinations remain PENDING. Paid fallback is disabled. Stop loads that lack verified hardware headroom."
+}
