@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "role": "growth",
+  "allowed_tools": [
+    "propose_experiment",
+    "read_analytics"
+  ],
+  "max_attempts": 3,
+  "max_cost_usd": "0",
+  "escalation": "owner_review",
+  "inputs": "AgentContext",
+  "outputs": "AgentResult",
+  "fixture_mode_explicit": true,
+  "model_proposals_execute": false
+}

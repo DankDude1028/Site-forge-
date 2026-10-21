@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "role": "quality",
+  "allowed_tools": [
+    "inspect_preview",
+    "read_sources",
+    "run_tests",
+    "write_quality_report"
+  ],
+  "max_attempts": 3,
+  "max_cost_usd": "0",
+  "escalation": "owner_review",
+  "inputs": "AgentContext",
+  "outputs": "AgentResult",
+  "fixture_mode_explicit": true,
+  "model_proposals_execute": false
+}

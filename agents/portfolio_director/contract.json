@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "role": "portfolio_director",
+  "allowed_tools": [
+    "propose_workflow",
+    "read_portfolio",
+    "score_opportunities"
+  ],
+  "max_attempts": 3,
+  "max_cost_usd": "0",
+  "escalation": "owner_review",
+  "inputs": "AgentContext",
+  "outputs": "AgentResult",
+  "fixture_mode_explicit": true,
+  "model_proposals_execute": false
+}
