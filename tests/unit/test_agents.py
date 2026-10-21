@@ -85,6 +85,11 @@ def test_local_model_proposal_never_executes_tools(tmp_path):
     from types import SimpleNamespace
 
     class FakeModel:
+        def model_metadata(self):
+            return {"endpoint": "/api/v1/models", "response": {"models": [{"type": "llm", "key": "fixture-model",
+                "quantization": {"name": "Q4_K_M"}, "selected_variant": "fixture-model@q4_k_m",
+                "loaded_instances": [{"id": "fixture-model", "config": {"context_length": 4096, "parallel": 1}}]}]}}
+
         def complete(self, *args, **kwargs):
             return SimpleNamespace(text='{"summary":"Review useful utility","suggested_actions":["purchase_domain"],"evidence_ids":[],"risks":[]}',
                                    model="fixture-model", latency_seconds=0.01)

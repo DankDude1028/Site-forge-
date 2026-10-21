@@ -15,6 +15,22 @@ def settings(tmp_path):
     return WorkerSettings("http://127.0.0.1:8000", "unit-worker-token-long-enough", str(uuid4()), tmp_path)
 
 
+def test_worker_waits_for_supervisor_when_started_offline(tmp_path, monkeypatch):
+    from dataclasses import replace
+    config=replace(settings(tmp_path),poll_seconds=.001)
+    worker=WindowsWorker(config)
+    attempts=[]
+    def register():
+        attempts.append(1)
+        if len(attempts)==1:
+            raise httpx.ConnectError('fixture supervisor unavailable')
+        worker.stop_event.set()
+    monkeypatch.setattr(worker,'register',register)
+    worker.run_forever()
+    assert len(attempts)==2
+    worker.close()
+
+
 def task_for(worker):
     return {"id": str(uuid4()), "org_id": str(uuid4()), "agent_type": "research", "capability": "write_evidence",
         "input": fixture_payload(), "status": "leased", "idempotency_key": "unit-fixture", "site_id": None,

@@ -7,7 +7,7 @@ production publication remains disabled.
 
 ## Run on Windows
 
-Python 3.12+, Node 22.12+, Git and LM Studio are needed. Setup can discover the bundled Codex Python
+Python 3.12+, Node 22.23.4+ (or the bundled Node 24 runtime), Git and LM Studio are needed. Setup can discover the bundled Codex Python
 when the Windows Store `python` alias is not an installed interpreter.
 
 ```powershell
@@ -31,16 +31,16 @@ tasks, and runs the Windows worker through registration, leases, checkpoints and
 research, source, Astro project, QA, content, growth and revenue artifacts are under
 `runtime/artifacts/label-roll-planner/`. Synthetic market evidence is explicitly labeled. The useful
 sample site calculates label roll length, waste, spare allowance and roll counts; it does not claim
-real demand or revenue. Build it independently:
+real demand or revenue. Build it independently (on this PC use `scripts/Invoke-Npm.ps1` in place of the older default npm runtime):
 
 ```powershell
 Push-Location packages/site-templates/label-roll-planner
-npm ci
-npm test
-npm run typecheck
-npm run build
-npm run e2e
-npm run dev
+..\..\..\scripts\Invoke-Npm.ps1 ci
+..\..\..\scripts\Invoke-Npm.ps1 test
+..\..\..\scripts\Invoke-Npm.ps1 run typecheck
+..\..\..\scripts\Invoke-Npm.ps1 run build
+..\..\..\scripts\Invoke-Npm.ps1 run e2e
+..\..\..\scripts\Invoke-Npm.ps1 run dev
 Pop-Location
 ```
 

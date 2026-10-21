@@ -21,6 +21,7 @@ from pydantic import ValidationError
 from siteforge.agents import AGENTS, AgentRunner
 from siteforge.contracts import AgentContext, AgentResult, AgentType, TaskView
 from siteforge.lmstudio import LMStudioClient, LMStudioError
+from siteforge.model_router import ModelRouter
 from siteforge.policy import KNOWN_TOOLS
 from siteforge.queue import digest
 from siteforge.site_factory import scoped_path
@@ -96,7 +97,8 @@ class WindowsWorker:
                                             timeout=20, follow_redirects=False, trust_env=False)
         self.runner = runner or AgentRunner(settings.artifact_root,
             model_client=LMStudioClient(base_url=os.environ.get("SITEFORGE_LMSTUDIO_URL", "http://127.0.0.1:1234"),
-                                       api_key=os.environ.get("LM_STUDIO_API_KEY")))
+                                       api_key=os.environ.get("LM_STUDIO_API_KEY")),
+            model_router=ModelRouter(os.environ.get("SITEFORGE_BENCHMARK_RESULTS", "benchmarks/results/results.json")))
         self.sleeper = sleeper
         self.stop_event = threading.Event()
         self.lease_lost = threading.Event()
@@ -239,7 +241,15 @@ class WindowsWorker:
                 self._task = None
 
     def run_forever(self) -> None:
-        self.register()
+        while not self.stop_event.is_set():
+            try:
+                self.register()
+                break
+            except (httpx.HTTPError, LeaseLost, WorkerProtocolError, ValidationError) as error:
+                LOG.warning("Initial worker registration waiting (%s)", type(error).__name__)
+                self.stop_event.wait(self.settings.poll_seconds)
+        if self.stop_event.is_set():
+            return
         self.start_heartbeat()
         while not self.stop_event.is_set():
             try:

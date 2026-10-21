@@ -38,7 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: {node-version: '22', cache: npm, cache-dependency-path: 'apps/dashboard/package-lock.json'}
+        with: {node-version: '24', cache: npm, cache-dependency-path: 'apps/dashboard/package-lock.json'}
       - run: npm ci
         working-directory: apps/dashboard
       - run: npm run build && npm test
@@ -59,3 +59,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build --file infrastructure/docker/Dockerfile --tag siteforge:ci .
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install pytest==9.1.1
+      - name: Exercise actual offline sandbox boundary
+        run: |
+          docker pull python:3.12-slim
+          export SITEFORGE_TEST_DOCKER_IMAGE=$(docker image inspect python:3.12-slim --format '{{index .RepoDigests 0}}')
+          python -m pytest tests/integration/test_docker_sandbox.py -q

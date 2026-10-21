@@ -291,7 +291,7 @@ def run(args: argparse.Namespace) -> dict:
         if os.name == 'nt':
             import msvcrt
             try:
-                msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)  # type: ignore[attr-defined]
             except OSError as error:
                 raise RuntimeError('An endurance runner already owns this root') from error
         else:

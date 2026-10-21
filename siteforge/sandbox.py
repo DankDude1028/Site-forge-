@@ -81,6 +81,7 @@ class GitWorktrees:
 RECIPES = {
     "label_tests": ("node", "--experimental-strip-types", "--test", "tests/planner.test.ts"),
     "python_tests": ("python", "-m", "pytest", "-q", "-p", "no:cacheprovider", "tests"),
+    "python_unittest": ("python", "-I", "-m", "unittest", "discover", "-s", "tests"),
 }
 
 
@@ -134,9 +135,10 @@ class DockerSandbox:
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         output = bytearray()
         truncated = threading.Event()
+        stream = process.stdout
+        assert stream is not None
         def drain() -> None:
-            assert process.stdout is not None
-            for block in iter(lambda: process.stdout.read(8192), b""):
+            for block in iter(lambda: stream.read(8192), b""):
                 remaining = max(0, 65_536 - len(output))
                 output.extend(block[:remaining])
                 if len(block) > remaining:
@@ -155,7 +157,7 @@ class DockerSandbox:
             finally:
                 process.kill()
                 process.wait(timeout=10)
-            raise SandboxError("Sandbox timed out; operator must reconcile Docker container state") from error
+            raise SandboxError(f"Sandbox timed out; reconcile Docker container {name}") from error
         finally:
             reader.join(timeout=3)
         return SandboxResult(returncode, output.decode("utf-8", errors="replace"), truncated.is_set(), recipe)

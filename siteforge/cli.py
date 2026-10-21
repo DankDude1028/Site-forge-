@@ -62,11 +62,13 @@ def serve(_args: argparse.Namespace) -> None:
     uvicorn.run('siteforge.api:app', host='127.0.0.1', port=8080)
 
 
-def demo(_args: argparse.Namespace) -> None:
+def demo(args: argparse.Namespace) -> None:
     from .agents import fixture_payload
     from .policy import AGENT_TOOLS
     from .worker import WindowsWorker, WorkerSettings
     load_environment()
+    revision=args.revision
+    slug='label-roll-planner' if revision=='v1' else f'label-roll-planner-{revision}'
     token = os.environ['SITEFORGE_OWNER_TOKEN']
     origin = os.environ.get('SITEFORGE_API_URL', 'http://127.0.0.1:8080')
     with httpx.Client(base_url=origin, headers={'Authorization': f'Bearer {token}'},
@@ -75,14 +77,14 @@ def demo(_args: argparse.Namespace) -> None:
             response = client.post(path, json=body)
             response.raise_for_status()
             return response.json()
-        site = post('/v1/sites', {'slug':'label-roll-planner','config':{'mode':'fixture','commercial_launch':False}})
+        site = post('/v1/sites', {'slug':slug,'config':{'mode':'fixture','commercial_launch':False}})
         workflow = post('/v1/workflows', {'type':'fixture_site','site_id':site['id'],
-                                          'idempotency_key':'fixture-site-v1'})
+                                          'idempotency_key':f'fixture-site-{revision}'})
         previous: list[str] = []
         for role in ('portfolio_director','research','developer','content','quality','growth','revenue'):
             task = post('/v1/tasks', {'agent_type':role, 'capability':sorted(AGENT_TOOLS[role])[0],
-                'input':fixture_payload(), 'site_id':site['id'], 'workflow_id':workflow['id'],
-                'dependencies':previous,'idempotency_key':f'fixture-v1-{role}'})
+                'input':fixture_payload(slug), 'site_id':site['id'], 'workflow_id':workflow['id'],
+                'dependencies':previous,'idempotency_key':f'fixture-{revision}-{role}'})
             previous=[task['id']]
     worker = WindowsWorker(WorkerSettings.from_env())
     worker.register()
@@ -92,7 +94,7 @@ def demo(_args: argparse.Namespace) -> None:
         while count < 20 and worker.run_once():
             count+=1
         print(json.dumps({'processed_tasks':count,'site_id':site['id'], 'workflow_id':workflow['id'],
-                          'artifacts':'runtime/artifacts/label-roll-planner', 'mode':'fixture',
+                          'artifacts':str(Path(os.environ.get('SITEFORGE_ARTIFACT_ROOT','runtime/artifacts'))/slug), 'mode':'fixture',
                           'external_actions':0},indent=2))
     finally:
         worker.stop_event.set()
@@ -121,7 +123,9 @@ def main() -> None:
     init.add_argument('--database', default='sqlite:///runtime/local.db')
     init.set_defaults(handler=initialize)
     commands.add_parser('serve').set_defaults(handler=serve)
-    commands.add_parser('demo').set_defaults(handler=demo)
+    demo_parser=commands.add_parser('demo')
+    demo_parser.add_argument('--revision',default='v1',help='Use a fresh bounded slug for a new template revision')
+    demo_parser.set_defaults(handler=demo)
     results=commands.add_parser('import-benchmarks')
     results.add_argument('--path',type=Path,default=Path('benchmarks/results/results.json'))
     results.set_defaults(handler=import_results)
