@@ -18,6 +18,7 @@ from uuid import UUID, uuid4
 import psutil
 from sqlalchemy import select
 
+from .atomic_files import atomic_replace
 from .contracts import ActionExecution, ActionRequest, AgentContext, AgentType, TaskCreate, TaskView
 from .db import Database, Site, Task
 from .policy import AGENT_TOOLS, PolicyService
@@ -50,8 +51,11 @@ def observed_interval(seconds: float) -> float:
 def atomic_json(path: Path, value: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix('.tmp')
-    temporary.write_text(json.dumps(value, indent=2, default=str) + '\n', encoding='utf-8')
-    temporary.replace(path)
+    with temporary.open('w', encoding='utf-8') as handle:
+        handle.write(json.dumps(value, indent=2, default=str) + '\n')
+        handle.flush()
+        os.fsync(handle.fileno())
+    atomic_replace(temporary, path)
 
 
 def implementation_hash() -> str:

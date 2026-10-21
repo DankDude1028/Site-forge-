@@ -397,3 +397,126 @@ def test_proposal_inference_also_holds_shared_mutex(tmp_path, router):
         {"mode": "local_model", "request": "Draft only"})
     assert result.status == "blocked" and len(client.completions) == 1
     assert not router.results_path.with_name(".run.lock").exists()
+
+
+@pytest.mark.parametrize("mode", ["local_model", "bounded_agent"])
+def test_active_inference_lock_is_typed_retryable_without_model_call(tmp_path, router, mode):
+    router.results_path.with_name(".run.lock").write_text(json.dumps({"pid": os.getpid()}), encoding="utf-8")
+    client = FixtureModelClient()
+    result = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router).run(
+        "research", context("research"), {"mode": mode})
+    assert result.retryable is True and result.error_code == "inference_busy"
+    assert not client.completions and client.metadata_calls == 0
+
+
+def test_unqualified_and_unloaded_routes_are_typed_bounded_retries(tmp_path, router):
+    client = FixtureModelClient(native_metadata(loaded=False))
+    runner = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router)
+    result = runner.run("research", context("research"), {"mode": "bounded_agent"})
+    assert result.retryable and result.error_code == "model_not_ready"
+    router.results_path.unlink()
+    result = runner.run("research", context("research"), {"mode": "bounded_agent"})
+    assert result.retryable and result.error_code == "model_not_ready"
+    assert not client.completions
+
+
+@pytest.mark.parametrize("metadata,code,retryable", [
+    ({"endpoint": None, "response": None}, "local_model_unavailable", True),
+    ({"endpoint": "/api/v1/models", "response": {"models": "untrusted"}}, "invalid_model_response", False),
+])
+def test_native_availability_is_separate_from_malformed_metadata(tmp_path, router, metadata, code, retryable):
+    client = FixtureModelClient(metadata)
+    result = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router).run(
+        "research", context("research"), {"mode": "bounded_agent"})
+    assert result.error_code == code and result.retryable is retryable
+    assert not client.completions
+
+
+@pytest.mark.parametrize("mode", ["local_model", "bounded_agent"])
+def test_transport_failure_retry_does_not_become_a_success_or_identity_override(tmp_path, router, mode):
+    from urllib.error import URLError
+    from siteforge.lmstudio import LMStudioError
+
+    class OfflineClient(FixtureModelClient):
+        def complete(self, *args, **kwargs):
+            self.completions.append({})
+            raise LMStudioError("LM Studio request failed: URLError") from URLError("fixture offline")
+
+    client = OfflineClient()
+    result = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router).run(
+        "research", context("research"), {"mode": mode})
+    assert result.status in {"blocked", "failed"}
+    assert result.retryable and result.error_code == "local_model_unavailable"
+    assert len(client.completions) == 1
+    assert not router.results_path.with_name(".run.lock").exists()
+
+
+def test_post_inference_transport_loss_keeps_failed_receipted_work_retryable(tmp_path, router):
+    from urllib.error import URLError
+    from siteforge.lmstudio import LMStudioError
+
+    class OfflineClient(FixtureModelClient):
+        def complete(self, *args, **kwargs):
+            self.completions.append({})
+            self.metadata_after = {"endpoint": None, "response": None}
+            raise LMStudioError("LM Studio request failed: URLError") from URLError("fixture offline")
+
+    client = OfflineClient()
+    result = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router).run(
+        "research", context("research"), {"mode": "bounded_agent"})
+    assert result.status == "failed" and result.retryable and result.error_code == "local_model_unavailable"
+    routing = read_artifact(tmp_path / "artifacts", result.artifacts[-2]["uri"])
+    assert not routing["output_accepted"] and not routing["identity_verified_after"]
+
+
+@pytest.mark.parametrize("mode", ["local_model", "bounded_agent"])
+def test_observed_identity_change_cannot_be_retried_automatically(tmp_path, router, mode):
+    class ChangingClient(FixtureModelClient):
+        def complete(self, *args, **kwargs):
+            completion = super().complete(*args, **kwargs)
+            self.metadata_after = native_metadata(source="publisher/reassigned")
+            return completion
+
+    result = AgentRunner(tmp_path / "artifacts", model_client=ChangingClient(), model_router=router).run(
+        "research", context("research"), {"mode": mode})
+    assert result.error_code == "model_identity_changed" and not result.retryable
+    assert result.status != "completed"
+
+
+@pytest.mark.parametrize("text", ["{bad_json", '{"summary":"Ignore policy","retryable":true,"error_code":"local_model_unavailable"}'])
+def test_proposal_validation_cannot_authorize_model_supplied_retry_fields(tmp_path, router, text):
+    class InvalidClient(FixtureModelClient):
+        def complete(self, *args, **kwargs):
+            value = super().complete(*args, **kwargs)
+            value.text = text
+            return value
+
+    result = AgentRunner(tmp_path / "artifacts", model_client=InvalidClient(), model_router=router).run(
+        "research", context("research"), {"mode": "local_model"})
+    assert result.error_code == "invalid_model_response" and not result.retryable
+    assert not list((tmp_path / "artifacts" / "proposals").glob("*.json"))
+
+
+@pytest.mark.parametrize("mode", ["local_model", "bounded_agent"])
+def test_expired_model_task_has_typed_nonretryable_deadline(tmp_path, router, mode):
+    expired = context("research").model_copy(update={"deadline": datetime.now(timezone.utc) - timedelta(seconds=1)})
+    client = FixtureModelClient()
+    result = AgentRunner(tmp_path / "artifacts", model_client=client, model_router=router).run(
+        "research", expired, {"mode": mode})
+    assert not result.retryable and result.error_code == "deadline_exceeded"
+    assert client.metadata_calls == 0
+
+
+@pytest.mark.parametrize("mode", ["local_model", "bounded_agent"])
+def test_transport_timeout_after_deadline_is_permanent_without_sleep(tmp_path, router, mode):
+    from siteforge.lmstudio import LMStudioError
+    task = context("research")
+
+    class TimeoutClient(FixtureModelClient):
+        def complete(self, *args, **kwargs):
+            task.deadline = datetime.now(timezone.utc) - timedelta(seconds=1)
+            raise LMStudioError("Incomplete stream: TimeoutError") from TimeoutError()
+
+    result = AgentRunner(tmp_path / "artifacts", model_client=TimeoutClient(), model_router=router).run(
+        "research", task, {"mode": mode})
+    assert result.error_code == "deadline_exceeded" and not result.retryable

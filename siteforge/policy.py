@@ -15,7 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .contracts import ActionExecution, ActionRequest
-from .db import Approval, Budget, Database, Organization, PolicyDecision, Receipt, Site, Task, audit, utcnow
+from .db import Approval, Budget, Database, Notification, Organization, PolicyDecision, Receipt, Site, Task, audit, utcnow
 from .queue import DomainError, aware, digest, tenant_row
 
 
@@ -29,7 +29,7 @@ AGENT_TOOLS: dict[str, frozenset[str]] = {
     "revenue": frozenset({"read_revenue", "read_costs", "reconcile_ledger"}),
 }
 RESTRICTED_ACTIONS = frozenset({
-    "deploy_production", "spend_money", "send_email", "external_outreach", "purchase_domain",
+    "deploy_preview", "deploy_production", "spend_money", "send_email", "external_outreach", "purchase_domain",
     "affiliate_enrollment", "accept_contract", "change_payment_details", "delete_production_data",
     "change_credentials", "change_privileges", "provision_paid_service",
 })
@@ -158,8 +158,38 @@ class PolicyService:
                 raise DomainError("budget below committed spend")
             else:
                 budget.limit_amount = limit
+            session.flush()
+            self._budget_alerts(session, budget)
             audit(session, org_id, actor, "budget.configure", period, amount=str(limit), currency=currency)
             return {"period": period, "currency": currency, "limit_amount": limit}
+
+    @staticmethod
+    def _budget_alerts(session: Session, budget: Budget) -> None:
+        """Persist threshold notices once under the caller's organization lock.
+
+        Reserved commitments count toward a cap; a notice does not claim realized
+        provider expense. Notices remain internal drafts, with no message delivery.
+        """
+        committed = budget.used_amount + budget.reserved_amount
+        if budget.limit_amount <= 0:
+            return
+        for threshold in (50, 80, 100):
+            if committed * 100 < budget.limit_amount * threshold:
+                continue
+            kind = f"budget.threshold.{threshold}"
+            existing = session.scalar(select(Notification.id).where(
+                Notification.org_id == budget.org_id, Notification.kind == kind,
+                Notification.data["budget_id"].as_string() == budget.id))
+            if existing is not None:
+                continue
+            session.add(Notification(org_id=budget.org_id, kind=kind, status="draft", data={
+                "budget_id": budget.id, "period": budget.period, "currency": budget.currency,
+                "threshold_percent": threshold, "limit_amount": str(budget.limit_amount),
+                "used_amount": str(budget.used_amount), "reserved_amount": str(budget.reserved_amount),
+                "basis": "used_plus_reserved_commitments", "external_delivery": False,
+            }))
+            audit(session, budget.org_id, "policy", "budget.threshold", budget.id,
+                  threshold_percent=threshold, period=budget.period, currency=budget.currency)
 
     def _reserve(self, session: Session, org_id: str, amount: Decimal, currency: str,
                  task_id: str | None) -> list[str]:
@@ -182,6 +212,7 @@ class PolicyService:
                 raise DomainError("per-task budget ceiling exceeded", 403)
         for budget in budgets:
             budget.reserved_amount += amount
+            self._budget_alerts(session, budget)
         return periods
 
     def authorize(self, org_id: str, approval_id: str, execution: ActionExecution,

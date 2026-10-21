@@ -20,6 +20,7 @@ from pydantic import ValidationError
 
 from siteforge.agents import AGENTS, AgentRunner
 from siteforge.contracts import AgentContext, AgentResult, AgentType, TaskView
+from siteforge.inference_lock import InferenceBusy, ensure_inference_available
 from siteforge.lmstudio import LMStudioClient, LMStudioError
 from siteforge.model_router import ModelRouter
 from siteforge.policy import KNOWN_TOOLS
@@ -176,6 +177,14 @@ class WindowsWorker:
         if data.get("stage") != "result" or data.get("task_id") != task.id:
             return None
         result = AgentResult.model_validate(data.get("result"))
+        # Failed/blocked snapshots are diagnostic evidence, not reusable work.
+        # Native tools must reenter their receipt/policy/source validation on
+        # every attempt. Fixture previews and QA likewise depend on a mutable
+        # source tree that hashing their JSON manifest/report cannot prove.
+        if (result.status != "completed" or task.input.get("mode") != "fixture"
+                or task.agent_type in {AgentType.developer.value, AgentType.quality.value}
+                or not result.artifacts):
+            return None
         for artifact in result.artifacts:
             path = scoped_path(self.settings.artifact_root, artifact["uri"])
             if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != artifact["sha256"]:
@@ -183,6 +192,15 @@ class WindowsWorker:
         return result
 
     def run_once(self) -> bool:
+        # Backpressure before leasing preserves the durable attempt budget while
+        # a benchmark/agent holds inference. The runner still acquires its own
+        # lock after leasing, closing the race without holding a mutex over HTTP.
+        model_router = getattr(self.runner, "model_router", None)
+        if model_router is not None:
+            try:
+                ensure_inference_available(model_router.results_path.with_name(".run.lock"))
+            except InferenceBusy:
+                return False
         # Never retry a lease request after an uncertain response: another lease might be issued.
         value = self._request("POST", "/v1/tasks/lease", {
             "worker_id": self.settings.worker_id, "seconds": self.settings.lease_seconds}, retry_safe=False)
@@ -223,7 +241,9 @@ class WindowsWorker:
                 raise LeaseLost("Lease ownership is uncertain")
             if result.status != "completed":
                 self._request("POST", f"/v1/tasks/{task.id}/fail", {
-                    **self._claim(task), "error": f"agent_{result.status}: owner review required", "retryable": False})
+                    **self._claim(task),
+                    "error": result.error_code if result.error_code != "none" else f"agent_{result.status}: owner review required",
+                    "retryable": result.retryable})
             else:
                 self._request("POST", f"/v1/tasks/{task.id}/complete", {
                     **self._claim(task), "result": result.model_dump(mode="json")})

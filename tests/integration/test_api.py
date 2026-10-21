@@ -155,6 +155,37 @@ def test_production_requires_migrations_and_no_fallback_credentials():
     db.dispose()
 
 
+def test_dashboard_counts_and_pending_filter_do_not_hide_older_work(api):
+    from siteforge.db import Approval
+    client, org, _ = api
+    site = client.post("/v1/sites", headers=headers(), json={"slug": "pagination-fixture"}).json()
+    old_pending = str(uuid4())
+    with client.app.state.db.transaction() as session:
+        for index in range(102):
+            session.add(Approval(id=old_pending if index == 0 else str(uuid4()), org_id=org,
+                site_id=site["id"], agent_type="developer", action="deploy_production", payload={"fixture": True},
+                payload_hash="a" * 64, request_hash="b" * 64, requester="fixture-owner",
+                status="pending" if index == 0 else "rejected", idempotency_key=f"history-{index}",
+                created_at=utcnow() - timedelta(days=2) if index == 0 else utcnow(),
+                expires_at=utcnow() + timedelta(hours=1)))
+    assert old_pending not in {item["id"] for item in client.get("/v1/approvals", headers=headers()).json()}
+    pending = client.get("/v1/approvals", headers=headers(), params={"status": "pending"}).json()
+    assert [item["id"] for item in pending] == [old_pending]
+    summary = client.get("/v1/dashboard-summary", headers=headers()).json()
+    assert summary["sites"] == 1 and summary["pending_approvals"] == 1
+    assert client.get("/v1/dashboard-summary", headers=headers("other")).json()["pending_approvals"] == 0
+    assert client.get("/v1/dashboard-summary", headers=headers("worker")).status_code == 403
+    assert client.get("/v1/audit?status=pending", headers=headers()).status_code == 422
+    for index in range(102):
+        client.app.state.queue.enqueue(org, TaskCreate(agent_type="research", capability="read_web",
+                                                       idempotency_key=f"paged-task-{index}"))
+    first = client.get("/v1/tasks?limit=100&offset=0", headers=headers()).json()
+    second = client.get("/v1/tasks?limit=100&offset=100", headers=headers()).json()
+    assert len(first) == 100 and len(second) == 2
+    assert len({item["id"] for item in first + second}) == 102
+    assert client.get("/v1/dashboard-summary", headers=headers()).json()["tasks"] == 102
+
+
 def test_frozen_migration_creates_full_schema_and_guards(tmp_path, monkeypatch):
     from alembic import command
     from alembic.config import Config
@@ -210,3 +241,14 @@ def test_postgres_atomic_skip_locked_claims_and_audit_trigger(monkeypatch):
         with db.transaction() as session:
             session.execute(text("TRUNCATE audit_events"))
     db.dispose()
+
+
+def test_money_api_preserves_decimal_strings(api):
+    client, _, _ = api
+    site=client.post('/v1/sites',headers=headers(),json={'slug':'money-contract'}).json()
+    result=client.post('/v1/approvals',headers=headers(),json={'agent_type':'developer',
+        'action':'deploy_preview','site_id':site['id'],'payload':{'commit_sha':'a'*40},
+        'amount':'0.123456','idempotency_key':'money-contract'}).json()
+    assert result['amount']=='0.123456'
+    listed=client.get('/v1/approvals',headers=headers()).json()
+    assert listed[0]['amount']=='0.123456'

@@ -91,6 +91,8 @@ is required to validate that stack.
 ```
 
 The scheduler recovers deadlines/leases and stale workers. Daily fixture scheduling is opt-in;
+`SITEFORGE_SCHEDULE_WEEKLY_REVIEWS=true` adds durable internal reviews from recorded economics,
+preserving missing observations. Budget commitments produce internal 50/80/100% notices.
 its database idempotency keys survive restarts. Model and external research jobs wait when the
 Windows PC is offline. Seven typed roles have fixed tools, bounded retry rules, audited artifacts
 and owner escalation. `local_model` mode writes structured proposals. `bounded_agent` mode runs
@@ -103,7 +105,7 @@ host code, provider mutations, publishing and paid fallback are unavailable to t
 
 The API provides `/healthz`, `/readyz`, organization-scoped `/v1` catalogs, worker operations,
 task cancellation, candidate scoring, workflows, approvals, budget configuration, action intents,
-kill switch and ledger summaries. Owner/observer/worker scopes are distinct. Hashed token config
+kill switch and ledger summaries. Owner/observer/worker/release scopes are distinct. Hashed token config
 (`SITEFORGE_AUTH_TOKENS`) supports explicit capabilities and expiry. Authenticated `/metrics` is for
 monitoring. Money uses Decimal; missing revenue imports remain unknown rather than zero.
 
@@ -124,10 +126,18 @@ must be supplied before enabling live operations. No provider success is fabrica
 
 GitHub Actions runs Python lint/type checks/tests, real PostgreSQL migration/concurrent leasing
 checks, package vulnerability scans, a secret pattern scan, SBOM generation, dashboard browser/axe
-tests and Astro build/tests. The manually enabled preview workflow requires a configured protected
-Netlify site and protection verification. `.netlify` is ignored. The production workflow fails
-closed until exact approval consumption, provider reconciliation, health checks and a tested
-fix-forward release are connected. No live launch or deployment is implied by a local build.
+tests and Astro build/tests. Manually enabled preview and promotion workflows call the supervisor's
+exact approval, budget and durable provider-receipt pipeline. Releases default to disabled; unknown
+costs, unresolved effects, unverified protection and mismatched artifact trees block advancement.
+The workflow needs an already reviewed compiled bundle staged in the supervisor's scoped root.
+Promotion preserves those exact preview bytes, including noindex. Indexable production artifacts,
+build provenance transfer and automatic rollback still require implementation and acceptance.
+See [release operations](docs/operations/releases.md) for scoped credentials, read reconciliation,
+bounded upload recovery and limitations. `.netlify` is ignored. No live deployment was performed.
+
+[Encrypted backups](docs/operations/backups.md) stream PostgreSQL dumps into authenticated AES-GCM
+archives, retain verified local history and restore only into new disposable databases. Production
+scheduling, protected off-host storage and key custody remain operator acceptance work.
 
 ## Endurance and acceptance
 
@@ -135,9 +145,9 @@ fix-forward release are connected. No live launch or deployment is implied by a 
 # Fast smoke evidence (not 72-hour acceptance)
 .\.venv\Scripts\python.exe -m siteforge.endurance --root runtime/smoke --hours 0.02 --cycles 3 --interval 0
 # Actual wall-clock fixture run in a hidden background process
-.\scripts\Start-Endurance.ps1
+.\scripts\Start-Endurance.ps1 -RunDirectory runtime/endurance-final-source
 # Optional current-user logon recovery, no administrator rights
-.\scripts\Install-EnduranceTask.ps1
+.\scripts\Install-EnduranceTask.ps1 -RunDirectory runtime/endurance-final-source
 ```
 
 The runner counts observed active time, persists progress, prevents parallel ownership with an OS
@@ -147,6 +157,14 @@ checks blocked approvals, zero budgets and receipt replays, and measures latency
 are labeled smoke. Even a 72-hour fixture soak cannot certify untested PostgreSQL/service/OS/network
 faults or a hosted staging deployment. See [status](docs/operations/status.md) and the
 [operations runbook](docs/operations/runbook.md) for exact remaining acceptance gates.
+
+An additional [actual process recovery drill](docs/operations/runtime-drill.md) hard-stops only its
+isolated API/worker subprocesses, observes a real loopback outage and lease expiry, then recovers
+the checkpoint and research/build/QA chain. Run it with a new evidence directory:
+
+```powershell
+.\.venv\Scripts\python.exe -m siteforge.runtime_drill --root runtime/process-drill
+```
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q

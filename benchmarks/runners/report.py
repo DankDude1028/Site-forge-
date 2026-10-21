@@ -5,17 +5,22 @@ import csv
 import argparse
 import io
 import json
+import os
 from pathlib import Path
 from statistics import mean
 from typing import Any
+from siteforge.atomic_files import atomic_replace
 from siteforge.inference_lock import InferenceLock
 from siteforge.model_router import QUALIFIED_DATASET_VERSIONS
 
 
 def atomic_write(path: Path, text: str) -> None:
     temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(text, encoding="utf-8", newline="\n")
-    temporary.replace(path)
+    with temporary.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(text)
+        handle.flush()
+        os.fsync(handle.fileno())
+    atomic_replace(temporary, path)
 
 
 def summarize(run: dict[str, Any]) -> dict[str, Any]:
@@ -106,7 +111,7 @@ def write_reports(output: Path, payload: dict[str, Any]) -> None:
                 coverage.append("MEASURED" if any(run["status"] == "complete" for run in matched) else matched[-1]["status"] if matched else "PENDING")
             lines.append(f"| {candidate['source_model']} | {candidate['quantization']} | " + " | ".join(coverage) + " |")
         lines.extend(["", "Requested Qwen3.6-35B-A3B: absent under that exact name in local inventory; upstream identity and license were verified in docs/research/model-candidates.md; local hardware benchmarking remains PENDING. Installed Qwen3.6-27B is a separate replacement candidate. Q5, Q6 and justified lower-bit variant sweeps remain PENDING because those artifacts are not in the captured inventory. Large models require actual RAM/VRAM/offload headroom before loading; absence of a result is not a quality failure."])
-    lines.extend(["", "## Acceptance and routing", "", "Quality, tool/schema reliability, coding tests, speed, memory, sampled efficiency, and estimated electricity appear separately in the HTML charts. Role routing uses complete measured runs only, minimum 5 role samples and >=80% success; among qualifying models it chooses measured successful tasks/hour. A full 100-task run is necessary but does not establish production reliability. No cloud fallback is authorized.", "", "4K/8K/16K/32K context and Q4/Q5/Q6 sweeps are separate runs; unavailable variants stay PENDING. No quality extrapolation across quantizations. High RAM pressure may prevent large-model tests.", ""])
+    lines.extend(["", "## Acceptance and routing", "", "Quality, tool/schema reliability, coding tests, speed, memory, sampled efficiency, and estimated electricity appear separately in the HTML charts. Role routing uses complete measured runs only, minimum 5 samples and >=80% success in every required role category; among qualifying models it chooses measured successful tasks/hour. A full 100-task run is necessary but does not establish production reliability. No cloud fallback is authorized.", "", "4K/8K/16K/32K context and Q4/Q5/Q6 sweeps are separate runs; unavailable variants stay PENDING. No quality extrapolation across quantizations. High RAM pressure may prevent large-model tests.", ""])
     atomic_write(output / "report.md", "\n".join(lines))
     chart_runs = [{"label": f"{run['source_model']} {run['quantization']} {run['context']} fixture{run['dataset_version']} {'structured' if run['settings'].get('structured_json') else 'plain'}", "status": run["status"],
                    "fixture": run["dataset_version"], "context": run["context"],

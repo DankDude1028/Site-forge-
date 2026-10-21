@@ -30,3 +30,33 @@ test('login is usable at narrow widths',async({page})=>{
   await expect(page.getByRole('heading',{level:1})).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
 });
+
+test('older pending approvals and jobs beyond the first page remain visible',async({page})=>{
+  let pendingFilterUsed=false;
+  await page.route('**/v1/**',route=>{
+    const url=new URL(route.request().url());const key=url.pathname.split('/')[2];
+    let value=[];
+    if(key==='dashboard-summary')value={sites:0,workers:0,tasks:101,pending_approvals:1,audit_events:0};
+    if(key==='tasks'){
+      const offset=Number(url.searchParams.get('offset')??0);
+      value=Array.from({length:offset===0?100:1},(_,i)=>({id:`task-${offset+i}`,agent_type:'research',status:'completed',attempt:1,capability:'read_sources'}));
+    }
+    if(key==='approvals'){
+      pendingFilterUsed=url.searchParams.get('status')==='pending';
+      value=[{id:'old-pending',site_id:'site-1',action:'deploy_production',status:'pending',amount:'0',currency:'USD'}];
+    }
+    return route.fulfill({json:value});
+  });
+  await page.goto('/');await page.getByLabel('Supervisor access token').fill('fixture-ui-token');
+  await page.getByRole('button',{name:'Open control room'}).click();
+  await expect(page.getByText('Pending across all records')).toBeVisible();
+  expect(pendingFilterUsed).toBe(true);
+  await page.getByRole('button',{name:'Agents & jobs'}).click();
+  await expect(page.getByText('Showing 1–100 of 101')).toBeVisible();
+  await page.getByRole('button',{name:'Next tasks',exact:true}).click();
+  await expect(page.getByText('task-100',{exact:true})).toBeVisible();
+  await expect(page.getByText('Showing 101–101 of 101')).toBeVisible();
+  await expect(page.getByRole('button',{name:'Next tasks',exact:true})).toBeDisabled();
+  await page.getByRole('button',{name:'Approvals'}).click();
+  await expect(page.getByRole('button',{name:'Review details'})).toBeVisible();
+});

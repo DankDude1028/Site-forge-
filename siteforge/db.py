@@ -14,6 +14,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 from sqlalchemy.pool import StaticPool
+from sqlalchemy.engine import Dialect
+from sqlalchemy.types import TypeDecorator
 from sqlalchemy.dialects.postgresql import JSONB
 
 JSON_VALUE = JSON().with_variant(JSONB(), "postgresql")
@@ -27,13 +29,40 @@ def new_id() -> str:
     return str(uuid4())
 
 
+class UTCDateTime(TypeDecorator[datetime]):
+    """Preserve aware UTC instants across PostgreSQL and SQLite round trips.
+
+    SQLite drops timezone offsets in its DATETIME representation. Bind UTC
+    values only, then restore that known UTC timezone when reading SQLite.
+    The underlying SQL type is unchanged from DateTime(timezone=True).
+    """
+    impl = DateTime(timezone=True)
+    cache_ok = True
+
+    def process_bind_param(self, value: datetime | None, dialect: Dialect) -> datetime | None:
+        if value is None:
+            return None
+        if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("Database timestamps must include a timezone")
+        return value.astimezone(timezone.utc)
+
+    def process_result_value(self, value: datetime | None, dialect: Dialect) -> datetime | None:
+        if value is None:
+            return None
+        if value.tzinfo is None or value.utcoffset() is None:
+            if dialect.name != "sqlite":
+                raise ValueError("Database returned a timestamp without a timezone")
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+
+
 class Base(DeclarativeBase):
     pass
 
 
 class Entity:
     id: Mapped[str] = mapped_column(String(36).with_variant(Uuid(as_uuid=False), "postgresql"), primary_key=True, default=new_id)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
 
 class Tenant(Entity):
@@ -64,7 +93,7 @@ class Worker(Tenant, Base):
     __tablename__ = "workers"
     name: Mapped[str] = mapped_column(String(100))
     capabilities: Mapped[list[str]] = mapped_column(JSON_VALUE, default=list)
-    last_heartbeat_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    last_heartbeat_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     status: Mapped[str] = mapped_column(String(30), default="online")
     version: Mapped[str] = mapped_column(String(40), default="0.1.0")
     __table_args__ = (UniqueConstraint("org_id", "name"),)
@@ -101,11 +130,11 @@ class Task(Tenant, Base):
     attempt: Mapped[int] = mapped_column(Integer, default=0)
     max_attempts: Mapped[int] = mapped_column(Integer, default=3)
     lease_worker_id: Mapped[str | None] = mapped_column(ForeignKey("workers.id"))
-    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    lease_expires_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     lease_token: Mapped[str | None] = mapped_column(String(100))
-    deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    deadline: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    available_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     budget_cap: Mapped[Decimal] = mapped_column(Numeric(18, 6), default=Decimal("0"))
     actual_cost: Mapped[Decimal] = mapped_column(Numeric(18, 6), default=Decimal("0"))
     result: Mapped[dict[str, Any] | None] = mapped_column(JSON_VALUE)
@@ -134,7 +163,7 @@ class Attempt(Tenant, Base):
     number: Mapped[int] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(30), default="leased")
     error: Mapped[str | None] = mapped_column(String(500))
-    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     __table_args__ = (UniqueConstraint("task_id", "number"),)
 
 
@@ -143,8 +172,8 @@ class Lease(Tenant, Base):
     task_id: Mapped[str] = mapped_column(ForeignKey("tasks.id"), index=True)
     worker_id: Mapped[str] = mapped_column(ForeignKey("workers.id"))
     token_hash: Mapped[str] = mapped_column(String(64), unique=True)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    released_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    released_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
 
 
 class Checkpoint(Tenant, Base):
@@ -176,9 +205,9 @@ class Approval(Tenant, Base):
     currency: Mapped[str] = mapped_column(String(3), default="USD")
     requester: Mapped[str] = mapped_column(String(100))
     status: Mapped[str] = mapped_column(String(30), default="pending")
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime())
     approved_by: Mapped[str | None] = mapped_column(String(100))
-    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    decided_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     reason: Mapped[str | None] = mapped_column(String(500))
     idempotency_key: Mapped[str] = mapped_column(String(160))
     __table_args__ = (
@@ -241,7 +270,7 @@ class RevenueEvent(Tenant, Base):
     amount: Mapped[Decimal] = mapped_column(Numeric(18, 6))
     currency: Mapped[str] = mapped_column(String(3))
     verification_status: Mapped[str] = mapped_column(String(30))
-    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    occurred_at: Mapped[datetime] = mapped_column(UTCDateTime())
     __table_args__ = (UniqueConstraint("org_id", "provider", "external_ref"),)
 
 
@@ -253,7 +282,7 @@ class Expense(Tenant, Base):
     amount: Mapped[Decimal] = mapped_column(Numeric(18, 6))
     currency: Mapped[str] = mapped_column(String(3))
     verification_status: Mapped[str] = mapped_column(String(30), default="verified")
-    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    occurred_at: Mapped[datetime] = mapped_column(UTCDateTime())
     __table_args__ = (UniqueConstraint("org_id", "provider", "external_ref"),)
 
 
@@ -270,7 +299,7 @@ class Evidence(Tenant, Base):
     opportunity_id: Mapped[str | None] = mapped_column(ForeignKey("opportunities.id"))
     site_id: Mapped[str | None] = mapped_column(ForeignKey("sites.id"))
     url: Mapped[str] = mapped_column(Text)
-    retrieved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    retrieved_at: Mapped[datetime] = mapped_column(UTCDateTime())
     sha256: Mapped[str] = mapped_column(String(64))
     data: Mapped[dict[str, Any]] = mapped_column(JSON_VALUE, default=dict)
 
@@ -317,8 +346,8 @@ class AnalyticsSnapshot(Tenant, Base):
     site_id: Mapped[str] = mapped_column(ForeignKey("sites.id"))
     provider: Mapped[str] = mapped_column(String(80))
     source_record_id: Mapped[str] = mapped_column(String(160))
-    period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    period_start: Mapped[datetime] = mapped_column(UTCDateTime())
+    period_end: Mapped[datetime] = mapped_column(UTCDateTime())
     data: Mapped[dict[str, Any]] = mapped_column(JSON_VALUE)
     __table_args__ = (UniqueConstraint("org_id", "provider", "source_record_id"),)
 

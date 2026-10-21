@@ -53,11 +53,11 @@ does not replace the live revision. Preserve the prior provider deploy/commit re
 
 ## Endurance evidence
 
-`runtime/endurance/report.json` is updated every five observed active seconds. Inspect `pid`,
+The current run directory is recorded in [status](status.md); its `report.json` is updated every five observed active seconds. Inspect `pid`,
 heartbeat freshness, completed durable tasks, injected/recovered fault counts, memory growth and
 failures. Restarts resume the report and do not count offline time. Do not combine separate runs
 or accelerate the clock to satisfy 259,200 seconds. The optional Windows task uses the current
-user at logon; sleep/shutdown delays completion. The initial fixture simulation does not claim
+user at logon; pass the same `-RunDirectory` to the startup and task-install scripts. Sleep/shutdown delays completion. If implementation bytes change, preserve the interrupted run and start a fresh directory. The initial fixture simulation does not claim
 real provider outages, supervisor OS process death or PostgreSQL endurance. Preserve those limits
 when reporting results. No cloud spending or public launch occurs in the runner.
 

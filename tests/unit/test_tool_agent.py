@@ -111,6 +111,7 @@ def test_malformed_arguments_and_model_response_are_audited(tmp_path):
     bad["function"]["arguments"] = "{not_json}"
     result = ToolAgentRunner(tmp_path, Client(response(bad)), "local", context_length=32768).run("research", context(), payload())
     assert result.status == "blocked" and result.artifacts
+    assert result.error_code == "invalid_model_response" and not result.retryable
 
 
 def test_maximum_tool_calls_and_context_budget_fail_closed(tmp_path):
@@ -118,9 +119,11 @@ def test_maximum_tool_calls_and_context_budget_fail_closed(tmp_path):
                     response(call("read_sources", identity="call_11")))
     result = ToolAgentRunner(tmp_path, client, "local", context_length=100000).run("research", context(), payload())
     assert result.status == "blocked" and "budget" in " ".join(result.risks)
+    assert result.error_code == "execution_limit" and not result.retryable
     client = Client()
     result = ToolAgentRunner(tmp_path, client, "local", context_length=1024).run("research", context(), payload())
     assert result.status == "blocked" and "context" in " ".join(result.risks)
+    assert result.error_code == "context_limit" and not result.retryable
     assert client.messages == []
 
 
@@ -291,3 +294,44 @@ def test_ledger_actuals_require_reconciled_hash_provenance_and_exclude_fixtures(
     assert report["revenue"]["estimated"] == {"USD": "100"}
     assert report["revenue"]["unknown_records"] == 4
     assert report["costs"]["verified"] is None and report["operating_contribution"] is None
+
+
+def test_transport_failure_after_internal_action_can_replay_receipts_safely(tmp_path):
+    from urllib.error import URLError
+    from siteforge.lmstudio import LMStudioError
+
+    class UnavailableClient(Client):
+        def complete(self, messages, model, **kwargs):
+            if self.messages:
+                raise LMStudioError("LM Studio request failed: URLError") from URLError("fixture offline")
+            return super().complete(messages, model, **kwargs)
+
+    task = context()
+    first = ToolAgentRunner(tmp_path, UnavailableClient(response(call("read_sources"))), "local",
+                            context_length=32768).run("research", task, payload())
+    assert first.status == "blocked" and first.retryable and first.error_code == "local_model_unavailable"
+    assert len(list((tmp_path / ".tool-receipts" / str(task.task_id)).glob("read_sources-*.json"))) == 1
+    retried = ToolAgentRunner(tmp_path, successful_research_client(), "local", context_length=32768).run(
+        "research", task, payload())
+    assert retried.status == "completed" and not retried.retryable and retried.error_code == "none"
+    assert len(list((tmp_path / ".tool-receipts" / str(task.task_id)).glob("read_sources-*.json"))) == 1
+
+
+@pytest.mark.parametrize("kind", ["incomplete_stream", "printed_tool_json", "malformed_native", "injected_tool"])
+def test_untrusted_native_response_cannot_request_automatic_retry(tmp_path, kind):
+    from siteforge.lmstudio import LMStudioError
+
+    class InvalidClient(Client):
+        def complete(self, messages, model, **kwargs):
+            if kind == "incomplete_stream":
+                raise LMStudioError("Stream ended without a finish reason")
+            if kind == "printed_tool_json":
+                return SimpleNamespace(text=json.dumps({"tool_calls": [call("read_sources")]}), finish_reason="stop")
+            if kind == "malformed_native":
+                return SimpleNamespace(text='{"tool_calls":[],"retryable":true}', finish_reason="tool_calls")
+            return response(call("spend_money", {"retryable": True}))
+
+    result = ToolAgentRunner(tmp_path, InvalidClient(), "local", context_length=32768).run(
+        "research", context(), payload())
+    assert result.status == "blocked" and not result.retryable
+    assert result.error_code == ("policy_blocked" if kind == "injected_tool" else "invalid_model_response")

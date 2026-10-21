@@ -1,6 +1,6 @@
 # Implementation and acceptance status
 
-Updated 2026-10-21, with evidence inspected at 18:37 UTC. A working local fixture pipeline and
+Updated 2026-10-21. A working local fixture pipeline and
 passing hosted checks are available. Full MVP acceptance and production launch are **not complete**.
 See [acceptance evidence](acceptance-evidence.md) for exact scopes and limitations, and the
 [runbook](runbook.md) for operator recovery procedures.
@@ -22,12 +22,13 @@ PASSED below means the stated bounded check passed. It does not imply production
 
 | Gate | Status | Evidence and remaining work |
 | --- | --- | --- |
-| Hosted implementation checks | PASSED at `a71c7e8` | [CI run 39653684353](https://github.com/DankDude1028/Site-forge-/actions/runs/39653684353): Python 266 passed, 3 skipped; lint, type checks, dependency audits, builds and browser checks passed. Changes after this commit, including fixture v1.3 qualification, need their own final run. |
+| Hosted implementation checks | PASSED at `d64e469` | [CI run 39655980576](https://github.com/DankDude1028/Site-forge-/actions/runs/39655980576): Python 289 passed, 3 skipped; lint, type checks, dependency audits, builds and browser checks passed. The subsequent application/persistence fixes require a final CI run: **PENDING**. |
 | PostgreSQL concurrent leasing and audit guard | PASSED, bounded integration | PostgreSQL 16.15: 8 concurrent workers completed 20 unique tasks without duplicate claims; audit truncation was rejected. This is not long-duration PostgreSQL recovery evidence. |
 | Real Docker sandbox boundary | PASSED on hosted Linux | Actual digest-pinned Python container denied network and writes, ran as non-root with no effective capabilities, and received no fixture host credential; 1 integration test passed. Windows Docker and resource-exhaustion tests remain pending. |
 | Migration and application security controls | PASSED, tested scope | Alembic/schema checks, tenant/identity fences, capability checks, immutable audit guards, approval binding, budget reservations and receipt replay tests passed. This is not a full security audit. |
-| Actual GPU comparison and role routing | PENDING corrected v1.3 runs | [Generated benchmark report](../../benchmarks/results/report.md) and raw records preserve actual measurements. Fixture v1.2 had prompt/grader contract defects, including hidden exact workflow action labels; every previous strict aggregate is exploratory and cannot establish final quality ranks or automatic qualified routes. Planned corrected suites: E4B 8K, GPT-OSS 4K, Qwen3.5-9B 4K and Gemma 12B QAT 4K, each verified parallelism 1. Final counts and qualification remain pending. |
-| 72-hour SQLite fixture soak | PENDING, source freeze required | Historical runs `4c1ec950-2bc9-4ec9-9ffa-708465746539` and `d5dadf17-189c-4a1b-8df7-a3d2d77de910` were interrupted for source updates. Neither is accepted or contributes elapsed time to a replacement. Start a fresh root/report against frozen final sources; required: 259,200 active seconds, at least 900 tasks, matching source hash and all thresholds. |
+| Actual GPU comparison and role routing | PENDING final v1.3 measurements | Fixture v1.3.0 passed independent review of all 100 prompt/schema/grader contracts; exact SHA is below. Actual corrected suites cover E4B 4K/8K, GPT-OSS 4K, Qwen3.5-9B 4K and Gemma 12B QAT 4K, each verified parallelism 1. Final counts and routes: **PENDING**. All v1.0–v1.2 strict aggregates remain exploratory and unqualified; no historical response is silently rescored. |
+| Native-agent HTTP/worker demonstration | PENDING reproof after UTC fix | First task `0ee01e99-5085-4b2a-822f-54fff1887240` failed before inference because SQLite dropped its future deadline timezone. Original evidence is retained. UTC round trips and actual fixture-worker completion are regression-tested; the new native proof remains pending. |
+| 72-hour SQLite fixture soak | PENDING, new source freeze required | Every previous root, including `runtime/endurance-final-v13/`, was interrupted for source changes. Accepted active seconds: **0**. New run ID/hash/start time: **PENDING**. Require 259,200 active seconds, at least 900 tasks and every continuity/recovery threshold; no interrupted time carries forward. |
 | Full production-like endurance | PENDING | A fixture soak cannot close real PostgreSQL/service/OS/network outage, long worker-disconnect, hosted-preview or provider reconciliation acceptance. Run and preserve these separately. |
 | Protected Netlify preview | BLOCKED | Netlify connection needs reauthentication and no protected target site is configured. No protected deployment receipt, verified access control or hosted health result exists. Local noindex/build checks do not satisfy this gate. |
 | Cloud hosting and authorized budget | PENDING | No cloud infrastructure was provisioned. TLS, secrets, least-privilege roles, quotas, monitoring and an owner-authorized operating budget require actual configuration and verification. |
@@ -46,6 +47,17 @@ mode and bounded internal tool execution are separate modes; the latter requires
 routing and an already-loaded matching model. Their presence does not prove a successful unattended
 real-model portfolio run or permit production/provider effects.
 
+The current working tree adds aware UTC database timestamp binding/decoding, strict typed transient
+retry outcomes, deadline precedence and worker inference backpressure. Blocked/failed and native-agent
+checkpoints cannot bypass renewed policy/source/receipt validation; fixture developer and QA checks
+also rerun. Routing requires its success/sample floor in every relevant category, so aggregate coding
+success cannot conceal unreliable research or tool use. Task/approval pagination uses aggregate API
+totals. Shared atomic persistence retries only short Windows sharing/access denials while retaining
+the prior valid file on failure. Final verification of these combined changes remains pending.
+
+The latest local **pre-atomic-persistence** suite was **342 passed, 4 skipped**, with Ruff and full
+application mypy passing. This is a regression baseline, not the final combined suite or hosted CI.
+
 External actions remain disconnected from the autonomous agent loop. Secure provider configuration,
 approval consumption, durable provider receipts, unknown-outcome reconciliation and health verification
 must be exercised together before claiming an end-to-end live workflow. No paid resource, public site,
@@ -54,6 +66,11 @@ outreach, revenue or production deployment is implied by the local artifacts or 
 Benchmark and endurance reports change during execution. Preserve run IDs, fixture/source hashes,
 settings, raw records and timestamps when accepting them. Old v1.2 outputs, including content,
 research and coding outcomes, remain diagnostic evidence; do not silently rescore them or relabel
-them v1.3. Automatic routes stay unqualified until corrected v1.3 evidence passes the new checks.
+them v1.3. The frozen v1.3.0 fixture SHA-256 is
+`ac59d435468237015e8d16d778fa6e461c27c7f10a249af3c9bd388391f78369`.
+It retains 25 tool/20 research/20 coding/15 content/15 workflow/5 efficiency tasks, with explicit
+canonical contracts, typed content fact slots and native tool provenance checks. Automatic routes
+require qualifying complete v1.3 evidence and matching already-loaded model settings; no model is
+auto-loaded. Final per-model scores and role routes remain **PENDING**.
 Do not combine smoke/interrupted runs or infer missing measurements. Record final CI and a new
 source-stable endurance run before closing another gate.

@@ -82,7 +82,13 @@ class ModelRouter:
             successes = sum(bool(row.get("passed")) for row in rows)
             seconds = sum(float(row.get("wall_seconds", 0)) for row in rows)
             rate = successes / len(rows) if rows else 0
-            if len(rows) >= self.minimum_samples and rate >= self.minimum_success_rate and seconds > 0:
+            # Every required category needs its own evidence and success floor:
+            # strong coding cannot conceal unreliable sources/tools in a QA role.
+            categories_qualified = all(
+                len(category_rows := [row for row in rows if row.get("category") == category]) >= self.minimum_samples
+                and sum(bool(row.get("passed")) for row in category_rows) / len(category_rows) >= self.minimum_success_rate
+                for category in ROLE_CATEGORIES[role])
+            if categories_qualified and rate >= self.minimum_success_rate and seconds > 0:
                 routes.append(Route(role, model, setting, successes * 3600 / seconds, rate,
                                     len(rows), str(self.results_path), run.get("model"),
                                     quantization, run.get("dataset_version")))

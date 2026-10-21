@@ -3,6 +3,10 @@ on:
   workflow_dispatch:
     inputs:
       ref: {description: 'Exact reviewed commit SHA', required: true}
+      site_id: {description: 'Internal SiteForge site UUID', required: true}
+      directory: {description: 'Reviewed built bundle directory already staged in supervisor preview root', required: true}
+      approval_id: {description: 'Exact deploy_preview approval UUID', required: true}
+      request_id: {description: 'Stable preview idempotency key', required: true}
 permissions: {contents: read}
 jobs:
   preview:
@@ -12,18 +16,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: {ref: '${{ inputs.ref }}'}
-      - uses: actions/setup-node@v4
-        with: {node-version: '24'}
-      - run: npm ci && npm test && npm run build
-        working-directory: packages/site-templates/label-roll-planner
-      - name: Deploy draft to configured protected Netlify site
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12', cache: pip}
+      - run: pip install -r requirements.lock
+      - name: Execute exact approved preview through supervisor
         env:
-          NETLIFY_AUTH_TOKEN: '${{ secrets.NETLIFY_AUTH_TOKEN }}'
-          NETLIFY_SITE_ID: '${{ vars.NETLIFY_SITE_ID }}'
-          PREVIEW_PROTECTION_VERIFIED: '${{ vars.PREVIEW_PROTECTION_VERIFIED }}'
+          SITEFORGE_API_URL: '${{ vars.SITEFORGE_API_URL }}'
+          SITEFORGE_RELEASE_TOKEN: '${{ secrets.SITEFORGE_RELEASE_TOKEN }}'
+          PREVIEW_SITE_ID: '${{ inputs.site_id }}'
+          PREVIEW_COMMIT_SHA: '${{ inputs.ref }}'
+          PREVIEW_DIRECTORY: '${{ inputs.directory }}'
+          PREVIEW_APPROVAL_ID: '${{ inputs.approval_id }}'
+          PREVIEW_REQUEST_ID: '${{ inputs.request_id }}'
         run: |
-          test "$PREVIEW_PROTECTION_VERIFIED" = "true"
-          test -n "$NETLIFY_SITE_ID"
-          npx --yes netlify-cli@23 deploy --dir=packages/site-templates/label-roll-planner/dist --site="$NETLIFY_SITE_ID" --json > preview-receipt.json
+          python -m siteforge.release_client preview --site-id "$PREVIEW_SITE_ID" --commit-sha "$PREVIEW_COMMIT_SHA" --directory "$PREVIEW_DIRECTORY" --approval-id "$PREVIEW_APPROVAL_ID" --request-id "$PREVIEW_REQUEST_ID" > preview-receipt.json
       - uses: actions/upload-artifact@v4
+        if: always()
         with: {name: preview-receipt, path: preview-receipt.json}

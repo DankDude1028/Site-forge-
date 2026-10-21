@@ -136,3 +136,26 @@ def test_scheduler_once_command_runs_against_the_existing_database(scheduled, tm
     assert report["fixture_tasks_created"] == 3 and report["external_actions"] == 0
     with db.session() as session:
         assert len(session.scalars(select(Task)).all()) == 3
+
+
+def test_weekly_review_is_opt_in_durable_and_retains_missing_economics(scheduled):
+    from siteforge.db import Notification
+    db, org, time, url = scheduled
+    with db.transaction() as session:
+        session.add(Site(org_id=org, slug='useful-site'))
+    assert Scheduler(db, org, clock=lambda: time[0]).run_once()['weekly_reviews_created'] == 0
+    assert Scheduler(db, org, enable_weekly_reviews=True, clock=lambda: time[0]).run_once()['weekly_reviews_created'] == 1
+    restarted = Database(url)
+    scheduler = Scheduler(restarted, org, enable_weekly_reviews=True, clock=lambda: time[0])
+    assert scheduler.run_once()['weekly_reviews_created'] == 0
+    with restarted.session() as session:
+        notice = session.scalar(select(Notification).where(Notification.kind == 'portfolio.weekly'))
+        assert notice.data['sites'][0]['economics']['verified_revenue'] is None
+        assert notice.data['sites'][0]['economics']['coverage'] == 'missing'
+        assert notice.data['external_delivery'] is False
+    time[0] += timedelta(days=7)
+    assert scheduler.run_once()['weekly_reviews_created'] == 1
+    QueueService(restarted).set_kill_switch(org, True)
+    time[0] += timedelta(days=7)
+    assert scheduler.run_once()['weekly_reviews_created'] == 0
+    restarted.dispose()

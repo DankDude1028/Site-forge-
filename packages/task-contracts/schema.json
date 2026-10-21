@@ -80,6 +80,29 @@
           "title": "Status",
           "type": "string"
         },
+        "retryable": {
+          "default": false,
+          "title": "Retryable",
+          "type": "boolean"
+        },
+        "error_code": {
+          "default": "none",
+          "enum": [
+            "none",
+            "local_model_unavailable",
+            "inference_busy",
+            "model_not_ready",
+            "model_identity_changed",
+            "invalid_model_response",
+            "policy_blocked",
+            "deadline_exceeded",
+            "execution_limit",
+            "context_limit",
+            "tool_execution_failed"
+          ],
+          "title": "Error Code",
+          "type": "string"
+        },
         "artifacts": {
           "items": {
             "additionalProperties": true,

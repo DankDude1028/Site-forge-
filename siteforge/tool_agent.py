@@ -18,8 +18,10 @@ from urllib.parse import urlparse
 
 from pydantic import Field, ValidationError
 
-from .contracts import AgentContext, AgentResult, AgentType, StrictModel
+from .agents import classify_local_inference_error
+from .contracts import AgentContext, AgentErrorCode, AgentResult, AgentType, StrictModel
 from .integrations import Provenance
+from .lmstudio import LMStudioError
 from .policy import AGENT_TOOLS
 from .sandbox import DockerSandbox, SandboxError
 from .site_factory import create_preview, inspect_preview, read_artifact, scoped_path, site_path, write_artifact
@@ -143,8 +145,10 @@ class ToolAgentRunner:
         state: dict[str, Any] = {}
         warnings = ["Bounded internal actions only; production publication and external spending are unavailable."]
 
-        def result(status: str, reason: str, confidence: float = 0) -> AgentResult:
+        def result(status: str, reason: str, confidence: float = 0, *,
+                   error_code: AgentErrorCode = "policy_blocked", retryable: bool = False) -> AgentResult:
             return AgentResult(status=cast(Any, status), confidence=confidence, costs=Decimal("0"),
+                               error_code="none" if status == "completed" else error_code, retryable=retryable,
                                artifacts=list(artifacts.values()), evidence=evidence,
                                risks=warnings + [reason], next_actions=["Owner review of artifacts and unresolved checks"])
 
@@ -160,7 +164,7 @@ class ToolAgentRunner:
             artifacts[entry["uri"]] = entry
 
         if expired():
-            return result("blocked", "Task deadline expired before execution")
+            return result("blocked", "Task deadline expired before execution", error_code="deadline_exceeded")
         if context.budget_remaining < 0:
             return result("blocked", "Task budget is exhausted")
         permitted = set(AGENT_TOOLS[role.value]) & set(context.allowed_tools) & TOOLS.keys()
@@ -438,25 +442,27 @@ class ToolAgentRunner:
         ids: set[str] = set()
         for _round in range(MAX_ROUNDS):
             if expired():
-                return result("blocked", "Task deadline expired")
+                return result("blocked", "Task deadline expired", error_code="deadline_exceeded")
             # Bytes provide a conservative upper token bound. Never silently
             # drop sources or previous tool messages to make a request fit.
             if len(json.dumps({"messages": messages, "tools": schemas}, ensure_ascii=False).encode()) + 768 > self.context_length:
-                return result("blocked", "Conservative context budget exceeded; select a qualified larger context")
+                return result("blocked", "Conservative context budget exceeded; select a qualified larger context",
+                              error_code="context_limit")
             try:
                 completion = self.client.complete(cast(list[dict[str, str]], messages), self.model_id,
                                                   tools=schemas, max_tokens=768, temperature=0)
                 if expired():
-                    return result("blocked", "Task deadline expired during model inference")
+                    return result("blocked", "Task deadline expired during model inference", error_code="deadline_exceeded")
                 if getattr(completion, "finish_reason", None) != "tool_calls":
                     audit_call("native_response", _hash(getattr(completion, "text", "")), "denied", count + 1)
-                    return result("blocked", "Native tool calls required; model prose cannot authorize an action")
+                    return result("blocked", "Native tool calls required; model prose cannot authorize an action",
+                                  error_code="invalid_model_response")
                 response = NativeResponse.model_validate_json(completion.text)
                 calls = response.tool_calls
                 if count + len(calls) > MAX_CALLS:
                     for index, call in enumerate(calls, count + 1):
                         audit_call(call.function.name, _hash(call.function.arguments), "budget_denied", index)
-                    return result("blocked", "Tool call budget exhausted")
+                    return result("blocked", "Tool call budget exhausted", error_code="execution_limit")
                 validated: list[tuple[NativeCall, dict[str, Any]]] = []
                 for position, call in enumerate(calls):
                     name = call.function.name
@@ -464,24 +470,31 @@ class ToolAgentRunner:
                         audit_call(name, _hash(call.function.arguments), "denied", count + 1)
                         return result("blocked", "Duplicate call identity or unauthorized tool requested")
                     if name == "finish" and position != len(calls) - 1:
-                        return result("blocked", "finish must be the final tool call")
+                        return result("blocked", "finish must be the final tool call", error_code="invalid_model_response")
                     if len(call.function.arguments.encode()) > MAX_ARGUMENT_BYTES:
-                        return result("blocked", "Tool arguments exceed the byte budget")
+                        return result("blocked", "Tool arguments exceed the byte budget", error_code="execution_limit")
                     model = FinishArgs if name == "finish" else TOOLS[name]
                     arguments = model.model_validate_json(call.function.arguments).model_dump(mode="json")
                     validated.append((call, arguments))
                     ids.add(call.id)
                 messages.append({"role": "assistant", "content": None,
                                  "tool_calls": [call.model_dump() for call in calls]})
+            except LMStudioError as error:
+                if expired():
+                    return result("blocked", "Task deadline expired during model inference", error_code="deadline_exceeded")
+                code, retryable = classify_local_inference_error(error)
+                audit_call("native_response", _hash("inference_error"), "unavailable" if retryable else "malformed", count + 1)
+                return result("blocked", "Local inference unavailable" if retryable else "Invalid local inference response",
+                              error_code=code, retryable=retryable)
             except (ValidationError, ValueError, TypeError, RuntimeError, OSError, AttributeError):
                 audit_call("native_response", _hash("invalid_response"), "malformed", count + 1)
-                return result("blocked", "Malformed native tool response or local inference unavailable")
+                return result("blocked", "Malformed native tool response", error_code="invalid_model_response")
             for call, arguments in validated:
                 count += 1
                 name, args_hash = call.function.name, _hash(arguments)
                 if expired():
                     audit_call(name, args_hash, "deadline_denied", count)
-                    return result("blocked", "Task deadline expired before a tool action")
+                    return result("blocked", "Task deadline expired before a tool action", error_code="deadline_exceeded")
                 if name == "finish":
                     missing = REQUIRED[role.value] - succeeded
                     if missing:
@@ -489,10 +502,10 @@ class ToolAgentRunner:
                         return result("blocked", "Mandatory role actions were not completed: " + ",".join(sorted(missing)))
                     if role == AgentType.quality and not state.get("inspection", {}).get("static_passed"):
                         audit_call(name, args_hash, "failed", count)
-                        return result("failed", "Independent static quality checks failed")
+                        return result("failed", "Independent static quality checks failed", error_code="tool_execution_failed")
                     if state.get("tests", {}).get("status") == "failed":
                         audit_call(name, args_hash, "failed", count)
-                        return result("failed", "Executable sandbox tests failed")
+                        return result("failed", "Executable sandbox tests failed", error_code="tool_execution_failed")
                     if state.get("tests"):
                         try:
                             matches = (state["tests"].get("source_tree_sha256") == source_tree_hash()
@@ -501,7 +514,8 @@ class ToolAgentRunner:
                             matches = False
                         if not matches:
                             audit_call(name, args_hash, "failed", count)
-                            return result("failed", "Executable test evidence does not match the current source bytes and pinned image")
+                            return result("failed", "Executable test evidence does not match the current source bytes and pinned image",
+                                          error_code="tool_execution_failed")
                     audit_call(name, args_hash, "completed", count)
                     if role == AgentType.quality:
                         warnings.append("Static QA completed; browser and executable checks require their separate evidence.")
@@ -550,9 +564,10 @@ class ToolAgentRunner:
                                      "content": json.dumps(output, sort_keys=True, default=str)})
                 except SandboxError:
                     audit_call(name, args_hash, "blocked", count)
-                    return result("blocked", "Executable tests blocked; a working operator-pinned Docker sandbox is required")
+                    return result("blocked", "Executable tests blocked; a working operator-pinned Docker sandbox is required",
+                                  error_code="tool_execution_failed")
                 except (ValueError, KeyError, TypeError, OSError, InvalidOperation):
                     audit_call(name, args_hash, "rejected", count)
                     messages.append({"role": "tool", "tool_call_id": call.id,
                                      "content": json.dumps({"error": "Arguments, citations, prerequisites, or artifact integrity rejected"})})
-        return result("blocked", "Maximum native tool rounds reached")
+        return result("blocked", "Maximum native tool rounds reached", error_code="execution_limit")

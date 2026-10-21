@@ -12,6 +12,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from .atomic_files import atomic_replace
 SLUG = re.compile(r"[a-z0-9][a-z0-9-]{1,62}\Z")
 TEMPLATE_ROOT = Path(__file__).resolve().parents[1] / "packages" / "site-templates" / "label-roll-planner"
 IGNORED = {"node_modules", "dist", ".astro", ".git", "test-results", "playwright-report", "coverage"}
@@ -40,8 +41,11 @@ def write_artifact(root: Path, relative: str, data: dict[str, Any]) -> dict[str,
     # Recheck after mkdir to avoid writing through a preexisting outside link.
     if not path.resolve().is_relative_to(root.resolve()):
         raise ValueError("Artifact path escapes its configured sandbox")
-    temporary.write_bytes(content)
-    os.replace(temporary, path)
+    with temporary.open("wb") as handle:
+        handle.write(content)
+        handle.flush()
+        os.fsync(handle.fileno())
+    atomic_replace(temporary, path)
     return {"kind": "json", "uri": path.relative_to(root.resolve()).as_posix(),
             "sha256": hashlib.sha256(content).hexdigest(), "bytes": len(content)}
 

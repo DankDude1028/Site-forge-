@@ -6,10 +6,12 @@ ast_serialize==0.13.1
 boolean.py==5.0
 CacheControl==0.14.4
 certifi==2026.10.19
+cffi==2.1.1
 charset-normalizer==3.5.2
 click==8.5.0
 colorama==0.4.6
 cyclonedx-python-lib==11.12.0
+cryptography==50.0.2
 defusedxml==0.7.1
 fastapi==0.158.0
 filelock==4.2.4
@@ -42,6 +44,7 @@ psycopg-binary==3.3.6
 py-serializable==2.1.0
 pydantic==2.14.1
 pydantic_core==2.50.1
+pycparser==3.11
 Pygments==2.21.0
 pyparsing==3.3.3
 pytest==9.1.1

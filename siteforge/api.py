@@ -9,9 +9,10 @@ from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import Annotated, Any
-from uuid import UUID
+from uuid import UUID, NAMESPACE_URL, uuid5
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -31,6 +32,8 @@ from .economics import EconomicsService
 from .integrations import AnalyticsImport, AnalyticsIngestor, RevenueImport
 from .policy import KNOWN_TOOLS, PolicyService
 from .queue import DomainError, QueueService, aware, digest, task_view, tenant_row
+from .providers import ProviderError
+from .release import ReleaseService
 
 
 class SiteCreate(StrictModel):
@@ -63,6 +66,20 @@ class Reconciliation(StrictModel):
     provider_reference: str = Field(min_length=1, max_length=200)
 
 
+class PreviewPlanRequest(StrictModel):
+    site_id: UUID
+    commit_sha: str = Field(pattern="^(?:[a-f0-9]{40}|[a-f0-9]{64})$")
+    relative_directory: str = Field(min_length=1, max_length=240)
+
+
+class PromotionPlanRequest(StrictModel):
+    preview_deployment_id: UUID
+
+
+class ReleaseLookupRequest(StrictModel):
+    idempotency_key: str = Field(min_length=1, max_length=160)
+
+
 class Candidate(StrictModel):
     name: str = Field(min_length=1, max_length=160)
     demand: float = Field(ge=0, le=1)
@@ -74,8 +91,13 @@ class Candidate(StrictModel):
 
 
 def row_dict(row: Any) -> dict[str, Any]:
-    return {column.name: getattr(row, column.name) for column in row.__table__.columns
-            if column.name not in {"lease_token", "token_hash"}}
+    return api_json({column.name: getattr(row, column.name) for column in row.__table__.columns
+                     if column.name not in {"lease_token", "token_hash"}})
+
+
+def api_json(value: Any) -> Any:
+    """Money crosses the API as decimal strings, without a binary-float hop."""
+    return jsonable_encoder(value, custom_encoder={Decimal: str})
 
 
 def create_app(db: Database | None = None,
@@ -120,6 +142,12 @@ def create_app(db: Database | None = None,
         record_denial(request, exc.message)
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
 
+    @app.exception_handler(ProviderError)
+    async def provider_exception(request: Request, exc: ProviderError) -> JSONResponse:
+        # Provider payloads, URLs and exception chains may carry credentials.
+        return JSONResponse(status_code=502, content={
+            "detail": "Provider result unavailable; inspect and reconcile the durable release record."})
+
     @app.exception_handler(HTTPException)
     async def scope_exception(request: Request, exc: HTTPException) -> Any:
         if exc.status_code == 403:
@@ -140,6 +168,10 @@ def create_app(db: Database | None = None,
                 raise HTTPException(401, "worker credential requires bound identity and expiry")
             if aware(identity.expires_at) > utcnow() + timedelta(hours=24):
                 raise HTTPException(401, "worker credential validity exceeds 24 hours")
+        if identity.role == "release":
+            if (not identity.expires_at or not identity.site_ids
+                    or aware(identity.expires_at) > utcnow() + timedelta(hours=24)):
+                raise HTTPException(401, "release credential requires explicit sites and expiry within 24 hours")
         request.state.identity = identity
         return identity
 
@@ -147,6 +179,17 @@ def create_app(db: Database | None = None,
         if identity.role != "owner":
             raise HTTPException(403, "owner scope required")
         return identity
+
+    def release_operator(identity: Principal = Depends(principal)) -> Principal:
+        if identity.role not in {"owner", "release"}:
+            raise HTTPException(403, "release operator scope required")
+        return identity
+
+    def release_scope(identity: Principal, site_id: str, capability: str) -> None:
+        if identity.role == "owner":
+            return
+        if site_id not in {str(value) for value in identity.site_ids} or capability not in identity.capabilities:
+            raise HTTPException(403, "release credential does not permit this site or operation")
 
     def reader(identity: Principal = Depends(principal)) -> Principal:
         if identity.role not in {"owner", "observer"}:
@@ -246,6 +289,8 @@ def create_app(db: Database | None = None,
 
     @app.get("/v1/tasks/{task_id}/checkpoint")
     def read_checkpoint(task_id: UUID, identity: Principal = Depends(principal)) -> Any:
+        if identity.role not in {"owner", "observer", "worker"}:
+            raise HTTPException(403, "task read scope required")
         with db.session() as session:
             task = tenant_row(session, Task, identity.org_id, str(task_id))
             if identity.role == "worker" and task.lease_worker_id != identity.worker_id:
@@ -265,6 +310,8 @@ def create_app(db: Database | None = None,
     @app.get("/v1/tasks/{task_id}")
     @app.get("/v1/jobs/{task_id}")
     def read_task(task_id: UUID, identity: Principal = Depends(principal)) -> Any:
+        if identity.role not in {"owner", "observer", "worker"}:
+            raise HTTPException(403, "task read scope required")
         with db.session() as session:
             task = tenant_row(session, Task, identity.org_id, str(task_id))
             if identity.role == "worker" and task.lease_worker_id != identity.worker_id:
@@ -343,27 +390,111 @@ def create_app(db: Database | None = None,
     def request_approval(body: ActionRequest, identity: Principal = Depends(principal)) -> Any:
         if identity.role not in {"owner", "worker"}:
             raise HTTPException(403, "approval request scope required")
-        return policy.request_approval(identity.org_id, body, identity.subject)
+        return api_json(policy.request_approval(identity.org_id, body, identity.subject))
 
     @app.post("/v1/approvals/{approval_id}/approve")
     def approve(approval_id: UUID, body: ApprovalDecision, identity: Principal = Depends(owner)) -> Any:
-        return policy.decide(identity.org_id, str(approval_id), identity.subject, True, body.reason)
+        return api_json(policy.decide(identity.org_id, str(approval_id), identity.subject, True, body.reason))
 
     @app.post("/v1/approvals/{approval_id}/reject")
     def reject(approval_id: UUID, body: ApprovalDecision, identity: Principal = Depends(owner)) -> Any:
-        return policy.decide(identity.org_id, str(approval_id), identity.subject, False, body.reason)
+        return api_json(policy.decide(identity.org_id, str(approval_id), identity.subject, False, body.reason))
 
     @app.post("/v1/approvals/{approval_id}/authorize")
     def authorize(approval_id: UUID, body: ActionExecution, identity: Principal = Depends(owner)) -> Any:
-        return policy.authorize(identity.org_id, str(approval_id), body, identity.subject)
+        return api_json(policy.authorize(identity.org_id, str(approval_id), body, identity.subject))
 
     @app.post("/v1/receipts/{receipt_id}/reconcile")
     def reconcile(receipt_id: UUID, body: Reconciliation, identity: Principal = Depends(owner)) -> Any:
-        return policy.reconcile(identity.org_id, str(receipt_id), body.status, body.provider_reference, identity.subject)
+        return api_json(policy.reconcile(identity.org_id, str(receipt_id), body.status, body.provider_reference, identity.subject))
+
+    def release_service(identity: Principal, site_id: str) -> ReleaseService:
+        with db.session() as session:
+            tenant_row(session, Site, identity.org_id, site_id)
+        try:
+            return ReleaseService.from_environment(db, site_id)
+        except (ValueError, ProviderError) as error:
+            raise DomainError("Release service is not configured for this site", 503) from error
+
+    def deployment_site(identity: Principal, deployment_id: str) -> str:
+        with db.session() as session:
+            return tenant_row(session, Deployment, identity.org_id, deployment_id).site_id
+
+    @app.post("/v1/releases/lookup")
+    def lookup_release(body: ReleaseLookupRequest, identity: Principal = Depends(release_operator)) -> Any:
+        with db.session() as session:
+            receipt = session.scalar(select(Receipt).where(Receipt.org_id == identity.org_id,
+                Receipt.idempotency_key == body.idempotency_key))
+            if receipt is None:
+                return {"found": False}
+            approval = tenant_row(session, Approval, identity.org_id, receipt.approval_id)
+            release_scope(identity, approval.site_id, "reconcile_release")
+            identifier = str(uuid5(NAMESPACE_URL, "siteforge:release:" + receipt.id))
+            deployment = session.get(Deployment, identifier)
+            if deployment is None:
+                return {"found": True, "intent_only": True, "receipt_id": receipt.id}
+            if deployment.org_id != identity.org_id or deployment.site_id != approval.site_id:
+                raise DomainError("Release lookup binding differs", 403)
+            return {"found": True, "deployment": row_dict(deployment)}
+
+    @app.post("/v1/releases/preview-plan")
+    def preview_plan(body: PreviewPlanRequest, identity: Principal = Depends(release_operator)) -> Any:
+        release_scope(identity, str(body.site_id), "plan_release")
+        service = release_service(identity, str(body.site_id))
+        try:
+            return service.plan_preview(str(body.site_id), body.commit_sha, body.relative_directory)
+        finally:
+            service.close()
+
+    @app.post("/v1/releases/{approval_id}/preview")
+    def execute_preview(approval_id: UUID, body: ActionExecution, identity: Principal = Depends(release_operator)) -> Any:
+        release_scope(identity, str(body.site_id), "deploy_preview")
+        service = release_service(identity, str(body.site_id))
+        try:
+            return service.execute_preview(identity.org_id, str(approval_id), body, identity.subject)
+        finally:
+            service.close()
+
+    @app.post("/v1/releases/promotion-plan")
+    def promotion_plan(body: PromotionPlanRequest, identity: Principal = Depends(release_operator)) -> Any:
+        site_id = deployment_site(identity, str(body.preview_deployment_id))
+        release_scope(identity, site_id, "plan_release")
+        service = release_service(identity, site_id)
+        try:
+            return service.plan_promotion(identity.org_id, str(body.preview_deployment_id))
+        finally:
+            service.close()
+
+    @app.post("/v1/releases/{approval_id}/production")
+    def execute_production(approval_id: UUID, body: ActionExecution, identity: Principal = Depends(release_operator)) -> Any:
+        release_scope(identity, str(body.site_id), "deploy_production")
+        service = release_service(identity, str(body.site_id))
+        try:
+            return service.execute_promotion(identity.org_id, str(approval_id), body, identity.subject)
+        finally:
+            service.close()
+
+    @app.post("/v1/releases/{deployment_id}/reconcile")
+    def reconcile_release(deployment_id: UUID, identity: Principal = Depends(release_operator)) -> Any:
+        site_id = deployment_site(identity, str(deployment_id))
+        release_scope(identity, site_id, "reconcile_release")
+        service = release_service(identity, site_id)
+        try:
+            return service.reconcile(identity.org_id, str(deployment_id), identity.subject)
+        finally:
+            service.close()
+
+    @app.post("/v1/releases/{deployment_id}/resume-preview")
+    def resume_preview(deployment_id: UUID, identity: Principal = Depends(owner)) -> Any:
+        service = release_service(identity, deployment_site(identity, str(deployment_id)))
+        try:
+            return service.resume_preview(identity.org_id, str(deployment_id), identity.subject)
+        finally:
+            service.close()
 
     @app.post("/v1/budgets")
     def configure_budget(body: BudgetConfiguration, identity: Principal = Depends(owner)) -> Any:
-        return policy.set_budget(identity.org_id, body.period, body.limit_amount, identity.subject, body.currency)
+        return api_json(policy.set_budget(identity.org_id, body.period, body.limit_amount, identity.subject, body.currency))
 
     @app.post("/v1/kill-switch")
     def kill_switch(body: KillSwitch, identity: Principal = Depends(owner)) -> dict[str, bool]:
@@ -380,7 +511,7 @@ def create_app(db: Database | None = None,
 
     @app.get("/v1/sites/{site_id}/economics")
     def site_economics(site_id: UUID, currency: str = "USD", identity: Principal = Depends(reader)) -> Any:
-        return economics.summary(identity.org_id, str(site_id), currency)
+        return api_json(economics.summary(identity.org_id, str(site_id), currency))
 
     @app.post("/v1/imports/analytics")
     def import_analytics(body: AnalyticsImport, identity: Principal = Depends(owner)) -> Any:
@@ -394,6 +525,16 @@ def create_app(db: Database | None = None,
     def analytics_coverage(site_id: UUID, provider: str, identity: Principal = Depends(reader)) -> Any:
         return ingestor.coverage(identity.org_id, str(site_id), provider)
 
+    @app.get("/v1/dashboard-summary")
+    def dashboard_summary(identity: Principal = Depends(reader)) -> dict[str, int]:
+        with db.session() as session:
+            counts = {name: int(session.scalar(select(func.count()).select_from(model).where(
+                model.org_id == identity.org_id)) or 0)
+                for name, model in (("sites", Site), ("tasks", Task), ("workers", Worker), ("audit_events", AuditEvent))}
+            counts["pending_approvals"] = int(session.scalar(select(func.count()).select_from(Approval).where(
+                Approval.org_id == identity.org_id, Approval.status == "pending")) or 0)
+            return counts
+
     catalogs = {
         "sites": Site, "workers": Worker, "tasks": Task, "jobs": Task,
         "agents": Agent, "workflows": Workflow, "approvals": Approval, "budgets": Budget,
@@ -405,9 +546,15 @@ def create_app(db: Database | None = None,
 
     def catalog_endpoint(model: Any) -> Any:
         def endpoint(limit: int = Query(100, ge=1, le=500), offset: int = Query(0, ge=0),
+                     status: str | None = Query(None, min_length=1, max_length=80),
                      identity: Principal = Depends(reader)) -> list[dict[str, Any]]:
             with db.session() as session:
-                rows = session.scalars(select(model).where(model.org_id == identity.org_id)
+                statement = select(model).where(model.org_id == identity.org_id)
+                if status is not None:
+                    if not hasattr(model, "status"):
+                        raise HTTPException(422, "This catalog has no status filter")
+                    statement = statement.where(model.status == status)
+                rows = session.scalars(statement
                                        .order_by(model.created_at.desc(), model.id).limit(limit).offset(offset)).all()
                 return [row_dict(row) for row in rows]
         return endpoint

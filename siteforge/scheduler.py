@@ -17,17 +17,20 @@ from uuid import UUID
 from sqlalchemy import select
 
 from .contracts import AgentType, TaskCreate
-from .db import Database, Organization, Site, Task, Worker, Workflow, audit, utcnow
+from .db import Database, Notification, Organization, Site, Task, Worker, Workflow, audit, utcnow
+from .economics import EconomicsService
 from .queue import DomainError, QueueService
 
 
 class Scheduler:
     def __init__(self, db: Database, org_id: str, *, enable_fixtures: bool = False,
+                 enable_weekly_reviews: bool = False,
                  clock: Callable[[], datetime] = utcnow, stale_worker_seconds: int = 120):
         if stale_worker_seconds < 30:
             raise ValueError("stale worker threshold must be at least 30 seconds")
         self.db, self.org_id = db, org_id
         self.enable_fixtures, self.clock = enable_fixtures, clock
+        self.enable_weekly_reviews = enable_weekly_reviews
         self.stale_worker_seconds = stale_worker_seconds
         self.queue = QueueService(db, clock=clock)
 
@@ -88,6 +91,38 @@ class Scheduler:
             count += int(not existed)
         return count
 
+    def _weekly_review(self, now: datetime) -> int:
+        """Draft a dated review from recorded observations, without external delivery."""
+        iso = now.astimezone(timezone.utc).isocalendar()
+        week = f"{iso.year}-W{iso.week:02d}"
+        with self.db.session() as session:
+            sites = session.scalars(select(Site).where(Site.org_id == self.org_id).order_by(Site.id)).all()
+        economics = EconomicsService(self.db)
+        observations = [{"site_id": site.id, "slug": site.slug, "status": site.status,
+                         "economics": economics.summary(self.org_id, site.id)} for site in sites]
+        # JSON money is stored as exact decimal strings; missing values remain null.
+        snapshot = json.loads(json.dumps(observations, default=str))
+        with self.db.transaction() as session:
+            org = session.scalar(select(Organization).where(Organization.id == self.org_id).with_for_update())
+            if org is None or org.kill_switch:
+                return 0
+            existing = session.scalar(select(Notification.id).where(
+                Notification.org_id == self.org_id, Notification.kind == "portfolio.weekly",
+                Notification.data["week"].as_string() == week))
+            if existing is not None:
+                return 0
+            notice = Notification(org_id=self.org_id, kind="portfolio.weekly", status="draft", data={
+                "week": week, "observed_at": now.isoformat(), "sites": snapshot,
+                "basis": "recorded_imports_with_explicit_coverage", "external_delivery": False,
+                "review_questions": ["Which sites have reconciled operating contribution?",
+                                     "Which evidence or cost coverage is missing?",
+                                     "What bounded experiment should the owner review next?"],
+            })
+            session.add(notice)
+            session.flush()
+            audit(session, self.org_id, "scheduler", "portfolio.review_draft", notice.id, week=week)
+            return 1
+
     def run_once(self) -> dict[str, Any]:
         now = self.clock()
         if now.tzinfo is None:
@@ -108,6 +143,7 @@ class Scheduler:
                 audit(session, self.org_id, "scheduler", "worker.offline", worker.id,
                       stale_threshold_seconds=self.stale_worker_seconds)
         scheduled = self._schedule_fixture(now) if self.enable_fixtures else 0
+        reviewed = self._weekly_review(now) if self.enable_weekly_reviews else 0
         updated = 0
         with self.db.transaction() as session:
             workflows = session.scalars(select(Workflow).where(Workflow.org_id == self.org_id)
@@ -138,6 +174,7 @@ class Scheduler:
         return {"at": now.isoformat(), "expired_leases_recovered": recovered,
                 "workers_marked_offline": stale, "fixture_tasks_created": scheduled,
                 "workflow_states_updated": updated, "fixtures_enabled": self.enable_fixtures,
+                "weekly_reviews_created": reviewed,
                 "external_actions": 0}
 
 
@@ -166,7 +203,8 @@ def main() -> None:
     if not org_id or not url:
         parser.error("SITEFORGE_ORG_ID and SITEFORGE_DATABASE_URL are required; initialize and migrate first")
     db = Database(url)
-    scheduler = Scheduler(db, org_id, enable_fixtures=env_boolean("SITEFORGE_SCHEDULE_FIXTURES"))
+    scheduler = Scheduler(db, org_id, enable_fixtures=env_boolean("SITEFORGE_SCHEDULE_FIXTURES"),
+                          enable_weekly_reviews=env_boolean("SITEFORGE_SCHEDULE_WEEKLY_REVIEWS"))
     try:
         while True:
             try:

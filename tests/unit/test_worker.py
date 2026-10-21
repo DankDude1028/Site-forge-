@@ -1,18 +1,76 @@
-from datetime import datetime, timezone
-from types import SimpleNamespace
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import httpx
 import pytest
 
-from siteforge.agents import fixture_payload
-from siteforge.contracts import AgentResult
+from siteforge.agents import AGENTS, AgentRunner, fixture_payload
+from siteforge.contracts import AgentContext, AgentResult, AgentType, TaskView
+from siteforge.inference_lock import InferenceLock
+from siteforge.model_router import ModelRouter
 from siteforge.queue import digest
+from siteforge.site_factory import read_artifact, write_artifact
 from siteforge.worker import LeaseLost, WindowsWorker, WorkerProtocolError, WorkerSettings, validate_supervisor_url
 
 
 def settings(tmp_path):
     return WorkerSettings("http://127.0.0.1:8000", "unit-worker-token-long-enough", str(uuid4()), tmp_path)
+
+
+@pytest.fixture(autouse=True)
+def isolate_inference_lock(tmp_path, monkeypatch):
+    # Worker unit tests must never inspect/recover a real benchmark's live lock.
+    monkeypatch.setenv("SITEFORGE_BENCHMARK_RESULTS", str(tmp_path / "benchmark" / "results.json"))
+
+
+@pytest.fixture
+def durable_supervisor(tmp_path):
+    from fastapi.testclient import TestClient
+
+    from siteforge.api import create_app
+    from siteforge.db import Database
+    from siteforge.policy import KNOWN_TOOLS
+
+    config = settings(tmp_path / "artifacts")
+    database = Database("sqlite:///" + (tmp_path / "reconnect.db").as_posix())
+    database.create_schema()
+    org_id = str(uuid4())
+    database.provision_org(org_id)
+    now = [datetime.now(timezone.utc)]
+    tokens = {
+        digest_token(config.token): {"subject": "worker", "org_id": org_id, "role": "worker",
+            "worker_id": config.worker_id, "capabilities": sorted(KNOWN_TOOLS),
+            "expires_at": now[0] + timedelta(hours=1)},
+        digest_token("owner-test-token"): {"subject": "owner", "org_id": org_id, "role": "owner"},
+    }
+    app = create_app(database, tokens)
+    app.state.queue.clock = lambda: now[0]
+    clients = []
+
+    def connection():
+        client = TestClient(app, base_url=config.supervisor_url)
+        clients.append(client)
+        return client
+
+    owner = connection()
+    owner.headers["Authorization"] = "Bearer owner-test-token"
+    yield config, owner, connection, now
+    for client in clients:
+        client.close()
+    database.dispose()
+
+
+def digest_token(value):
+    import hashlib
+    return hashlib.sha256(value.encode()).hexdigest()
+
+
+def enqueue(owner, role="research", payload=None, key="reconnect"):
+    response = owner.post("/v1/tasks", json={"agent_type": role,
+        "capability": sorted(AGENTS[AgentType(role)].tools)[0], "input": payload or fixture_payload(),
+        "idempotency_key": key})
+    response.raise_for_status()
+    return response.json()["id"]
 
 
 def test_worker_waits_for_supervisor_when_started_offline(tmp_path, monkeypatch):
@@ -121,16 +179,159 @@ def test_reconnect_is_bounded_and_malformed_output_fails_closed(tmp_path):
 def test_checkpoint_cache_requires_checksum_identity_and_artifact_integrity(tmp_path):
     config = settings(tmp_path)
     worker = WindowsWorker(config, client=httpx.Client(base_url=config.supervisor_url))
-    task = SimpleNamespace(id=str(uuid4()))
-    result = AgentResult(status="completed", confidence=1).model_dump(mode="json")
+    task = TaskView.model_validate(task_for(config))
+    artifact = write_artifact(tmp_path, "immutable.json", {"fixture": "evidence"})
+    result = AgentResult(status="completed", confidence=1, artifacts=[artifact]).model_dump(mode="json")
     data = {"stage": "result", "task_id": task.id, "result": result}
     assert worker._recover_result(task, {"data": data, "sha256": digest(data)}).status == "completed"
     with pytest.raises(WorkerProtocolError):
         worker._recover_result(task, {"data": data, "sha256": "corrupt"})
     wrong = {**data, "task_id": str(uuid4())}
     assert worker._recover_result(task, {"data": wrong, "sha256": digest(wrong)}) is None
+    (tmp_path / "immutable.json").write_text("changed", encoding="utf-8")
+    assert worker._recover_result(task, {"data": data, "sha256": digest(data)}) is None
     result["artifacts"] = [{"kind": "json", "uri": "missing.json", "sha256": "missing"}]
     assert worker._recover_result(task, {"data": data, "sha256": digest(data)}) is None
+    worker.close()
+
+
+@pytest.mark.parametrize("mode,role,status", [
+    ("fixture", "research", "blocked"), ("fixture", "research", "failed"),
+    ("bounded_agent", "research", "completed"), ("bounded_agent", "content", "completed"),
+    ("fixture", "developer", "completed"), ("fixture", "quality", "completed"),
+])
+def test_recovery_reruns_noncompleted_or_mutable_work(tmp_path, mode, role, status):
+    config = settings(tmp_path)
+    worker = WindowsWorker(config, client=httpx.Client(base_url=config.supervisor_url))
+    task = TaskView.model_validate({**task_for(config), "agent_type": role, "input": {"mode": mode}})
+    artifact = write_artifact(tmp_path, "unchanged.json", {"fixture": "still unchanged"})
+    result = AgentResult(status=status, confidence=1, artifacts=[artifact])
+    data = {"stage": "result", "task_id": task.id, "result": result.model_dump(mode="json")}
+    assert worker._recover_result(task, {"data": data, "sha256": digest(data)}) is None
+    worker.close()
+
+
+@pytest.mark.parametrize("role,expected", [("developer", "completed"), ("quality", "failed")])
+def test_reconnect_revalidates_changed_fixture_source(durable_supervisor, role, expected, monkeypatch):
+    config, owner, connection, now = durable_supervisor
+    runner = AgentRunner(config.artifact_root)
+    slug = "reconnect-planner"
+    payload = fixture_payload(slug)
+
+    def context(agent_role, task_id=None):
+        return AgentContext(task_id=task_id or uuid4(), allowed_tools=sorted(AGENTS[AgentType(agent_role)].tools),
+            budget_remaining=0, deadline=datetime.now(timezone.utc) + timedelta(minutes=10))
+
+    assert runner.run("research", context("research"), payload).status == "completed"
+    assert runner.run("developer", context("developer"), payload).status == "completed"
+    identifier = enqueue(owner, role, payload)
+    first = WindowsWorker(config, client=connection(), runner=runner)
+    first.register()
+    task = TaskView.model_validate(first._request("POST", "/v1/tasks/lease", {
+        "worker_id": config.worker_id, "seconds": config.lease_seconds}))
+    first._request("POST", f"/v1/tasks/{identifier}/start", first._claim(task))
+    result = runner.run(role, context(role, task.id), payload)
+    assert result.status == "completed"
+    first._request("POST", f"/v1/tasks/{identifier}/checkpoint", {**first._claim(task),
+        "data": {"stage": "result", "task_id": identifier, "result": result.model_dump(mode="json")}})
+    first.close()  # Disconnect after the result checkpoint, before completion.
+
+    page = config.artifact_root / slug / "source/src/pages/index.astro"
+    original = page.read_text(encoding="utf-8")
+    page.write_text(original + "\n<!-- changed after the passing checkpoint -->", encoding="utf-8")
+    now[0] += timedelta(seconds=config.lease_seconds + 1)
+    restarted = WindowsWorker(config, client=connection(), runner=runner)
+    restarted.register()
+    assert not restarted.run_once()  # Expiry recovery schedules bounded backoff.
+    now[0] += timedelta(seconds=31)
+    calls = []
+    run = runner.run
+    def observed_run(*args, **kwargs):
+        calls.append(args[0])
+        return run(*args, **kwargs)
+    monkeypatch.setattr(runner, "run", observed_run)
+    assert restarted.run_once()
+    record = owner.get(f"/v1/tasks/{identifier}").json()
+    assert record["status"] == expected and record["attempt"] == 2
+    assert calls == [role]
+    if role == "developer":
+        assert page.read_text(encoding="utf-8") == original
+    else:
+        assert not read_artifact(config.artifact_root, f"{slug}/quality/report.json")["static_passed"]
+    restarted.close()
+
+
+@pytest.mark.parametrize("error_code", ["local_model_unavailable", "inference_busy", "model_not_ready"])
+def test_transient_agent_failure_retries_after_backoff_and_does_not_reuse_blocked_checkpoint(
+        durable_supervisor, error_code):
+    config, owner, connection, now = durable_supervisor
+    identifier = enqueue(owner, payload={"mode": "bounded_agent"})
+
+    class TransientRunner:
+        model_router = None
+        calls = 0
+
+        def run(self, *args, **kwargs):
+            self.calls += 1
+            if self.calls == 1:
+                return AgentResult(status="blocked", confidence=0, retryable=True, error_code=error_code)
+            return AgentResult(status="completed", confidence=1, artifacts=[
+                write_artifact(config.artifact_root, "retried.json", {"accepted": "internal artifact"})])
+
+    runner = TransientRunner()
+    worker = WindowsWorker(config, client=connection(), runner=runner)
+    worker.register()
+    assert worker.run_once()
+    failed = owner.get(f"/v1/tasks/{identifier}").json()
+    assert failed["status"] == "retry_scheduled" and failed["attempt"] == 1
+    assert failed["error_code"] == error_code
+    assert not worker.run_once()
+    worker.close()
+    now[0] += timedelta(seconds=31)
+    restarted = WindowsWorker(config, client=connection(), runner=runner)
+    restarted.register()
+    assert restarted.run_once()
+    completed = owner.get(f"/v1/tasks/{identifier}").json()
+    assert completed["status"] == "completed" and completed["attempt"] == 2
+    assert runner.calls == 2
+    restarted.close()
+
+
+@pytest.mark.parametrize("error_code", ["policy_blocked", "model_identity_changed"])
+def test_permanent_agent_failure_does_not_enter_transient_retry(durable_supervisor, error_code):
+    config, owner, connection, _ = durable_supervisor
+    identifier = enqueue(owner, payload={"mode": "bounded_agent"})
+
+    class PermanentRunner:
+        model_router = None
+
+        def run(self, *args, **kwargs):
+            return AgentResult(status="blocked", confidence=0, error_code=error_code)
+
+    worker = WindowsWorker(config, client=connection(), runner=PermanentRunner())
+    worker.register()
+    assert worker.run_once()
+    record = owner.get(f"/v1/tasks/{identifier}").json()
+    assert record["status"] == "failed" and record["error_code"] == error_code
+    assert not worker.run_once()
+    worker.close()
+
+
+def test_inference_busy_backpressure_preserves_attempts_and_heartbeat(durable_supervisor, tmp_path):
+    config, owner, connection, _ = durable_supervisor
+    identifier = enqueue(owner)
+    router = ModelRouter(tmp_path / "isolated-inference" / "results.json")
+    runner = AgentRunner(config.artifact_root, model_router=router)
+    worker = WindowsWorker(config, client=connection(), runner=runner)
+    worker.register()
+    with InferenceLock(router.results_path.with_name(".run.lock"), owner="unit-benchmark"):
+        assert not worker.run_once()
+        worker.heartbeat_once()
+        queued = owner.get(f"/v1/tasks/{identifier}").json()
+        assert queued["status"] == "ready" and queued["attempt"] == 0
+        assert worker._task is None
+    assert worker.run_once()
+    assert owner.get(f"/v1/tasks/{identifier}").json()["status"] == "completed"
     worker.close()
 
 

@@ -7,7 +7,7 @@ from enum import StrEnum
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class JobState(StrEnum):
@@ -115,9 +115,10 @@ class RenewRequest(TaskClaim):
 class Principal(StrictModel):
     subject: str = Field(min_length=1, max_length=100)
     org_id: str
-    role: Literal["owner", "worker", "observer"]
+    role: Literal["owner", "worker", "observer", "release"]
     worker_id: str | None = None
     capabilities: list[str] = Field(default_factory=list)
+    site_ids: list[UUID] = Field(default_factory=list, max_length=100)
     expires_at: datetime | None = None
 
 
@@ -152,11 +153,25 @@ class AgentContext(StrictModel):
     source_requirements: list[str] = Field(default_factory=list)
 
 
+AgentErrorCode = Literal["none", "local_model_unavailable", "inference_busy", "model_not_ready",
+                         "model_identity_changed", "invalid_model_response", "policy_blocked",
+                         "deadline_exceeded", "execution_limit", "context_limit", "tool_execution_failed"]
+RETRYABLE_AGENT_ERRORS = frozenset({"local_model_unavailable", "inference_busy", "model_not_ready"})
+
+
 class AgentResult(StrictModel):
     status: Literal["completed", "blocked", "failed"]
+    retryable: bool = Field(default=False, strict=True)
+    error_code: AgentErrorCode = "none"
     artifacts: list[dict[str, Any]] = Field(default_factory=list)
     evidence: list[dict[str, Any]] = Field(default_factory=list)
     costs: Decimal = Field(default=Decimal("0"), ge=0)
     confidence: float = Field(ge=0, le=1)
     risks: list[str] = Field(default_factory=list)
     next_actions: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def retry_requires_transient_failure(self) -> AgentResult:
+        if self.retryable and (self.status == "completed" or self.error_code not in RETRYABLE_AGENT_ERRORS):
+            raise ValueError("Only typed transient agent failures can be retried")
+        return self
