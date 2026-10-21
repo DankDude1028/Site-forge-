@@ -174,7 +174,7 @@ def _process(arguments: list[str], connection: Connection, timeout: float, *,
              stdin: Any = subprocess.DEVNULL, stdout: Any = subprocess.PIPE) -> Iterator[subprocess.Popen]:
     process = subprocess.Popen(arguments, stdin=stdin, stdout=stdout, stderr=subprocess.PIPE,
                                env=connection.environment(), shell=False,
-                               creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
+                               creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0)
     timed_out = threading.Event()
 
     def stop() -> None:
@@ -446,14 +446,14 @@ def _quarantine(root: Path) -> Iterator[BinaryIO]:
         if os.name == "nt":
             system = Path(os.environ["SystemRoot"]) / "System32"
             identity = subprocess.run([str(system / "whoami.exe"), "/user", "/fo", "csv", "/nh"],
-                capture_output=True, check=True, timeout=10, creationflags=subprocess.CREATE_NO_WINDOW)
+                capture_output=True, check=True, timeout=10, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
             match = re.search(rb"S-1-(?:[0-9]+-)*[0-9]+", identity.stdout)
             if match is None:
                 raise BackupError("Cannot verify the current Windows identity")
             sid = match.group().decode("ascii")
             subprocess.run([str(system / "icacls.exe"), str(directory), "/inheritance:r", "/grant:r",
                 f"*{sid}:(OI)(CI)F", "*S-1-5-18:(OI)(CI)F"], capture_output=True, check=True,
-                timeout=10, creationflags=subprocess.CREATE_NO_WINDOW)
+                timeout=10, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         else:
             directory.chmod(0o700)
         # Authentication completes in an owner-only, delete-on-close temporary
