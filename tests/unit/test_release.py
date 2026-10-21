@@ -1,9 +1,11 @@
 """Real orchestration and persistence with explicitly mocked Netlify transports."""
+import hashlib
 import json
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import timedelta
 from decimal import Decimal
+from threading import Event, get_ident
 from uuid import uuid4
 
 import httpx
@@ -11,6 +13,7 @@ import pytest
 from sqlalchemy import select
 
 from siteforge.contracts import ActionExecution, ActionRequest
+from siteforge.bundles import BundleFile, BundleManifest, BundleStore
 from siteforge.db import Approval, Budget, Database, Deployment, Receipt, Site
 from siteforge.policy import PolicyService
 from siteforge.providers import NetlifyReleaseAdapter, ProviderError
@@ -32,6 +35,13 @@ class FakeNetlify:
         self.protected = True
         self.public_healthy = True
         self.crash_after_upload = False
+        self.unhealthy_deploys = set()
+        self.rollback_target = None
+        self.drop_rollback = False
+        self.lose_rollback_response = False
+        self.crash_after_rollback = False
+        self.file_maps = {}
+        self.file_contents = {}
 
     def deploy(self, identifier, title, draft=True):
         return {"id": identifier, "site_id": self.site, "state": "ready", "title": title,
@@ -57,6 +67,8 @@ class FakeNetlify:
             body = json.loads(request.content)
             assert body["draft"] is True and set(body) == {"draft", "files"}
             value["required"] = list(body["files"].values())
+            self.file_maps[identifier] = body["files"]
+            self.file_contents[identifier] = {}
             value["state"] = "uploading"
             self.deploys[identifier] = value
             if self.lose_create_response:
@@ -67,8 +79,12 @@ class FakeNetlify:
             return httpx.Response(200 if value else 404, json=value or {})
         if request.method == "PUT" and request.url.path.startswith("/api/v1/deploys/"):
             identifier = request.url.path.split("/")[4]
-            assert request.content == self.content
-            self.deploys[identifier].update(required=[], state="ready")
+            path = "/" + request.url.path.split("/files/", 1)[1]
+            sha = hashlib.sha1(request.content).hexdigest()
+            assert self.file_maps[identifier][path] == sha
+            self.file_contents[identifier][path] = request.content
+            required = [item for item in self.deploys[identifier]["required"] if item != sha]
+            self.deploys[identifier].update(required=required, state="uploading" if required else "ready")
             if self.crash_after_upload:
                 raise SystemExit("fixture process death after provider upload")
             if self.lose_upload_response:
@@ -76,10 +92,16 @@ class FakeNetlify:
             return httpx.Response(204)
         if request.method == "POST" and suffix.endswith("/restore"):
             identifier = suffix.split("/")[-2]
+            if identifier == self.rollback_target and self.drop_rollback:
+                raise httpx.ReadTimeout("fixture rollback outcome unknown", request=request)
             if self.drop_promotion:
                 raise httpx.ReadTimeout("fixture unknown publication", request=request)
             self.published = identifier
             self.deploys[identifier].update(draft=False, published_at="2026-10-21T19:00:00Z")
+            if identifier == self.rollback_target and self.crash_after_rollback:
+                raise SystemExit("fixture process death after rollback effect")
+            if identifier == self.rollback_target and self.lose_rollback_response:
+                raise httpx.ReadTimeout("fixture lost rollback acknowledgment", request=request)
             if self.lose_promotion_response:
                 raise httpx.ReadTimeout("fixture lost publication acknowledgment", request=request)
             return httpx.Response(201, json=self.deploys[identifier])
@@ -90,10 +112,12 @@ class FakeNetlify:
         assert request.headers.get("authorization") in {None, "Basic Zml4dHVyZTpwYXNz"}
         assert "cookie" not in request.headers
         if request.url.host == "fixture.netlify.app":
-            return httpx.Response(200 if self.public_healthy else 500, content=self.content)
+            return httpx.Response(200 if self.public_healthy and self.published not in self.unhealthy_deploys else 500,
+                                  content=self.file_contents.get(self.published, {}).get("/index.html", self.content))
         assert request.url.host.endswith("--fixture.netlify.app")
         if request.headers.get("authorization") == "Basic Zml4dHVyZTpwYXNz":
-            return httpx.Response(200, content=self.content)
+            identifier = request.url.host.split("--", 1)[0]
+            return httpx.Response(200, content=self.file_contents.get(identifier, {}).get("/index.html", self.content))
         return httpx.Response(401 if self.protected else 200, content=b"private" if self.protected else self.content)
 
     def mutations(self, verb=None):
@@ -140,6 +164,28 @@ def approved(service, org, plan, key="preview"):
 
 def preview(service, org, site, key="preview"):
     plan = service.plan_preview(site, "a" * 40, "dist")
+    approval, execution = approved(service, org, plan, key)
+    return service.execute_preview(org, approval, execution, "owner"), approval, execution
+
+
+def production_preview(service, org, site, key="production-candidate"):
+    source, _, _ = preview(service, org, site, key + "-source")
+    origin = "https://fixture.netlify.app"
+    contents = {"index.html": (f'<html><head><meta name="robots" content="index, follow">'
+        f'<link rel="canonical" href="{origin}/"></head><body>Original utility</body></html>').encode(),
+        "robots.txt": f"User-agent: *\nAllow: /\nSitemap: {origin}/sitemap.xml\n".encode(),
+        "sitemap.xml": ('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+                        f'<url><loc>{origin}/</loc></url></urlset>').encode()}
+    manifest = BundleManifest(site_id=site, commit_sha="a" * 40, mode="production", canonical_origin=origin,
+        preview_deployment_id=source["id"], source_preview_tree_sha256=source["data"]["execution"]["payload"]["tree_sha256"],
+        files=[BundleFile(path=name, bytes=len(content), sha256=hashlib.sha256(content).hexdigest())
+               for name, content in contents.items()])
+    store = BundleStore(service.adapter.root, enabled=True, allowed_origins={site: origin})
+    identifier = store.begin(manifest, org_id=org, uploader="owner")["bundle_id"]
+    for name, content in contents.items():
+        store.upload(identifier, name, content, org_id=org, uploader="owner")
+    finalized = store.finalize(identifier, org_id=org, uploader="owner")
+    plan = service.plan_preview(site, "a" * 40, finalized["relative_directory"], org_id=org)
     approval, execution = approved(service, org, plan, key)
     return service.execute_preview(org, approval, execution, "owner"), approval, execution
 
@@ -262,7 +308,7 @@ def test_anonymous_preview_content_cannot_be_ready(release_system):
 
 def test_exact_ready_preview_promotion_and_health_replay(release_system):
     _, org, site, service, fake = release_system
-    ready, _, _ = preview(service, org, site)
+    ready, _, _ = production_preview(service, org, site)
     plan = service.plan_promotion(org, ready["id"])
     assert plan["payload"]["previous_published_id"] == "previousdeploy"
     approval, execution = approved(service, org, plan, "production")
@@ -278,7 +324,7 @@ def test_exact_ready_preview_promotion_and_health_replay(release_system):
 
 def test_previous_publication_change_and_older_deploy_rejected(release_system):
     _, org, site, service, fake = release_system
-    ready, _, _ = preview(service, org, site)
+    ready, _, _ = production_preview(service, org, site)
     approval, execution = approved(service, org, service.plan_promotion(org, ready["id"]), "production")
     count = len(fake.mutations())
     fake.deploys["unexpected"] = fake.deploy("unexpected", "other", draft=False)
@@ -294,7 +340,7 @@ def test_previous_publication_change_and_older_deploy_rejected(release_system):
 
 def test_unknown_promotion_does_not_restore_again(release_system):
     _, org, site, service, fake = release_system
-    ready, _, _ = preview(service, org, site)
+    ready, _, _ = production_preview(service, org, site)
     approval, execution = approved(service, org, service.plan_promotion(org, ready["id"]), "production")
     fake.drop_promotion = True
     result = service.execute_promotion(org, approval, execution, "owner")
@@ -416,3 +462,338 @@ def test_adapter_independently_refuses_foreign_or_published_resume(release_syste
     with pytest.raises(ProviderError):
         service.adapter.resume_draft_upload(plan, "unsafe", value["required"], before_upload=lambda: None)
     assert not fake.mutations()
+
+
+def rollback_candidate(system):
+    _, org, site, service, fake = system
+    old, _, _ = production_preview(service, org, site, "old-preview")
+    approval, execution = approved(service, org, service.plan_promotion(org, old["id"]), "old-production")
+    old_release = service.execute_promotion(org, approval, execution, "owner")
+    assert old_release["status"] == "healthy"
+    fake.rollback_target = old_release["data"]["provider_deploy_id"]
+    service.config = replace(service.config, rollback_enabled=True, rollback_cost_usd=Decimal("0"))
+    service.adapter.rollback_enabled = True
+    new, _, _ = production_preview(service, org, site, "new-preview")
+    plan = service.plan_promotion(org, new["id"], "owner")
+    approval, execution = approved(service, org, plan, "new-production")
+    return old_release, new, approval, execution
+
+
+def rollback_posts(fake):
+    return [call for call in fake.mutations("POST") if call[1].endswith(f"/{fake.rollback_target}/restore")]
+
+
+def test_preapproved_health_failure_rolls_back_once_and_verifies_previous_content(release_system):
+    _, org, _, service, fake = release_system
+    old, candidate, approval, execution = rollback_candidate(release_system)
+    baseline = len(rollback_posts(fake))
+    fake.unhealthy_deploys.add(candidate["data"]["provider_deploy_id"])
+    result = service.execute_promotion(org, approval, execution, "owner")
+    assert result["status"] == "rolled_back" and result["data"]["rollback_health"]["status"] == 200
+    assert fake.published == old["data"]["provider_deploy_id"]
+    assert len(rollback_posts(fake)) == baseline + 1
+    before = len(fake.mutations())
+    restarted = ReleaseService(service.db, service.adapter, service.config)
+    assert restarted.guard_production(org, result["id"], "owner")["status"] == "rolled_back"
+    assert restarted.reconcile(org, result["id"], "owner")["status"] == "rolled_back"
+    assert len(fake.mutations()) == before
+
+
+def test_reconciliation_never_rolls_back_but_explicit_guard_can_under_kill_switch(release_system):
+    db, org, _, service, fake = release_system
+    _, candidate, approval, execution = rollback_candidate(release_system)
+    result = service.execute_promotion(org, approval, execution, "owner")
+    fake.unhealthy_deploys.add(candidate["data"]["provider_deploy_id"])
+    before = len(fake.mutations())
+    assert service.reconcile(org, result["id"], "owner")["status"] == "health_failed"
+    assert len(fake.mutations()) == before
+    QueueService(db).set_kill_switch(org, True)
+    assert service.guard_production(org, result["id"], "owner")["status"] == "rolled_back"
+    with db.session() as session:
+        from siteforge.db import AuditEvent
+        claim = session.scalar(select(AuditEvent).where(AuditEvent.action == "release.rollback_claim"))
+        assert claim.detail["emergency_kill_switch_exception"] is True
+
+
+@pytest.mark.parametrize("fault", ["lose_rollback_response", "crash_after_rollback", "drop_rollback"])
+def test_rollback_transport_and_process_death_reconcile_without_another_mutation(release_system, fault):
+    _, org, _, service, fake = release_system
+    old, candidate, approval, execution = rollback_candidate(release_system)
+    fake.unhealthy_deploys.add(candidate["data"]["provider_deploy_id"])
+    setattr(fake, fault, True)
+    if fault == "crash_after_rollback":
+        with pytest.raises(SystemExit):
+            service.execute_promotion(org, approval, execution, "owner")
+        with service.db.session() as session:
+            identifier = session.scalar(select(Deployment.id).where(Deployment.approval_id == approval))
+    else:
+        identifier = service.execute_promotion(org, approval, execution, "owner")["id"]
+    before = len(fake.mutations())
+    restarted = ReleaseService(service.db, service.adapter, service.config)
+    result = restarted.guard_production(org, identifier, "owner")
+    assert result["status"] == ("rollback_unknown" if fault == "drop_rollback" else "rolled_back")
+    assert len(fake.mutations()) == before
+    if fault != "drop_rollback":
+        assert fake.published == old["data"]["provider_deploy_id"]
+
+
+def test_crash_after_rollback_claim_never_blindly_dispatches(release_system, monkeypatch):
+    _, org, _, service, fake = release_system
+    _, candidate, approval, execution = rollback_candidate(release_system)
+    fake.unhealthy_deploys.add(candidate["data"]["provider_deploy_id"])
+    def crash(*args, **kwargs):
+        raise SystemExit("fixture death before rollback POST")
+    monkeypatch.setattr(service.adapter, "rollback_to_previous", crash)
+    with pytest.raises(SystemExit):
+        service.execute_promotion(org, approval, execution, "owner")
+    with service.db.session() as session:
+        row = session.scalar(select(Deployment).where(Deployment.approval_id == approval))
+        identifier = row.id
+        assert row.data["rollback_claim"]
+    before = len(fake.mutations())
+    assert service.guard_production(org, identifier, "owner")["status"] == "rollback_unknown"
+    assert len(fake.mutations()) == before
+
+
+@pytest.mark.parametrize("denial", ["operator", "expired", "disabled", "unknown_cost", "positive_cost", "drift", "target"])
+def test_rollback_denials_never_restore_historical_target(release_system, denial):
+    _, org, _, service, fake = release_system
+    _, candidate, approval, execution = rollback_candidate(release_system)
+    result = service.execute_promotion(org, approval, execution, "owner")
+    fake.unhealthy_deploys.add(candidate["data"]["provider_deploy_id"])
+    actor = "owner"
+    if denial == "operator":
+        actor = "other"
+    elif denial == "expired":
+        now = service.policy.clock()
+        service.policy.clock = lambda: now + timedelta(days=2)
+    elif denial == "disabled":
+        service.config = replace(service.config, rollback_enabled=False)
+    elif denial == "unknown_cost":
+        service.config = replace(service.config, rollback_cost_usd=None)
+    elif denial == "positive_cost":
+        service.config = replace(service.config, rollback_cost_usd=Decimal("0.01"))
+    elif denial == "drift":
+        fake.deploys["outside"] = fake.deploy("outside", "another-publisher", draft=False)
+        fake.published = "outside"
+    else:
+        fake.deploys[fake.rollback_target]["title"] = "unrelated historical deployment"
+    before = len(fake.mutations())
+    try:
+        response = service.guard_production(org, result["id"], actor)
+        assert response["status"] == "unknown"  # Drift observed during the read-only health recheck.
+    except (DomainError, ProviderError):
+        pass
+    assert len(fake.mutations()) == before
+
+
+def test_first_launch_or_unrecorded_previous_publication_cannot_enable_rollback(release_system):
+    _, org, site, service, fake = release_system
+    ready, _, _ = production_preview(service, org, site)
+    service.config = replace(service.config, rollback_enabled=True, rollback_cost_usd=Decimal("0"))
+    with pytest.raises(DomainError, match="previously healthy"):
+        service.plan_promotion(org, ready["id"], "owner")
+    assert fake.published == "previousdeploy"
+
+
+def test_normal_noindex_preview_is_never_a_production_artifact(release_system):
+    _, org, site, service, fake = release_system
+    ready, _, _ = preview(service, org, site)
+    before = len(fake.mutations())
+    with pytest.raises(DomainError, match="indexable production"):
+        service.plan_promotion(org, ready["id"])
+    with pytest.raises(ValueError):
+        service.adapter.plan("dist", mode="production")
+    assert len(fake.mutations()) == before
+
+
+def test_indexable_candidate_retains_private_source_provenance_and_denies_changed_scope(release_system):
+    _, org, site, service, fake = release_system
+    candidate, _, execution = production_preview(service, org, site)
+    payload = execution.payload
+    assert payload["artifact_mode"] == "production"
+    assert payload["bundle_provenance"]["org_id"] == org
+    assert payload["bundle_provenance"]["tree_sha256"] == payload["tree_sha256"]
+    assert candidate["data"]["health"]["anonymous_status"] == 401
+    plan = service.plan_promotion(org, candidate["id"])
+    assert plan["payload"]["source_preview_deployment_id"] == payload["bundle_provenance"]["preview_deployment_id"]
+    before = len(fake.mutations())
+    for identifier, commit in [(None, "a" * 40), (str(uuid4()), "a" * 40), (org, "b" * 40)]:
+        with pytest.raises(DomainError):
+            service.plan_preview(site, commit, payload["artifact_directory"], org_id=identifier)
+    fake.protected = False
+    with pytest.raises(ProviderError, match="protection"):
+        service.plan_promotion(org, candidate["id"])
+    assert len(fake.mutations()) == before
+
+
+def test_concurrent_health_guards_have_one_durable_rollback_claim(release_system):
+    _, org, _, service, fake = release_system
+    _, candidate, approval, execution = rollback_candidate(release_system)
+    release = service.execute_promotion(org, approval, execution, "owner")
+    fake.unhealthy_deploys.add(candidate["data"]["provider_deploy_id"])
+    baseline = len(rollback_posts(fake))
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        results = list(pool.map(lambda _: service.guard_production(org, release["id"], "owner"), range(4)))
+    assert all(result["status"] in {"rolled_back", "rollback_unknown"} for result in results)
+    assert service.reconcile(org, release["id"], "owner")["status"] == "rolled_back"
+    assert len(rollback_posts(fake)) == baseline + 1
+
+
+@pytest.mark.parametrize("stale_outcome", ["healthy", "health_failed"])
+def test_stale_reconcile_cannot_unfence_pending_rollback_or_allow_new_publication(
+        release_system, monkeypatch, stale_outcome):
+    db, org, site, service, fake = release_system
+    _, candidate, approval, execution = rollback_candidate(release_system)
+    release = service.execute_promotion(org, approval, execution, "owner")
+    next_candidate, _, _ = production_preview(service, org, site, "next-preview")
+    # A new publication without its own recovery terms still has to respect
+    # the earlier emergency claim, independently of its configuration.
+    publisher = ReleaseService(db, service.adapter, replace(service.config, rollback_enabled=False),
+                               policy=service.policy)
+    next_plan = publisher.plan_promotion(org, next_candidate["id"], "owner")
+    next_approval, next_execution = approved(publisher, org, next_plan, "next-production")
+    legacy_approval, legacy_execution = approved(publisher, org, next_plan, "legacy-status-production")
+    observed, finish_observation, claimed, finish_restore = (Event() for _ in range(4))
+    stale_thread = []
+    verify, restore = service.adapter.verify_production, service.adapter.rollback_to_previous
+
+    def paused_health(index_sha256):
+        is_stale = stale_thread and get_ident() == stale_thread[0]
+        try:
+            return verify(index_sha256)
+        finally:
+            if is_stale:
+                observed.set()
+                assert finish_observation.wait(15), "stale observer was not released"
+
+    def paused_restore(*args, **kwargs):
+        claimed.set()  # guard has committed its claim before entering adapter
+        assert finish_restore.wait(15), "claimed recovery was not released"
+        return restore(*args, **kwargs)
+
+    def stale_reconcile():
+        stale_thread.append(get_ident())
+        return service.reconcile(org, release["id"], "owner")
+
+    monkeypatch.setattr(service.adapter, "verify_production", paused_health)
+    monkeypatch.setattr(service.adapter, "rollback_to_previous", paused_restore)
+    if stale_outcome == "health_failed":
+        fake.unhealthy_deploys.add(candidate["data"]["provider_deploy_id"])
+    baseline = len(fake.mutations())
+    rollback_baseline = len(rollback_posts(fake))
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        stale = pool.submit(stale_reconcile)
+        try:
+            assert observed.wait(10), "ordinary reconcile did not capture its pre-claim health observation"
+            fake.unhealthy_deploys.add(candidate["data"]["provider_deploy_id"])
+            guard = pool.submit(service.guard_production, org, release["id"], "owner")
+            assert claimed.wait(10), "health guard did not persist its claim"
+            pending = service.get(org, release["id"])
+            assert pending["status"] == "rollback_dispatching" and pending["data"]["rollback_claim"]
+            finish_observation.set()
+            late = stale.result(timeout=10)
+            assert late == pending  # Neither the normal status nor its data patch survived.
+            assert service.get(org, release["id"]) == pending
+            with pytest.raises(DomainError, match="unresolved release"):
+                publisher.execute_promotion(org, next_approval, next_execution, "owner")
+            assert len(fake.mutations()) == baseline
+
+            # Also fence old/corrupted records even if a previous version has
+            # already overwritten the status. A rolled_back label alone is
+            # insufficient without its exact successful recovery evidence.
+            with db.transaction() as session:
+                current = session.get(Deployment, release["id"])
+                current.status = "healthy" if stale_outcome == "healthy" else "rolled_back"
+            with pytest.raises(DomainError, match="unresolved release"):
+                publisher.execute_promotion(org, legacy_approval, legacy_execution, "owner")
+            assert len(fake.mutations()) == baseline
+            with db.session() as session:
+                assert session.scalar(select(Deployment.id).where(
+                    Deployment.approval_id.in_([next_approval, legacy_approval]))) is None
+        finally:
+            finish_observation.set()
+            finish_restore.set()
+        assert guard.result(timeout=10)["status"] == "rolled_back"
+    assert len(rollback_posts(fake)) == rollback_baseline + 1
+    before = len(fake.mutations())
+    assert service.reconcile(org, release["id"], "owner")["status"] == "rolled_back"
+    assert len(fake.mutations()) == before  # Reads never repeat the emergency effect.
+    recovered_plan = publisher.plan_promotion(org, next_candidate["id"], "owner")
+    recovered_approval, recovered_execution = approved(publisher, org, recovered_plan, "after-recovery")
+    assert publisher.execute_promotion(org, recovered_approval, recovered_execution, "owner")["status"] == "healthy"
+    assert fake.published == next_candidate["data"]["provider_deploy_id"]
+
+
+@pytest.mark.parametrize("interleave", ["after_health", "during_history"])
+def test_losing_guard_reconciles_peer_claim_after_forced_interleaving(release_system, monkeypatch, interleave):
+    _, org, _, service, fake = release_system
+    _, candidate, approval, execution = rollback_candidate(release_system)
+    release = service.execute_promotion(org, approval, execution, "owner")
+    fake.unhealthy_deploys.add(candidate["data"]["provider_deploy_id"])
+    baseline = len(rollback_posts(fake))
+    won = []
+
+    def peer_wins():
+        won.append(True)  # Fence recursion before running the real second guard.
+        assert service.guard_production(org, release["id"], "owner")["status"] == "rolled_back"
+
+    if interleave == "after_health":
+        original = service.reconcile
+        def stale_health(*args, **kwargs):
+            result = original(*args, **kwargs)
+            if not won and result["status"] == "health_failed":
+                peer_wins()
+            return result  # Deliberately return the pre-claim stale snapshot.
+        monkeypatch.setattr(service, "reconcile", stale_health)
+    else:
+        read = service.adapter.read_deploy
+        def stale_history(identifier):
+            result = read(identifier)
+            if not won and identifier == fake.rollback_target:
+                peer_wins()
+                now = service.policy.clock()
+                service.policy.clock = lambda: now + timedelta(days=2)
+            return result
+        monkeypatch.setattr(service.adapter, "read_deploy", stale_history)
+    assert service.guard_production(org, release["id"], "owner")["status"] == "rolled_back"
+    assert won == [True] and len(rollback_posts(fake)) == baseline + 1
+
+
+def test_publisher_drift_without_our_claim_remains_denied_after_stale_health(release_system, monkeypatch):
+    _, org, _, service, fake = release_system
+    _, candidate, approval, execution = rollback_candidate(release_system)
+    release = service.execute_promotion(org, approval, execution, "owner")
+    fake.unhealthy_deploys.add(candidate["data"]["provider_deploy_id"])
+    original = service.reconcile
+    def drift(*args, **kwargs):
+        result = original(*args, **kwargs)
+        fake.deploys["outside"] = fake.deploy("outside", "another-publisher", draft=False)
+        fake.published = "outside"
+        return result
+    monkeypatch.setattr(service, "reconcile", drift)
+    before = len(fake.mutations())
+    with pytest.raises(DomainError, match="publisher drift"):
+        service.guard_production(org, release["id"], "owner")
+    assert len(fake.mutations()) == before
+    assert not service.get(org, release["id"])["data"].get("rollback_claim")
+
+
+def test_zero_rollback_cost_is_in_approval_and_never_debits_budget_twice(release_system):
+    db, org, _, service, fake = release_system
+    _, candidate, _, _ = rollback_candidate(release_system)
+    service.config = replace(service.config, known_cost_usd=Decimal("0.1"), max_cost_usd=Decimal("0.1"))
+    for period in [service.policy.clock().strftime("%Y-%m"), service.policy.clock().strftime("%Y-%m-%d")]:
+        service.policy.set_budget(org, period, "1", "owner")
+    plan = service.plan_promotion(org, candidate["id"], "owner")
+    assert Decimal(plan["amount"]) == Decimal("0.1")
+    assert plan["payload"]["rollback"]["incremental_cost_usd"] == "0.000000"
+    approval, execution = approved(service, org, plan, "budgeted-production")
+    fake.unhealthy_deploys.add(candidate["data"]["provider_deploy_id"])
+    result = service.execute_promotion(org, approval, execution, "owner")
+    assert result["status"] == "rolled_back"
+    for _ in range(2):
+        service.guard_production(org, result["id"], "owner")
+    with db.session() as session:
+        assert all(budget.used_amount == Decimal("0.1") and budget.reserved_amount == 0
+                   for budget in session.scalars(select(Budget)))

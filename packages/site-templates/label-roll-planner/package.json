@@ -9,7 +9,7 @@
     "build": "astro build",
     "preview": "astro preview --host 127.0.0.1",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/planner.test.ts",
+    "test": "node --experimental-strip-types --test tests/planner.test.ts tests/site-config.test.mjs tests/build-modes.test.mjs",
     "e2e": "playwright test"
   },
   "dependencies": { "astro": "7.4.2" },

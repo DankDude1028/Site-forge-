@@ -1,6 +1,6 @@
 # Isolated execution and disconnected provider adapters
 
-Updated 2026-10-21. These modules have executable tests. A local Git worktree was actually created in a disposable test repository. Docker process isolation and live provider connections remain **PENDING**; no provider resource was created or modified during this implementation.
+Updated 2026-10-21. These modules have executable tests. A local Git worktree was created in a disposable repository and actual Linux Docker boundary checks passed in [hosted CI](evidence/ci.json). Windows Docker and live provider acceptance remain **PENDING**; no Netlify resource was created or modified. The Netlify section below describes the original narrow preview adapter; [release operations](releases.md) describes the current durable production/rollback service and its separate gates.
 
 ## Git and container execution
 
@@ -10,7 +10,7 @@ Worktrees have detached HEADs. The manager does not delete or reset existing pat
 
 `DockerSandbox(worktree_root, reviewed_image_digest)` accepts only `label_tests` and `python_tests` recipes from a fixed registry. The model cannot supply a command, image tag, extra mount, environment secret, Docker socket, network target, or privileged flag. Container commands use a digest-pinned image already installed locally (`--pull=never`), no network, no capabilities, no privilege escalation, a read-only root and job mount, a non-root user, limited CPU/RAM/swap/PIDs, and a small temporary filesystem. The only captured artifact is at most 64 KiB of text output; a reader drains and discards excess output without growing RAM or a host log file.
 
-The container timeout is 120 seconds by default and cannot exceed 300. On timeout the runner attempts to remove only its exact generated ephemeral container and kills its client; uncertain daemon cleanup still requires operator reconciliation. Missing Docker refuses execution and never falls back to the host. Container isolation depends on the host engine and operating system; before running untrusted jobs, verify resource enforcement, file permissions, engine mode and seccomp on the actual dedicated worker account. Current tests establish command construction and missing-engine behavior, not actual Docker enforcement.
+The container timeout is 120 seconds by default and cannot exceed 300. On timeout the runner attempts to remove only its exact generated ephemeral container and kills its client; uncertain daemon cleanup still requires operator reconciliation. Missing Docker refuses execution and never falls back to the host. Actual Linux CI checks verify non-root execution, denied network/writes, capabilities and bounded output. Container isolation still depends on the dedicated host engine/account; Windows engine mode, resource stress and local seccomp acceptance remain separate.
 
 Primary implementation references: [Git worktrees](https://git-scm.com/docs/git-worktree) and [Docker run options](https://docs.docker.com/reference/cli/docker/container/run/), opened on the research date.
 

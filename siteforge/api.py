@@ -23,6 +23,7 @@ from .contracts import (
     ActionExecution, ActionRequest, CheckpointRequest, CompleteRequest, FailureRequest,
     LeaseRequest, Principal, RenewRequest, StrictModel, TaskClaim, TaskCreate, WorkerRegister,
 )
+from .bundles import BundleManifest, BundleStore
 from .db import (
     Agent, AnalyticsSnapshot, Approval, AuditEvent, BenchmarkResult, BenchmarkRun,
     Budget, Database, Deployment, Experiment, Model, Notification, Opportunity, Organization,
@@ -33,7 +34,7 @@ from .integrations import AnalyticsImport, AnalyticsIngestor, RevenueImport
 from .policy import KNOWN_TOOLS, PolicyService
 from .queue import DomainError, QueueService, aware, digest, task_view, tenant_row
 from .providers import ProviderError
-from .release import ReleaseService
+from .release import ReleaseConfig, ReleaseService
 
 
 class SiteCreate(StrictModel):
@@ -420,6 +421,98 @@ def create_app(db: Database | None = None,
         with db.session() as session:
             return tenant_row(session, Deployment, identity.org_id, deployment_id).site_id
 
+    def bundle_store() -> BundleStore:
+        try:
+            if os.environ.get("SITEFORGE_BUNDLES_ENABLED", "false") != "true":
+                raise ValueError("Bundle transfer disabled")
+            configured = ReleaseConfig.from_environment()
+            if configured.preview_root is None or not configured.allowed_sites:
+                raise ValueError("Bundle scope not configured")
+            origins = {site_id: configured.production_origins[provider_id]
+                       for site_id, provider_id in configured.allowed_sites.items()
+                       if provider_id in configured.production_origins}
+            return BundleStore(configured.preview_root, enabled=True, allowed_origins=origins)
+        except (ValueError, OSError) as error:
+            raise DomainError("Bundle transfer is not configured", 503) from error
+
+    def bundle_write_scope(identity: Principal, site_id: str, session: Any) -> None:
+        release_scope(identity, site_id, "upload_bundle")
+        tenant_row(session, Site, identity.org_id, site_id)
+        organization = session.scalar(select(Organization).where(
+            Organization.id == identity.org_id).with_for_update())
+        if organization is None:
+            raise DomainError("Organization not provisioned", 403)
+        if organization.kill_switch:
+            raise DomainError("Bundle writes paused by kill switch", 403)
+        configured = ReleaseConfig.from_environment()
+        if site_id not in configured.allowed_sites:
+            raise DomainError("Bundle site is not configured", 403)
+
+    @app.post("/v1/bundles")
+    def begin_bundle(body: BundleManifest, identity: Principal = Depends(release_operator)) -> Any:
+        store = bundle_store()
+        try:
+            with db.transaction() as session:
+                bundle_write_scope(identity, str(body.site_id), session)
+                result = store.begin(body, org_id=identity.org_id, uploader=identity.subject)
+                audit(session, identity.org_id, identity.subject, "bundle.begin", result["bundle_id"],
+                      site_id=str(body.site_id), manifest_sha256=result["manifest_sha256"])
+            return result
+        except (ValueError, OSError) as error:
+            raise DomainError("Bundle manifest or storage binding rejected", 422) from error
+
+    @app.get("/v1/bundles/{bundle_id}")
+    def describe_bundle(bundle_id: str, identity: Principal = Depends(release_operator)) -> Any:
+        try:
+            result = bundle_store().describe(bundle_id, org_id=identity.org_id, uploader=identity.subject)
+            release_scope(identity, str(result["site_id"]), "upload_bundle")
+            with db.session() as session:
+                tenant_row(session, Site, identity.org_id, str(result["site_id"]))
+            return result
+        except (ValueError, OSError) as error:
+            raise DomainError("Bundle binding unavailable", 404) from error
+
+    @app.put("/v1/bundles/{bundle_id}/files")
+    async def upload_bundle_file(bundle_id: str, request: Request,
+                                 path: str = Query(min_length=1, max_length=160),
+                                 identity: Principal = Depends(release_operator)) -> Any:
+        store = bundle_store()
+        try:
+            binding = store.describe(bundle_id, org_id=identity.org_id, uploader=identity.subject)
+            release_scope(identity, str(binding["site_id"]), "upload_bundle")
+            if request.headers.get("content-type", "").split(";", 1)[0] != "application/octet-stream":
+                raise DomainError("Bundle files require application/octet-stream", 415)
+            chunks: list[bytes] = []
+            size = 0
+            async for chunk in request.stream():
+                size += len(chunk)
+                if size > 4_000_000:
+                    raise DomainError("Bundle file exceeds transfer limit", 413)
+                chunks.append(chunk)
+            with db.transaction() as session:
+                bundle_write_scope(identity, str(binding["site_id"]), session)
+                result = store.upload(bundle_id, path, b"".join(chunks), org_id=identity.org_id,
+                                      uploader=identity.subject)
+                audit(session, identity.org_id, identity.subject, "bundle.upload", bundle_id,
+                      path=path, bytes=size)
+            return result
+        except (ValueError, OSError) as error:
+            raise DomainError("Bundle file or principal binding rejected", 422) from error
+
+    @app.post("/v1/bundles/{bundle_id}/finalize")
+    def finalize_bundle(bundle_id: str, identity: Principal = Depends(release_operator)) -> Any:
+        store = bundle_store()
+        try:
+            binding = store.describe(bundle_id, org_id=identity.org_id, uploader=identity.subject)
+            with db.transaction() as session:
+                bundle_write_scope(identity, str(binding["site_id"]), session)
+                result = store.finalize(bundle_id, org_id=identity.org_id, uploader=identity.subject)
+                audit(session, identity.org_id, identity.subject, "bundle.seal", bundle_id,
+                      manifest_sha256=result["manifest_sha256"], site_id=str(binding["site_id"]))
+            return result
+        except (ValueError, OSError) as error:
+            raise DomainError("Bundle integrity, SEO or principal binding rejected", 422) from error
+
     @app.post("/v1/releases/lookup")
     def lookup_release(body: ReleaseLookupRequest, identity: Principal = Depends(release_operator)) -> Any:
         with db.session() as session:
@@ -442,7 +535,8 @@ def create_app(db: Database | None = None,
         release_scope(identity, str(body.site_id), "plan_release")
         service = release_service(identity, str(body.site_id))
         try:
-            return service.plan_preview(str(body.site_id), body.commit_sha, body.relative_directory)
+            return service.plan_preview(str(body.site_id), body.commit_sha, body.relative_directory,
+                                        org_id=identity.org_id)
         finally:
             service.close()
 
@@ -461,7 +555,7 @@ def create_app(db: Database | None = None,
         release_scope(identity, site_id, "plan_release")
         service = release_service(identity, site_id)
         try:
-            return service.plan_promotion(identity.org_id, str(body.preview_deployment_id))
+            return service.plan_promotion(identity.org_id, str(body.preview_deployment_id), identity.subject)
         finally:
             service.close()
 
@@ -489,6 +583,16 @@ def create_app(db: Database | None = None,
         service = release_service(identity, deployment_site(identity, str(deployment_id)))
         try:
             return service.resume_preview(identity.org_id, str(deployment_id), identity.subject)
+        finally:
+            service.close()
+
+    @app.post("/v1/releases/{deployment_id}/guard-production")
+    def guard_production(deployment_id: UUID, identity: Principal = Depends(release_operator)) -> Any:
+        site_id = deployment_site(identity, str(deployment_id))
+        release_scope(identity, site_id, "guard_production")
+        service = release_service(identity, site_id)
+        try:
+            return service.guard_production(identity.org_id, str(deployment_id), identity.subject)
         finally:
             service.close()
 

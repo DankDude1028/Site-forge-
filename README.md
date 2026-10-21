@@ -129,11 +129,17 @@ checks, package vulnerability scans, a secret pattern scan, SBOM generation, das
 tests and Astro build/tests. Manually enabled preview and promotion workflows call the supervisor's
 exact approval, budget and durable provider-receipt pipeline. Releases default to disabled; unknown
 costs, unresolved effects, unverified protection and mismatched artifact trees block advancement.
-The workflow needs an already reviewed compiled bundle staged in the supervisor's scoped root.
-Promotion preserves those exact preview bytes, including noindex. Indexable production artifacts,
-build provenance transfer and automatic rollback still require implementation and acceptance.
+The separate [bundle workflow](.github/workflows/bundle.yml) builds without release credentials,
+then transfers bounded, hashed static bytes through a scoped API for owner review. Normal previews
+remain noindex. A separate indexable production variant links to the exact reviewed preview,
+commit and source tree; promotion binds its own protected draft and manifest. Authenticated build
+claims are labeled and do not establish independent GitHub attestation.
+Default-disabled automatic rollback supports an exactly preapproved, previously healthy SiteForge
+release with server-attested zero incremental cost. Durable claims prevent repeating an uncertain
+restore. Unknown history, drift or cost blocks recovery. Hosted release acceptance remains pending.
 See [release operations](docs/operations/releases.md) for scoped credentials, read reconciliation,
-bounded upload recovery and limitations. `.netlify` is ignored. No live deployment was performed.
+bounded upload recovery and limitations, and [bundle operations](docs/operations/bundles.md) for
+transfer/SEO checks. `.netlify` is ignored. No live deployment was performed.
 
 [Encrypted backups](docs/operations/backups.md) stream PostgreSQL dumps into authenticated AES-GCM
 archives, retain verified local history and restore only into new disposable databases. Production

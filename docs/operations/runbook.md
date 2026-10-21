@@ -40,16 +40,22 @@ Use `pg_dump --format=custom` under a dedicated backup identity; secrets belong 
 credential mechanism, not command arguments or Git. Restore into a new isolated database with
 `pg_restore`, apply/verify migrations, run integrity/tenancy/queue tests, compare retained receipts
 and audit totals, then switch the service URL. A documented target is not evidence of a restore
-drill; that acceptance gate is pending until performed.
+drill. Bounded real PostgreSQL restores passed in [CI](evidence/ci.json); production scheduling,
+off-host key recovery and measured RPO/RTO remain pending. Use the authenticated
+[backup commands](backups.md) for encrypted dumps and disposable-target recovery.
 
 ## Preview and release
 
 No Netlify site is created automatically. Configure a protected preview site and a scoped token;
 verify access control and `noindex` before enabling `.github/workflows/staging.yml`. Preview URLs
 alone do not provide privacy. First production publication requires an owner decision for the
-exact reviewed commit/site and all acceptance gates. For a bad published revision, prepare a
-reviewed fix-forward/revert release with exact approval. A failed deploy that never published
-does not replace the live revision. Preserve the prior provider deploy/commit reference.
+exact reviewed commit/site and all acceptance gates. Build and review the separate
+[production bundle](bundles.md), then approve its exact publication and any supported zero-cost
+rollback terms. The [release guard](releases.md) can automatically restore only that bound prior
+healthy SiteForge release after failed health; it never guesses a target or repeats an uncertain
+restore. Without valid rollback authorization/history, prepare a reviewed fix-forward release.
+A failed draft that never published does not replace the live revision. Preserve all provider,
+commit, approval, dispatch and health records.
 
 ## Endurance evidence
 

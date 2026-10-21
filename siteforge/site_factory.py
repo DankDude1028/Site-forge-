@@ -124,9 +124,30 @@ def inspect_preview(root: Path, slug: str) -> dict[str, Any]:
         path = scoped_path(root, f"{slug}/source/{item['path']}")
         if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != item["sha256"]:
             failures.append(f"Artifact integrity failed: {item['path']}")
-    page = scoped_path(root, f"{slug}/source/src/pages/index.astro").read_text(encoding="utf-8")
+    critical = ("site-config.mjs", "astro.config.mjs", "src/pages/index.astro",
+                "src/pages/privacy.astro", "src/pages/robots.txt.ts", "src/pages/sitemap.xml.ts")
+    critical_sources: dict[str, str] = {}
+    trusted_configuration = True
+    listed = {item["path"] for item in manifest.get("files", [])}
+    for relative in critical:
+        source = scoped_path(root, f"{slug}/source/{relative}")
+        expected = TEMPLATE_ROOT / relative
+        if relative not in listed or not source.is_file() or source.read_bytes() != expected.read_bytes():
+            trusted_configuration = False
+        critical_sources[relative] = source.read_text(encoding="utf-8") if source.is_file() else ""
+    page = critical_sources["src/pages/index.astro"]
+    configuration = critical_sources["site-config.mjs"]
+    # This is a trusted-source inspection, never evidence that Astro ran. Runtime
+    # build environment and the final compiled bytes have separate validation.
+    preview_default = ("const mode = environment.SITEFORGE_BUILD_MODE || 'preview';" in configuration
+                       and "'index, follow' : 'noindex, nofollow'" in configuration)
+    crawl_route = critical_sources["src/pages/robots.txt.ts"]
     checks = {
-        "preview_noindex": 'name="robots" content="noindex, nofollow"' in page,
+        "trusted_build_configuration": trusted_configuration,
+        "preview_default_configuration": preview_default,
+        "preview_noindex": trusted_configuration and preview_default and 'name="robots" content={config.robots}' in page,
+        "preview_crawl_route": trusted_configuration and "config.mode === 'production'" in crawl_route
+                               and "User-agent: *\\nDisallow: /\\n" in crawl_route,
         "language": 'lang="en"' in page,
         "accessible_form": '<label for="quantity"' in page and 'aria-live="polite"' in page,
         "metadata": 'name="description"' in page and "<title>" in page,

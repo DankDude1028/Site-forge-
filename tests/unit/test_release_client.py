@@ -128,3 +128,21 @@ def test_preview_client_uses_exact_approved_plan_and_reconciles_stable_replay():
         assert paths[-1]=='/v1/releases/lookup'
     finally:
         client.close()
+
+
+def test_client_automatically_uses_only_preapproved_production_guard():
+    deployed = str(uuid4())
+    calls = []
+    def transport(request):
+        calls.append(request.url.path)
+        return httpx.Response(200, json={'id':deployed, 'status':'rolled_back',
+            'data':{'rollback_health':{'status':200}}})
+    client = ReleaseClient('https://supervisor.example','fixture-token',transport=httpx.MockTransport(transport))
+    try:
+        result = {'id':deployed,'status':'health_failed','data':{'execution':{'payload':{'rollback':{'enabled':True}}}}}
+        assert client.wait_for_status(result, 0)['status'] == 'rolled_back'
+        assert calls == [f'/v1/releases/{deployed}/guard-production']
+        assert client.wait_for_status({'id':deployed,'status':'health_failed'}, 0)['status'] == 'health_failed'
+        assert len(calls) == 1
+    finally:
+        client.close()

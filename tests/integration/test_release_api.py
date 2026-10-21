@@ -29,6 +29,8 @@ def release_api():
         'release':token('release',site_ids=[first],capabilities=['plan_release','deploy_production','reconcile_release'],
                         expires_at=utcnow()+timedelta(hours=1)),
         'invalid':token('release',site_ids=[first],capabilities=['plan_release']),
+        'guard':token('release',site_ids=[first],capabilities=['guard_production'],
+                      expires_at=utcnow()+timedelta(hours=1)),
         'other':{'subject':'other','org_id':other,'role':'owner'},
     }
     client = TestClient(create_app(db, {hashlib.sha256(key.encode()).hexdigest():value for key,value in config.items()}))
@@ -45,7 +47,7 @@ def test_delegated_release_scope_cannot_read_control_plane_or_other_sites(releas
     client, db, org, first, second = release_api
     calls = []
     class Fake:
-        def plan_preview(self, site_id, commit, directory):
+        def plan_preview(self, site_id, commit, directory, *, org_id=None):
             calls.append(site_id)
             return {'action':'deploy_preview','site_id':site_id,'payload':{'commit_sha':commit},'amount':'0','currency':'USD'}
         def close(self): pass
@@ -91,3 +93,27 @@ def test_release_factory_stays_disabled_without_server_configuration(release_api
         'site_id':first,'commit_sha':'a'*40,'relative_directory':'approved-dist'})
     assert result.status_code==503
     assert result.json()['detail']=='Release service is not configured for this site'
+
+
+def test_rollback_guard_requires_separate_site_capability_and_tenant(release_api, monkeypatch):
+    client, db, org, first, second = release_api
+    identifier, other_id = str(uuid4()), str(uuid4())
+    with db.transaction() as session:
+        session.add_all([Deployment(id=identifier, org_id=org, site_id=first, environment='production',
+                                    commit_sha='a'*40, status='health_failed', data={}),
+                         Deployment(id=other_id, org_id=org, site_id=second, environment='production',
+                                    commit_sha='a'*40, status='health_failed', data={})])
+    calls = []
+    class Fake:
+        def guard_production(self, org_id, deployment_id, actor):
+            calls.append((org_id, deployment_id, actor))
+            return {'id': deployment_id, 'status': 'rolled_back'}
+        def close(self): pass
+    monkeypatch.setattr(ReleaseService, 'from_environment', classmethod(lambda cls, db, site: Fake()))
+    url = f'/v1/releases/{identifier}/guard-production'
+    assert client.post(url, headers=auth('release'), json={}).status_code == 403
+    assert client.post(url, headers=auth('observer'), json={}).status_code == 403
+    assert client.post(url, headers=auth('other'), json={}).status_code == 404
+    assert client.post(f'/v1/releases/{other_id}/guard-production', headers=auth('guard'), json={}).status_code == 403
+    assert client.post(url, headers=auth('guard'), json={}).json()['status'] == 'rolled_back'
+    assert calls == [(org, identifier, 'owner')]

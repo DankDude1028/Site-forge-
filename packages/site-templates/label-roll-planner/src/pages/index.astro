@@ -1,4 +1,6 @@
 ---
+import { getSiteConfig } from '../../site-config.mjs';
+const config = getSiteConfig();
 const canonical = new URL('/', Astro.site);
 ---
 <!doctype html>
@@ -8,13 +10,13 @@ const canonical = new URL('/', Astro.site);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Label Roll Planner — a clearer print run</title>
     <meta name="description" content="Calculate labels, waste allowance, and whole rolls for your next small batch. A free browser-local planning tool." />
-    <meta name="robots" content="noindex, nofollow" />
+    <meta name="robots" content={config.robots} />
     <meta name="theme-color" content="#173d38" />
     <link rel="canonical" href={canonical} />
   </head>
   <body>
     <a href="#main" class="skip">Skip to calculator</a>
-    <header class="shell"><a class="brand" href="/" aria-label="Label Roll Planner home"><span class="mark" aria-hidden="true">▥</span> Rollwise <small>PRINT TOOLS</small></a><span class="preview">Private preview</span></header>
+    <header class="shell"><a class="brand" href="/" aria-label="Label Roll Planner home"><span class="mark" aria-hidden="true">▥</span> Rollwise <small>PRINT TOOLS</small></a><span class="preview">{config.mode === 'preview' ? 'Private preview' : 'Free planning tool'}</span></header>
     <main id="main" class="shell">
       <div class="intro"><span class="eyebrow">MAKE ROOM FOR THE MAKING.</span><h1>One less thing<br />to count by hand.</h1><p>From the first jar to the last label. Work out exactly how many rolls your next batch needs, with a little breathing room.</p><div class="trust"><span aria-hidden="true">✓</span> No inputs leave your browser</div></div>
       <section class="planner" aria-labelledby="planner-title">
@@ -33,7 +35,7 @@ const canonical = new URL('/', Astro.site);
       </section>
       <section class="explain" aria-labelledby="how"><div><span class="eyebrow">THE MATH, OUT IN THE OPEN</span><h2 id="how">A small buffer.<br />A smoother batch.</h2></div><div><p>We multiply your items by labels per item, add the percentage allowance, and round up to a whole label. Then we round up to full rolls and subtract the full rolls you already have.</p><p>For example: 250 items × 2 labels + 5% = 525 labels. With 500 labels per roll, you need 2 full rolls. If you have 1, order 1 more.</p><p class="fine">The allowance is extra stock, not a yield-loss rate. This assumes identical full rolls. Check printer setup requirements and any partially used rolls separately.</p></div></section>
     </main>
-    <footer class="shell"><span>Rollwise · A SiteForge utility preview</span><span>No ads. No affiliate links. No account needed.</span><a href="/privacy/">Privacy &amp; assumptions</a></footer>
+    <footer class="shell"><span>Rollwise · A SiteForge utility{config.mode === 'preview' ? ' preview' : ''}</span><span>No ads. No affiliate links. No account needed.</span><a href="/privacy/">Privacy &amp; assumptions</a></footer>
     <script src="../scripts/calculator.ts"></script>
   </body>
 </html>

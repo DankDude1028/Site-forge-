@@ -165,6 +165,7 @@ class PreviewPlan:
     site_id: str
     files: tuple[tuple[str, str, str, int], ...]  # relative path, SHA1, SHA256, bytes
     request_hash: str
+    mode: str = "preview"
 
 
 class NetlifyPreviewAdapter(_HTTPProvider):
@@ -179,7 +180,17 @@ class NetlifyPreviewAdapter(_HTTPProvider):
         self.site_id, self.root = site_id, artifact_root.resolve()
         self.enabled = operator_authorized and cost_authorized and protected_preview_verified
 
-    def plan(self, relative_directory: str) -> PreviewPlan:
+    def plan(self, relative_directory: str, *, mode: str = "preview") -> PreviewPlan:
+        if mode not in {"preview", "production"}:
+            raise ValueError("Unsupported release artifact mode")
+        provenance = None
+        if mode == "production":
+            from .bundles import inspect_bundle
+            provenance = inspect_bundle(self.root, relative_directory)
+            origin = getattr(self, "production_origin", None)
+            if (provenance["mode"] != "production" or not isinstance(origin, str)
+                    or provenance["canonical_origin"] != origin.rstrip("/")):
+                raise ValueError("Production candidate needs finalized bytes and the configured canonical origin")
         directory = scoped_path(self.root, relative_directory)
         if not directory.is_dir():
             raise ValueError("Preview directory must be an existing scoped build output")
@@ -206,21 +217,23 @@ class NetlifyPreviewAdapter(_HTTPProvider):
                 total += len(content)
                 if len(files) >= 1000 or total > 16_000_000:
                     raise ValueError("Preview exceeds bounded static upload limit")
-                if path.suffix.lower() == ".html" and b'content="noindex, nofollow"' not in content:
+                if mode == "preview" and path.suffix.lower() == ".html" and b'content="noindex, nofollow"' not in content:
                     raise ValueError("Every preview HTML page requires noindex metadata")
                 files.append((relative, hashlib.sha1(content).hexdigest(), hashlib.sha256(content).hexdigest(), len(content)))
         if not any(item[0] == "index.html" for item in files):
             raise ValueError("Preview requires a static index.html")
         files.sort()
-        request_hash = digest({"site_id": self.site_id, "files": files, "draft": True})
-        return PreviewPlan(directory, self.site_id, tuple(files), request_hash)
+        if provenance is not None and digest(tuple(files)) != provenance["tree_sha256"]:
+            raise ValueError("Production candidate bytes differ from finalized provenance")
+        request_hash = digest({"site_id": self.site_id, "files": files, "draft": True, "mode": mode})
+        return PreviewPlan(directory, self.site_id, tuple(files), request_hash, mode)
 
     def create_draft_preview(self, plan: PreviewPlan, *, correlation_id: str | None = None,
                              on_created: Callable[[ProviderReceipt], None] | None = None) -> ProviderReceipt:
         if not self.enabled:
             raise ProviderError("Preview disabled until operator cost authorization and site protection verification")
         # Rehash the exact bytes immediately before creating the provider effect.
-        current = self.plan(plan.directory.relative_to(self.root).as_posix())
+        current = self.plan(plan.directory.relative_to(self.root).as_posix(), mode=plan.mode)
         if current != plan or plan.site_id != self.site_id:
             raise ProviderError("Preview artifact binding changed; review again")
         if correlation_id is not None and not re.fullmatch(r"siteforge:[a-zA-Z0-9:-]{1,180}", correlation_id):
@@ -272,6 +285,7 @@ class NetlifyReleaseAdapter(NetlifyPreviewAdapter):
     """
     def __init__(self, site_id: str, artifact_root: Path, *, preview_authorization: str | None = None,
                  production_enabled: bool = False, production_origin: str | None = None,
+                 rollback_enabled: bool = False,
                  exclusive_publisher_verified: bool = False, health_client: httpx.Client | None = None,
                  **kwargs: Any) -> None:
         super().__init__(site_id, artifact_root, **kwargs)
@@ -284,6 +298,7 @@ class NetlifyReleaseAdapter(NetlifyPreviewAdapter):
                 raise ValueError("Production origin must be an explicitly configured HTTPS origin")
         self.preview_authorization = preview_authorization
         self.production_enabled, self.production_origin = production_enabled, production_origin
+        self.rollback_enabled = rollback_enabled
         self.exclusive_publisher_verified = exclusive_publisher_verified
         self.health_client = health_client or httpx.Client(timeout=20, trust_env=False, follow_redirects=False)
 
@@ -416,7 +431,7 @@ class NetlifyReleaseAdapter(NetlifyPreviewAdapter):
         if not set(deploy["required"]) <= {item[1] for item in plan.files}:
             raise ProviderError("Provider recovery digest is outside the approved tree")
         required = [item for item in required if item in deploy["required"]]
-        current = self.plan(plan.directory.relative_to(self.root).as_posix())
+        current = self.plan(plan.directory.relative_to(self.root).as_posix(), mode=plan.mode)
         if current != plan:
             raise ProviderError("Recovery artifact changed")
         uploaded = 0
@@ -452,6 +467,30 @@ class NetlifyReleaseAdapter(NetlifyPreviewAdapter):
             raise ProviderOutcomeUnknown("Promotion response uncertain; read published identity before any new action") from error
         return ProviderReceipt("netlify", "promote_ready_preview", identifier,
                                self.production_origin or "", request_hash, "publication_pending_reconciliation")
+
+    def rollback_to_previous(self, candidate_id: str, previous_id: str, *, candidate_title: str,
+                             previous_title: str, request_hash: str,
+                             before_restore: Callable[[], None]) -> ProviderReceipt:
+        """One preauthorized historical target, never an arbitrary restore API."""
+        if (not self.enabled or not self.rollback_enabled or not self.exclusive_publisher_verified
+                or not self.production_origin or candidate_id == previous_id):
+            raise ProviderError("Exact historical rollback is disabled or invalid")
+        candidate, previous = self.read_deploy(candidate_id), self.read_deploy(previous_id)
+        if (candidate["title"] != candidate_title or previous["title"] != previous_title
+                or any(deploy["draft"] is not False or not deploy["published_at"]
+                       or deploy["state"] != "ready" or deploy["required"] for deploy in (candidate, previous))):
+            raise ProviderError("Rollback publications do not match the approved history")
+        before_restore()
+        if self.current_published_id() != candidate_id:
+            raise ProviderError("Concurrent publisher drift blocks historical rollback")
+        result = self._request("POST", f"/sites/{self.site_id}/deploys/{self._identifier(previous_id)}/restore",
+                               mutation=True)
+        try:
+            self._deploy(result, previous_id)
+        except ProviderError as error:
+            raise ProviderOutcomeUnknown("Rollback response uncertain; read publication before another action") from error
+        return ProviderReceipt("netlify", "rollback_to_previous", previous_id,
+            self.production_origin, request_hash, "rollback_pending_reconciliation")
 
     def close(self) -> None:
         super().close()

@@ -28,6 +28,42 @@ def test_factory_builds_trusted_source_and_integrity_checks_detect_tampering(tmp
     assert report["astro_build"] == "pending_separate_executable_check"
 
 
+def test_default_preview_source_configuration_is_verified_without_claiming_a_build(tmp_path, monkeypatch):
+    # Ambient operator variables never turn source generation into a deployment
+    # or change the default trusted template copied by the deterministic factory.
+    monkeypatch.setenv("SITEFORGE_BUILD_MODE", "production")
+    monkeypatch.setenv("SITEFORGE_SITE_URL", "https://untrusted-input.invalid")
+    create_preview(tmp_path, "label-planner")
+    report = inspect_preview(tmp_path, "label-planner")
+    assert report["static_passed"]
+    assert report["static_checks"]["preview_noindex"]
+    assert report["static_checks"]["preview_crawl_route"]
+    assert report["production_authorized"] is False
+    assert report["astro_build"] == "pending_separate_executable_check"
+    assert report["browser_accessibility"] == "pending_separate_browser_check"
+
+
+@pytest.mark.parametrize("relative", ["site-config.mjs", "src/pages/index.astro", "src/pages/robots.txt.ts"])
+def test_crawl_configuration_tamper_fails_even_when_artifact_manifest_is_rehashed(tmp_path, relative):
+    import hashlib
+    import json
+
+    create_preview(tmp_path, "label-planner")
+    path = tmp_path / "label-planner/source" / relative
+    path.write_text(path.read_text(encoding="utf-8") + "\n// unreviewed configuration\n", encoding="utf-8")
+    manifest_path = tmp_path / "label-planner/build/manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    for item in manifest["files"]:
+        if item["path"] == relative:
+            item["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+            item["bytes"] = path.stat().st_size
+    manifest_path.write_text(json.dumps(manifest))
+    report = inspect_preview(tmp_path, "label-planner")
+    assert not report["static_passed"]
+    assert "trusted_build_configuration" in report["failures"]
+    assert "preview_noindex" in report["failures"]
+
+
 @pytest.mark.parametrize("value", ["../outside", "bad/slug", "BAD", "x", "C:/outside", None])
 def test_factory_rejects_untrusted_paths(tmp_path, value):
     with pytest.raises(ValueError):

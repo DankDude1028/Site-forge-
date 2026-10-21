@@ -69,6 +69,9 @@ class ReleaseClient:
     def reconcile(self, deployment_id: str) -> dict:
         return self._post(f"/v1/releases/{UUID(deployment_id)}/reconcile", {})
 
+    def guard_production(self, deployment_id: str) -> dict:
+        return self._post(f"/v1/releases/{UUID(deployment_id)}/guard-production", {})
+
     def preview(self, site_id: str, commit_sha: str, directory: str, approval_id: str, idempotency_key: str) -> dict:
         site_id, approval_id = str(UUID(site_id)), str(UUID(approval_id))
         if not re.fullmatch(r"[a-f0-9]{40}|[a-f0-9]{64}", commit_sha) or not 1 <= len(idempotency_key) <= 160:
@@ -97,9 +100,16 @@ class ReleaseClient:
         if not 0 <= seconds <= 180:
             raise ValueError("Health wait must be between zero and 180 seconds")
         deadline = time.monotonic() + seconds
-        while result.get("status") not in {expected_status, "failed", "health_failed"} and time.monotonic() < deadline:
+        def guarded(value: dict) -> dict:
+            rollback = value.get("data", {}).get("execution", {}).get("payload", {}).get("rollback", {})
+            if expected_status == "healthy" and value.get("status") == "health_failed" and rollback.get("enabled") is True:
+                return self.guard_production(str(value["id"]))
+            return value
+        result = guarded(result)
+        terminal = {expected_status, "failed", "health_failed", "rolled_back", "rollback_health_failed"}
+        while result.get("status") not in terminal and time.monotonic() < deadline:
             time.sleep(min(2, max(0, deadline - time.monotonic())))
-            result = self.reconcile(str(result["id"]))
+            result = guarded(self.reconcile(str(result["id"])))
         return result
 
 

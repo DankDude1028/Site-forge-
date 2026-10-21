@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12', cache: pip}
       - run: pip install -r requirements.lock
-      - name: Promote only the exact approved ready preview
+      - name: Promote exact approved artifact and apply its preauthorized health guard
         env:
           SITEFORGE_API_URL: '${{ vars.SITEFORGE_API_URL }}'
           SITEFORGE_RELEASE_TOKEN: '${{ secrets.SITEFORGE_RELEASE_TOKEN }}'

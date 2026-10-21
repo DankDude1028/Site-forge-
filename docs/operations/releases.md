@@ -33,6 +33,7 @@ The supplied exact commit SHA and artifact tree are separately bound to the appr
 | `SITEFORGE_RELEASE_PRODUCTION_ORIGINS` | JSON map from Netlify site UUID to independently allowlisted HTTPS production origin. |
 | `SITEFORGE_RELEASE_EXCLUSIVE_PUBLISHER` | Explicit operator attestation that outside publishers will not race the checked previous published deploy. Defaults to `false`. |
 | `SITEFORGE_RELEASE_RESUME_UPLOADS_ENABLED`, `SITEFORGE_RELEASE_RESUME_COST_USD` | Optional upload-recovery gate; disabled by default and requires an explicit zero incremental cost. |
+| `SITEFORGE_RELEASE_ROLLBACK_ENABLED`, `SITEFORGE_RELEASE_ROLLBACK_COST_USD` | Optional automatic health recovery; defaults disabled. Requires an explicit `0` incremental cost and a previously healthy SiteForge production release. Unknown or positive rollback costs are unsupported and refused. |
 
 These settings are trusted operator configuration. Enabling a flag does not itself prove protection,
 known costs, exclusive publishing, deployment health or full production acceptance.
@@ -185,8 +186,20 @@ With the separate production gates configured, request `POST /v1/releases/promot
 {"preview_deployment_id": "00000000-0000-0000-0000-000000000003"}
 ```
 
-The plan requires a reconciled protected `ready` preview and binds its internal/provider identities,
-commit, exact tree, amount and **previous published deploy ID**. Request and obtain a new owner
+The plan requires a reconciled protected `ready` **production candidate**, not the ordinary noindex
+preview. First transfer/finalize a separate `production` bundle using the authenticated
+[bundle workflow](bundles.md). Its manifest binds the same site/commit, the reviewed normal preview
+deployment and source tree, and the exact indexable production tree. Every HTML canonical,
+index/follow metadata, robots allow policy and sitemap must match the independently configured
+production origin. Bundle uploader and organization are server-authenticated; the commit remains
+an authenticated uploader claim, not independent proof of a GitHub build.
+
+Planning that production candidate requires the linked normal preview to remain ready/private,
+with the same site/commit and source-tree hash. The candidate itself is deployed as a protected
+draft, retaining indexable production bytes behind access control. Promotion rejects legacy
+noindex previews and revalidates both bundle provenance and the source-preview linkage. The plan
+binds internal/provider identities, both trees, manifest, commit, amount and **previous published
+deploy ID**. Request and obtain a new owner
 approval for the returned `deploy_production` action, then execute
 `POST /v1/releases/{approval_id}/production` with the exact plan and a stable execution key, or:
 
@@ -195,16 +208,46 @@ python -m siteforge.release_client promote --preview-id <preview-deployment-uuid
 ```
 
 The adapter promotes only that new, unpublished ready draft after checking the previous published
-identity and protection again. Its use of Netlify's restore endpoint is restricted to this promotion;
-it does not expose an older-deploy rollback. Production reconciliation verifies the published deploy
+identity and protection again. Production reconciliation verifies the published deploy
 identity and exact index bytes at the independently configured production HTTPS origin.
 
-Promotion serves the **same noindex preview bytes**. Building/linking a separate production SEO
-artifact is not implemented. Automatic rollback is also not implemented: a future rollback phase
-would need its own exact target/previous-publication binding, cost and owner approval, receipt and
-health reconciliation. Today a bad published release needs a new reviewed preview and explicit
-fix-forward release; do not reinterpret its old approval as rollback permission. Full production
-acceptance, including hosted evidence and all other operational gates, remains pending.
+## Preauthorized automatic health rollback
+
+Rollback is disabled by default. With its separate server flag and explicitly known zero
+incremental cost configured, the production plan additionally contains an immutable `rollback`
+object. It names the current candidate, exact previous provider and internal production release,
+site, approving identity, previous/candidate commits and trees, historical provider title and
+previous verified index SHA256. The owner reviews these terms as part of the **same production
+approval**. The approval amount includes the normal operation cost plus the explicit zero rollback
+increment; existing daily/monthly/task budget reservation rules still apply. Positive/unknown
+rollback costs are refused rather than estimated or charged as if an unused reserve were spent.
+
+The previous target must be a durable, previously healthy SiteForge production release that is
+currently published and whose index bytes still verify. A first launch, missing historical record,
+ambiguous history or unrelated provider deploy cannot claim rollback coverage; planning with
+rollback enabled refuses those cases. This is not a general restore-to-any-deploy feature.
+
+`POST /v1/releases/{deployment_id}/guard-production` is an explicit mutation entry point. It requires
+the original approving identity and owner scope or the site-scoped `guard_production` capability.
+The release client/workflow invokes it automatically after an observed production `health_failed`
+result when the approved rollback terms are present; immediate health failure during execution
+uses the same guard. The guard rechecks health before acting, refuses publisher drift/unknown state,
+and commits a durable rollback claim before its one provider restore request. The adapter rechecks
+the exact candidate and historical target and the current publication immediately before dispatch.
+
+The kill switch remains effective for new publications, spending and upload recovery. Its single
+emergency exception permits only this already-approved zero-cost rollback to the bound previous
+target. It cannot select another target, bypass the approving identity/expiry, change configuration,
+or create another authorization. An expired approval still blocks a new rollback claim.
+
+After a claim, process crashes, uncertain responses, repeated guards, lookup and reconciliation
+perform provider reads only; they never repeat the restore. A crash before the request can therefore
+remain `rollback_unknown` and require operator investigation. `rolled_back` means the exact previous
+publication and its index health were observed. `rollback_health_failed` means that target published
+but its health did not verify. Neither status means the new candidate succeeded; the production
+workflow exits unsuccessfully after rollback and preserves its evidence. There is no live-provider
+acceptance claim from mocked transport tests. Full production acceptance and operational gates
+remain pending.
 
 ## GitHub workflow wiring
 
@@ -216,7 +259,8 @@ transfer or attest a bundle**: the reviewed compiled bundle must already exist i
 
 The manually dispatched [production workflow](../../.github/workflows/production.yml) separately
 requires repository variable `SITEFORGE_PRODUCTION_ENABLED=true`, the `production` environment,
-the API URL and a properly scoped short-lived release secret. Inputs bind `commit_sha`,
+the API URL and a properly scoped short-lived release secret. Include `guard_production` only when
+that credential is intended to perform the exact preauthorized health recovery. Inputs bind `commit_sha`,
 `approval_id`, `preview_id` and stable `request_id`. It promotes the recorded preview rather than
 deploying checkout contents. Repository workflow variables are distinct from supervisor
 `SITEFORGE_RELEASE_*` configuration; both layers must be deliberately configured.
