@@ -338,8 +338,8 @@ def test_bounded_content_real_tool_runner_writes_cited_internal_draft(tmp_path, 
     assert result.status == "completed", result.risks
     assert len(client.completions) == 2
     assert all(call["model"] == "live-alias" for call in client.completions)
-    artifact = next(item for item in result.artifacts if "/write_draft-" in item["uri"])
-    draft = read_artifact(runner.root, artifact["uri"])
+    records = [read_artifact(runner.root, item["uri"]) for item in result.artifacts if item["kind"] == "json"]
+    draft = next(value for value in records if value.get("status") == "draft" and "paragraphs" in value)
     assert draft["published"] is False and draft["status"] == "draft"
     assert draft["paragraphs"][0]["source_ids"] == ["source_1"]
     assert not router.results_path.with_name(".run.lock").exists()

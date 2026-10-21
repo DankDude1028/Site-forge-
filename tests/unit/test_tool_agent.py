@@ -1,4 +1,7 @@
+import hashlib
 import json
+import tempfile
+from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from types import SimpleNamespace
@@ -10,7 +13,20 @@ import pytest
 from siteforge.contracts import AgentContext
 from siteforge.policy import AGENT_TOOLS
 from siteforge.site_factory import create_preview, read_artifact
-from siteforge.tool_agent import ToolAgentRunner
+from siteforge.tool_agent import REQUIRED, ROLE_STEPS, ToolAgentRunner
+
+
+def tool_receipts(root, tool, task=None):
+    directory = root / "receipts"
+    directory = directory / str(task.task_id) if task else directory
+    return [path for path in directory.rglob("*.json")
+            if read_artifact(root, path.relative_to(root).as_posix()).get("tool") == tool]
+
+
+def tool_artifact(root, result, tool):
+    accepted = {item["uri"] for item in result.artifacts}
+    return next(record["output"]["artifact"] for path in tool_receipts(root, tool)
+                if (record := read_artifact(root, path.relative_to(root).as_posix()))["output"]["artifact"]["uri"] in accepted)
 
 
 def call(name, args=None, identity="call_1"):
@@ -61,7 +77,7 @@ def test_native_two_turn_research_retains_sources_and_correct_tool_messages(tmp_
     assert second[-1]["role"] == "tool" and second[-1]["tool_call_id"] == "call_1"
     names = {item["function"]["name"] for item in client.schemas[0]}
     assert names == {"read_sources", "write_evidence", "finish"}
-    evidence = next(item for item in result.artifacts if "/write_evidence-" in item["uri"])
+    evidence = tool_artifact(tmp_path, result, "write_evidence")
     assert read_artifact(tmp_path, evidence["uri"])["verification_status"] == "unverified"
 
 
@@ -85,10 +101,10 @@ def test_deadline_missing_permissions_and_prose_cannot_authorize(tmp_path):
 def test_retry_replays_identical_action_without_duplicate_artifact(tmp_path):
     task = context()
     first = ToolAgentRunner(tmp_path, successful_research_client(), "local", context_length=32768).run("research", task, payload())
-    before = list((tmp_path / "bounded-label-planner/tool-actions").rglob("*.json"))
+    before = list((tmp_path / "actions" / str(task.task_id)).rglob("*.json"))
     second = ToolAgentRunner(tmp_path, successful_research_client(), "local", context_length=32768).run("research", task, payload())
     assert first.status == second.status == "completed"
-    assert before == list((tmp_path / "bounded-label-planner/tool-actions").rglob("*.json"))
+    assert before == list((tmp_path / "actions" / str(task.task_id)).rglob("*.json"))
     altered = payload()
     altered["sources"][0]["text"] = "Different task source"
     assert ToolAgentRunner(tmp_path, Client(), "local", context_length=32768).run("research", task, altered).status == "blocked"
@@ -103,7 +119,7 @@ def test_hallucinated_citations_and_unsupported_claims_cannot_finish(tmp_path, c
                     response(call("finish", {"summary": "Done", "confidence": 1}, "call_3")))
     result = ToolAgentRunner(tmp_path, client, "local", context_length=32768).run("research", context(), payload())
     assert result.status == "blocked"
-    assert not list((tmp_path / "bounded-label-planner").rglob("write_evidence-*.json"))
+    assert not tool_receipts(tmp_path, "write_evidence")
 
 
 def test_malformed_arguments_and_model_response_are_audited(tmp_path):
@@ -184,7 +200,7 @@ def test_portfolio_growth_and_revenue_perform_deterministic_internal_tools(tmp_p
     data["cost_records"] = []
     result = ToolAgentRunner(tmp_path, revenue, "local", context_length=32768).run("revenue", context("revenue"), data)
     assert result.status == "completed"
-    artifact = next(item for item in result.artifacts if "/reconcile_ledger-" in item["uri"])
+    artifact = tool_artifact(tmp_path, result, "reconcile_ledger")
     report = read_artifact(tmp_path, artifact["uri"])
     assert report["revenue"]["verified"] is None and report["revenue"]["unknown_records"] == 1
     assert report["operating_contribution"] is None
@@ -208,7 +224,7 @@ def test_source_dates_urls_attribution_and_hashed_provenance_are_preserved(tmp_p
     task = context(source_requirements=["dated", "attribution", "source_url", "verified_provider_evidence"])
     result = ToolAgentRunner(tmp_path, successful_research_client(), "local", context_length=32768).run("research", task, data)
     assert result.status == "completed"
-    artifact = next(item for item in result.artifacts if "/write_evidence-" in item["uri"])
+    artifact = tool_artifact(tmp_path, result, "write_evidence")
     packet = read_artifact(tmp_path, artifact["uri"])
     assert packet["sources"][0]["url"] == data["sources"][0]["url"]
     assert packet["sources"][0]["publisher"] == "Reviewed provider report"
@@ -248,7 +264,7 @@ def test_test_receipts_bind_exact_reviewed_image_and_source_bytes(tmp_path):
                                      context_length=32768).run("developer", task, payload())
             assert result.status == "completed"
         assert docker.return_value.run.call_count == 2
-    receipts = list((tmp_path / ".tool-receipts" / str(task.task_id)).glob("run_tests-*.json"))
+    receipts = tool_receipts(tmp_path, "run_tests", task)
     assert len(receipts) == 2
     records = [read_artifact(tmp_path, receipt.relative_to(tmp_path).as_posix())["output"]["data"] for receipt in receipts]
     assert len({record["image"] for record in records}) == 2
@@ -265,7 +281,7 @@ def test_source_change_during_container_execution_rejects_test_observation(tmp_p
         result = ToolAgentRunner(tmp_path, developer_client(), "local", "reviewed@sha256:" + "a" * 64,
                                  context_length=32768).run("developer", context("developer"), payload())
     assert result.status == "blocked"
-    assert not list((tmp_path / ".tool-receipts").rglob("run_tests-*.json"))
+    assert not tool_receipts(tmp_path, "run_tests")
 
 
 def test_ledger_actuals_require_reconciled_hash_provenance_and_exclude_fixtures(tmp_path):
@@ -288,7 +304,7 @@ def test_ledger_actuals_require_reconciled_hash_provenance_and_exclude_fixtures(
     ]
     result = ToolAgentRunner(tmp_path, revenue_client(), "local", context_length=32768).run("revenue", context("revenue"), data)
     assert result.status == "completed"
-    artifact = next(item for item in result.artifacts if "/reconcile_ledger-" in item["uri"])
+    artifact = tool_artifact(tmp_path, result, "reconcile_ledger")
     report = read_artifact(tmp_path, artifact["uri"])
     assert Decimal(report["revenue"]["verified"]["USD"]) == Decimal("0.1")
     assert report["revenue"]["estimated"] == {"USD": "100"}
@@ -310,11 +326,11 @@ def test_transport_failure_after_internal_action_can_replay_receipts_safely(tmp_
     first = ToolAgentRunner(tmp_path, UnavailableClient(response(call("read_sources"))), "local",
                             context_length=32768).run("research", task, payload())
     assert first.status == "blocked" and first.retryable and first.error_code == "local_model_unavailable"
-    assert len(list((tmp_path / ".tool-receipts" / str(task.task_id)).glob("read_sources-*.json"))) == 1
+    assert len(tool_receipts(tmp_path, "read_sources", task)) == 1
     retried = ToolAgentRunner(tmp_path, successful_research_client(), "local", context_length=32768).run(
         "research", task, payload())
     assert retried.status == "completed" and not retried.retryable and retried.error_code == "none"
-    assert len(list((tmp_path / ".tool-receipts" / str(task.task_id)).glob("read_sources-*.json"))) == 1
+    assert len(tool_receipts(tmp_path, "read_sources", task)) == 1
 
 
 @pytest.mark.parametrize("kind", ["incomplete_stream", "printed_tool_json", "malformed_native", "injected_tool"])
@@ -335,3 +351,82 @@ def test_untrusted_native_response_cannot_request_automatic_retry(tmp_path, kind
         "research", context(), payload())
     assert result.status == "blocked" and not result.retryable
     assert result.error_code == ("policy_blocked" if kind == "injected_tool" else "invalid_model_response")
+
+
+@pytest.mark.parametrize("role,steps", [
+    ("portfolio_director", ("score_opportunities", "propose_workflow")),
+    ("research", ("read_sources", "write_evidence")),
+    ("content", ("read_sources", "write_draft")),
+    ("developer", ("create_preview",)),
+    ("quality", ("inspect_preview", "write_quality_report")),
+    ("growth", ("read_analytics", "propose_experiment")),
+    ("revenue", ("read_revenue", "read_costs", "reconcile_ledger")),
+])
+def test_role_prompt_declares_prerequisite_order_without_weakening_finish(tmp_path, role, steps):
+    client = Client(response(call("finish", {"summary": "Premature completion", "confidence": .5})))
+    result = ToolAgentRunner(tmp_path, client, "local", context_length=32768).run(role, context(role), payload())
+    assert ROLE_STEPS[role] == steps and REQUIRED[role] == set(steps)
+    assert "Required order: " + " -> ".join((*steps, "finish")) + "." in client.messages[0][0]["content"]
+    assert result.status == "blocked" and "Mandatory role actions" in " ".join(result.risks)
+
+
+def test_long_windows_workspace_portfolio_full_hashes_and_cache_replay():
+    # Use a short system-temp base, then deliberately match a real long Windows
+    # workspace. Pytest's long test-name directories would hide whether our new
+    # paths fit the Win32 limit. No live workspace/benchmark directories are used.
+    with tempfile.TemporaryDirectory(prefix="sf-path-") as temporary:
+        base = Path(temporary).resolve()
+        padding = 126 - len(str(base)) - 1
+        assert 1 <= padding <= 200, "Fixture needs a short system temporary directory"
+        root = base / ("w" * padding)
+        root.mkdir()
+        assert len(str(root)) == 126
+        task = context("portfolio_director")
+        args = {"opportunity_id": "fixture-label-planner"}
+        def canonical(value):
+            return json.dumps(value, sort_keys=True, separators=(",", ":"), default=str).encode()
+        args_hash = hashlib.sha256(canonical(args)).hexdigest()
+        keys = {name: hashlib.sha256(canonical({"tool": name, "arguments_hash": args_hash})).hexdigest()
+                for name in ("score_opportunities", "propose_workflow")}
+        old = root / "native-agent-gemma-8k-v2/tool-actions" / str(task.task_id) / ("score_opportunities-" + args_hash + ".json.tmp")
+        assert len(str(old)) > 260  # The previous scheme reproduces the failing length.
+        data = payload()
+        data["site_slug"] = "native-agent-gemma-8k-v2"
+        data["opportunities"] = [{"id": args["opportunity_id"], "scores": {
+            "demand": 60, "low_competition": 60, "commercial_intent": 60,
+            "original_value": 60, "low_maintenance": 60}}]
+
+        def portfolio_client():
+            return Client(response(call("score_opportunities", args)),
+                          response(call("propose_workflow", args, "call_2"),
+                                   call("finish", {"summary": "Scored workflow proposed", "confidence": .8}, "call_3")))
+
+        first = ToolAgentRunner(root, portfolio_client(), "local", context_length=32768).run(
+            "portfolio_director", task, data)
+        assert first.status == "completed"
+        assert len(set(keys.values())) == 2 and all(len(key) == 64 for key in keys.values())
+        for name, key in keys.items():
+            uri = f"actions/{task.task_id}/{key}.json"
+            artifact = read_artifact(root, uri)
+            receipt = read_artifact(root, f"receipts/{task.task_id}/{key}.json")
+            assert receipt["tool"] == name and receipt["arguments_hash"] == args_hash
+            assert receipt["action_key"] == key and receipt["output"]["artifact"]["uri"] == uri
+            if name == "score_opportunities":
+                assert Decimal(artifact["weighted_score"]) == 60
+            else:
+                assert artifact["status"] == "proposed" and artifact["scheduled"] is False
+        # Includes the .tmp suffix used by the real artifact writer, not just
+        # the shorter final filename. This actually writes all files on Windows.
+        assert all(len(str(path)) + len(".tmp") < 260 for path in root.rglob("*.json"))
+        snapshot = {path.relative_to(root): path.read_bytes()
+                    for directory in (root / "actions", root / "receipts") for path in directory.rglob("*.json")}
+        from siteforge.tool_agent import write_artifact as original_write
+        def cache_must_not_reexecute(destination, relative, value):
+            assert not relative.startswith(("actions/", "receipts/")), "Cached actions must not execute or overwrite evidence"
+            return original_write(destination, relative, value)
+        with patch("siteforge.tool_agent.write_artifact", side_effect=cache_must_not_reexecute):
+            replay = ToolAgentRunner(root, portfolio_client(), "local", context_length=32768).run(
+                "portfolio_director", task, data)
+        assert replay.status == "completed"
+        assert snapshot == {path.relative_to(root): path.read_bytes()
+                            for directory in (root / "actions", root / "receipts") for path in directory.rglob("*.json")}
