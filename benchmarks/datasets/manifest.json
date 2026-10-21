@@ -1,0 +1,16 @@
+{
+  "version": "1.0.0",
+  "sha256": "a4c6e207245a6679c99f9653fbf9bbcf18474b417bc2bd5ea8e131a7075244da",
+  "tasks": 100,
+  "categories": {
+    "tool": 25,
+    "research": 20,
+    "coding": 20,
+    "content": 15,
+    "workflow": 15,
+    "efficiency": 5
+  },
+  "source_policy": "All source packets are versioned synthetic fixtures; this measures source fidelity, not live web knowledge.",
+  "coding_policy": "Executable tests use a bounded AST interpreter, never host exec/eval; no model code accesses OS or network.",
+  "content_limit": "Numeric fact/citation/advice constraints are objective proxies; editorial quality and originality require human review."
+}
