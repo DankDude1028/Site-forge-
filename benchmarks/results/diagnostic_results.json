@@ -1,0 +1,1221 @@
+{
+  "diagnostic_version": "1.1.0",
+  "generated_at": "2026-10-21T17:36:09.374645+00:00",
+  "policy": "Primary immutable scores unchanged; this diagnostic only removes a complete outer markdown JSON fence.",
+  "runs": [
+    {
+      "run_id": "32ef97aa-2d45-4d48-b057-c795e7c9aea6",
+      "source_model": "google/gemma-4-e4b",
+      "tasks": 100,
+      "primary_passed_original": 0,
+      "semantic_diagnostic_passed": 31,
+      "action_diagnostic_samples": 20,
+      "action_diagnostic_passed": 12,
+      "rows": [
+        {
+          "task_id": "tool-01",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1,
+          "action_diagnostic_match": true
+        },
+        {
+          "task_id": "tool-02",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": true
+        },
+        {
+          "task_id": "tool-03",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": false,
+          "literal_reason_diagnostic_match": false
+        },
+        {
+          "task_id": "tool-04",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": false,
+          "literal_reason_diagnostic_match": false
+        },
+        {
+          "task_id": "tool-05",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": false,
+          "literal_reason_diagnostic_match": false
+        },
+        {
+          "task_id": "tool-06",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": true
+        },
+        {
+          "task_id": "tool-07",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "tool-08",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": false
+        },
+        {
+          "task_id": "tool-09",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": true
+        },
+        {
+          "task_id": "tool-10",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": false
+        },
+        {
+          "task_id": "tool-11",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "tool-12",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1,
+          "action_diagnostic_match": true
+        },
+        {
+          "task_id": "tool-13",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1,
+          "action_diagnostic_match": true
+        },
+        {
+          "task_id": "tool-14",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": false
+        },
+        {
+          "task_id": "tool-15",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "tool-16",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": false,
+          "literal_reason_diagnostic_match": false
+        },
+        {
+          "task_id": "tool-17",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1,
+          "action_diagnostic_match": true
+        },
+        {
+          "task_id": "tool-18",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": true,
+          "literal_reason_diagnostic_match": false
+        },
+        {
+          "task_id": "tool-19",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1,
+          "action_diagnostic_match": true,
+          "literal_reason_diagnostic_match": true
+        },
+        {
+          "task_id": "tool-20",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "tool-21",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": true
+        },
+        {
+          "task_id": "tool-22",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "tool-23",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": false,
+          "literal_reason_diagnostic_match": false
+        },
+        {
+          "task_id": "tool-24",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1,
+          "action_diagnostic_match": true,
+          "literal_reason_diagnostic_match": true
+        },
+        {
+          "task_id": "tool-25",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": true,
+          "literal_reason_diagnostic_match": false
+        },
+        {
+          "task_id": "research-01",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-02",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "research-03",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "research-04",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-05",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-06",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-07",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-08",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-09",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-10",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "research-11",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "research-12",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "research-13",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-14",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "research-15",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "research-16",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-17",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-18",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-19",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-20",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "coding-01",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "coding-02",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-03",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-04",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-05",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "coding-06",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "coding-07",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-08",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "coding-09",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "coding-10",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "coding-11",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-12",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "coding-13",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "coding-14",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "coding-15",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-16",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-17",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "coding-18",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-19",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-20",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "content-01",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "content-02",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "content-03",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "content-04",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "content-05",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "content-06",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "content-07",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "content-08",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "content-09",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "content-10",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "content-11",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "content-12",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "content-13",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "content-14",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "content-15",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "workflow-01",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "workflow-02",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "workflow-03",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "workflow-04",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "workflow-05",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "workflow-06",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "workflow-07",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "workflow-08",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "workflow-09",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "workflow-10",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "workflow-11",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "workflow-12",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "workflow-13",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "workflow-14",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "workflow-15",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "efficiency-01",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "efficiency-02",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "efficiency-03",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "efficiency-04",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "efficiency-05",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        }
+      ]
+    },
+    {
+      "run_id": "2beecc0f-2036-46eb-93e2-4bd58b077da4",
+      "source_model": "google/gemma-4-e4b",
+      "tasks": 62,
+      "primary_passed_original": 33,
+      "semantic_diagnostic_passed": 33,
+      "action_diagnostic_samples": 20,
+      "action_diagnostic_passed": 12,
+      "rows": [
+        {
+          "task_id": "tool-01",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1,
+          "action_diagnostic_match": true
+        },
+        {
+          "task_id": "tool-02",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1,
+          "action_diagnostic_match": true
+        },
+        {
+          "task_id": "tool-03",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": false,
+          "literal_reason_diagnostic_match": false
+        },
+        {
+          "task_id": "tool-04",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": false,
+          "literal_reason_diagnostic_match": false
+        },
+        {
+          "task_id": "tool-05",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": false,
+          "literal_reason_diagnostic_match": false
+        },
+        {
+          "task_id": "tool-06",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1,
+          "action_diagnostic_match": true
+        },
+        {
+          "task_id": "tool-07",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "tool-08",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": false
+        },
+        {
+          "task_id": "tool-09",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": false
+        },
+        {
+          "task_id": "tool-10",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": false
+        },
+        {
+          "task_id": "tool-11",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "tool-12",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1,
+          "action_diagnostic_match": true
+        },
+        {
+          "task_id": "tool-13",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1,
+          "action_diagnostic_match": true
+        },
+        {
+          "task_id": "tool-14",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1,
+          "action_diagnostic_match": true
+        },
+        {
+          "task_id": "tool-15",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "tool-16",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": false,
+          "literal_reason_diagnostic_match": false
+        },
+        {
+          "task_id": "tool-17",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1,
+          "action_diagnostic_match": true
+        },
+        {
+          "task_id": "tool-18",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": true,
+          "literal_reason_diagnostic_match": false
+        },
+        {
+          "task_id": "tool-19",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": true,
+          "literal_reason_diagnostic_match": false
+        },
+        {
+          "task_id": "tool-20",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "tool-21",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1,
+          "action_diagnostic_match": true
+        },
+        {
+          "task_id": "tool-22",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "tool-23",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": true,
+          "literal_reason_diagnostic_match": false
+        },
+        {
+          "task_id": "tool-24",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1,
+          "action_diagnostic_match": true,
+          "literal_reason_diagnostic_match": true
+        },
+        {
+          "task_id": "tool-25",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0,
+          "action_diagnostic_match": false,
+          "literal_reason_diagnostic_match": false
+        },
+        {
+          "task_id": "research-01",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "research-02",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "research-03",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-04",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-05",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-06",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-07",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-08",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-09",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-10",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "research-11",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "research-12",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "research-13",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-14",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "research-15",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-16",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1
+        },
+        {
+          "task_id": "research-17",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-18",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-19",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "research-20",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "coding-01",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "coding-02",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-03",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-04",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-05",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "coding-06",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "coding-07",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-08",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-09",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-10",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-11",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-12",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-13",
+          "trial": 0,
+          "primary_passed_original": false,
+          "semantic_diagnostic_passed": false,
+          "semantic_diagnostic_score": 0
+        },
+        {
+          "task_id": "coding-14",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-15",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-16",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        },
+        {
+          "task_id": "coding-17",
+          "trial": 0,
+          "primary_passed_original": true,
+          "semantic_diagnostic_passed": true,
+          "semantic_diagnostic_score": 1.0
+        }
+      ]
+    }
+  ]
+}

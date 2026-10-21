@@ -170,12 +170,16 @@ Configured context belongs in the load call for chat completions. Capture effect
 4. Run gpt-oss-20b with explicitly recorded partial offload if required. Qwen3.8-27B and Qwen3.6-35B-A3B are optional offload/lower-bit comparisons; verify that the latter is actually downloaded before requesting it.
 5. Add [Qwen3.5-4B](https://lmstudio.ai/models/qwen/qwen3.5-4b) as a lightweight efficiency control if needed. Larger Qwen3-Coder-Next/180B-class models are not plausible ordinary full-GPU candidates for this hardware; size and active-parameter claims do not bypass storage limits.
 
-For primary agent, lightweight worker, coding, research, content, and QA, routing remains **PENDING
-until corrected v1.3 complete runs meet qualification and provide measured role-specific
-success/hour**. Exploratory v1.2 category outcomes cannot grant qualification. Calculate successful
-tasks divided by total elapsed hours, including retries, recovery, and amortized model switches;
-report confidence/sample counts. Enforce safety/schema/source-fidelity minimums before ranking
-efficiency. A role may have no qualifying local model. Keep a human review path. Optional paid cloud
-escalation remains disabled at a $0 budget until explicitly approved.
+The completed v1.3 comparison conditionally selects **Gemma E4B Q4_K_M at 8K for primary and
+lightweight worker**, and **gpt-oss-20b MXFP4 at 4K for coding, research and content**. QA has no
+qualified model. See the [recorded routes](../../benchmarks/results/routing.json) and
+[measured report](../../benchmarks/results/report.md). These are fixed-budget, single-trial
+observations on this PC; timing differences are conditional and content scores check typed
+constraints rather than editorial originality. Each required category must independently meet
+the sample and success floors before successful tasks/hour ranks a route. Exploratory v1.0–v1.2
+outcomes cannot qualify a role. E4B 16K/32K results cover five short efficiency probes each, not
+full quality suites or long-prompt retrieval. Routing requires matching already-loaded settings
+and never auto-loads a model. Keep a human review path. Optional paid cloud escalation remains
+disabled at a $0 budget until explicitly approved.
 
 Electricity cost requires measured energy or an explicitly labeled estimate and an operator-provided tariff. GPU utilization or TDP alone does not establish energy consumption. No cloud API price or realized revenue has been inferred from these local experiments.
