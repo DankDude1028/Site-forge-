@@ -19,7 +19,7 @@ def main():
     parser.add_argument("--results", type=Path, default=Path("benchmarks/results/results.json"))
     args = parser.parse_args()
     payload = json.loads(args.results.read_text(encoding="utf-8"))
-    output: dict[str, Any] = {"diagnostic_version": "1.1.0", "generated_at": now(),
+    output: dict[str, Any] = {"diagnostic_version": "1.3.0", "generated_at": now(),
               "policy": "Primary immutable scores unchanged; this diagnostic only removes a complete outer markdown JSON fence.", "runs": []}
     for run in payload.get("runs", []):
         version = run["dataset_version"]
@@ -33,7 +33,7 @@ def main():
             if row.get("warmup"):
                 continue
             text = row.get("completion", {}).get("text", "")
-            result = grade(by_id[row["task_id"]], text)
+            result = grade(by_id[row["task_id"]], text, finish_reason=row.get("completion", {}).get("finish_reason"))
             diagnostic = result.get("diagnostic_fence_stripped", result)
             item = {"task_id": row["task_id"], "trial": row["trial"], "primary_passed_original": row["passed"],
                     "semantic_diagnostic_passed": diagnostic["passed"], "semantic_diagnostic_score": diagnostic["score"]}

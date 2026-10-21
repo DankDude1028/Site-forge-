@@ -56,7 +56,7 @@ def router(tmp_path):
     result_path.write_text(json.dumps({"runs": [{"status": "complete", "synthetic": False,
         "model": "old-benchmark-alias", "source_model": "publisher/winner", "quantization": "Q4_K_M",
         "context": 4096, "actual_context": 4096, "parallel_verified": True,
-        "dataset_version": "1.2.0", "dataset_sha256": "versioned-fixture", "settings": {"parallel": 1},
+        "dataset_version": "1.3.0", "dataset_sha256": "versioned-fixture", "settings": {"parallel": 1},
         "results": rows}]}), encoding="utf-8")
     return ModelRouter(result_path)
 

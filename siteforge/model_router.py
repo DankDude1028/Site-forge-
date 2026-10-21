@@ -16,7 +16,7 @@ ROLE_CATEGORIES = {
     "coding": {"coding"}, "research": {"research"}, "content": {"content"},
     "qa": {"coding", "research", "tool"},
 }
-QUALIFIED_DATASET_VERSIONS = frozenset({"1.2.0"})
+QUALIFIED_DATASET_VERSIONS = frozenset({"1.3.0"})
 
 
 @dataclass(frozen=True)

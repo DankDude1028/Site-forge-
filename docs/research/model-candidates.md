@@ -9,6 +9,30 @@ Research date: **2026-10-21**. Target: Windows 11, RTX 4070 Ti with 12 GB VRAM, 
 - **Local inventory** means the local inspection performed during this implementation session. Preserve the raw environment and model inventory with benchmark output; inventory alone is not a benchmark.
 - **Estimate** means an explicit planning calculation. **Pending** means the corresponding experiment has not completed.
 
+## Local benchmark contract correction, 2026-10-21
+
+Fixture v1.2 is **exploratory**, alongside v1.0/v1.1. An independent review found prompt/grader
+contract defects: workflow questions required exact serialized action labels that the prompts did
+not fully specify. A reasonable recovery plan could fail on an undisclosed spelling or serialization
+choice. The full task set is being checked for agreement between instructions, response schemas,
+types and expected values. This is a harness defect; strict totals cannot be interpreted solely as
+model reasoning failures or as final quality ranks.
+
+Preserve all previous raw outputs, strict grades and performance measurements, including prior
+research, content and coding outcomes. They remain dated diagnostic observations. Do not silently
+rescore them, relabel their fixture version or use an apparent category threshold to grant an
+automatic qualified route. **No previous fixture aggregate establishes a routing winner.**
+
+Corrected v1.3 must make the canonical contract explicit, pass independent review and be measured
+again through actual local inference. The planned comparison uses Gemma E4B at 8K and GPT-OSS,
+Qwen3.5-9B and Gemma 12B QAT at 4K, all with verified parallelism one. These are planned settings,
+not completed measurements. Different contexts make hardware/throughput comparisons conditional.
+New fixture hashes, settings, source/quant/context identity, raw responses, full task coverage and
+the new qualification version must accompany results. Automatic role routes remain unqualified
+until corrected v1.3 runs pass the required checks. Final counts and winners are pending in the
+[generated benchmark report](../../benchmarks/results/report.md), which should always be read with
+its version and limitation notes.
+
 ## Names, licenses, and compatibility
 
 Every candidate explicitly requested in the handoff exists in an official model repository as of the research date. In particular, Qwen3.6-35B-A3B and Qwen3.8-27B are verified; the word "purported" in the handoff is not a reason to reject them. Instruction-tuned Gemma variants carry the `-it` suffix and should be used for agent evaluations.
@@ -41,9 +65,42 @@ The following numbers were read from the LM Studio Community publisher's file li
 
 **Local inventory communicated by the environment inspection on 2026-10-21:** RTX 4070 Ti, 12 GB VRAM, driver 617.42; 16 GB RAM with approximately 330 MB free at inspection. Downloaded models included Qwen3.8-27B around 17.74 GB Q4, Qwen3.6-27B around 17.48 GB Q4, gpt-oss-20b around 12.11 GB MXFP4, Gemma 4 E4B around 5.34 GB Q4, Gemma 4 12B QAT around 7.15 GB Q4_0, and Qwen3.5-9B around 5.63 GB Q4. Those inventory sizes can differ from the publisher table because the exact quantizer, revision, included tensors, and file accounting differ. The locally installed **Qwen3.6-27B is not Qwen3.6-35B-A3B**; never label a run with the other model's name.
 
-No tokens/sec, task success, TTFT, peak inference memory, or completed load duration is asserted here. Those values belong in measured benchmark records. Very low available system memory is a current feasibility constraint. Keep supervisor/database/browser workloads light during model tests, avoid parallel models, and retain failed/OOM/timeout runs as evidence. Do not silently report only successful runs.
+No tokens/sec, task success, TTFT, peak inference memory, or completed load duration is asserted in
+these hardware planning tables. Actual exploratory measurements belong in the versioned benchmark
+records and do not validate the corrected fixture in advance. Very low available system memory at
+the initial inspection was a feasibility constraint. Keep supervisor/database/browser workloads
+light during model tests, avoid parallel models, and retain failed/OOM/timeout runs as evidence.
+Do not silently report only successful runs.
 
 **Inference from storage and hardware, not a measurement:** E4B and Qwen3.5-9B Q4/Q6 have the best initial chance of full GPU placement with useful context. Gemma 12B Q4/QAT is a plausible larger candidate. Its Q6 has less room for context and runtime allocations. gpt-oss MXFP4 is marginal for full 12 GB placement; partial CPU placement may be necessary. Qwen 27B Q4 and 35B Q4 cannot fit their weights entirely in 12 GB and need substantial CPU offload or a separately evaluated lower-bit artifact. Sixteen GB total RAM is also restrictive for these larger models. SSD capacity does not substitute for RAM bandwidth or GPU memory.
+
+### Actual CLI estimates with no model loaded
+
+The [raw estimate-only capture](../../benchmarks/results/environment/fit-estimates.json), taken at
+18:41:34 UTC on 2026-10-21, supersedes the earlier estimate taken while E4B was loaded. Only the
+benchmark model alias was unloaded; `lms ps --json` returned `[]`. No other user applications were
+closed. Available physical RAM was 6,479,441,920 bytes (about 6.03 GiB) of 16,984,162,304 bytes total.
+The following are LM Studio CLI estimates at 4,096 context and prediction parallelism one for the
+installed Q4_K_M artifacts. They are not measured model loads, inference peaks or task results.
+
+| Installed model | Requested GPU placement | Estimated GPU memory | Estimated total memory |
+| --- | --- | ---: | ---: |
+| Qwen3.6-27B | Full (`max`) | 18.47 GiB | 18.47 GiB |
+| Qwen3.6-27B | 50% (`0.5`) | 9.57 GiB | 18.47 GiB |
+| Qwen3.8-27B | Full (`max`) | 18.75 GiB | 18.75 GiB |
+| Qwen3.8-27B | 50% (`0.5`) | 9.57 GiB | 18.75 GiB |
+
+The permissive resource guardrail said the model **may be loaded** for every estimate, including
+full-GPU estimates above the physical 12 GB VRAM. That message is not proof of usable fit. Full-GPU
+weights exceed this GPU's physical capacity. For 50% placement, subtracting estimated GPU memory
+from estimated total suggests roughly 8.90 and 9.18 GiB outside the GPU, respectively. This is a
+planning inference, not observed process RSS; both exceed the snapshot's 6.03 GiB available RAM
+and establish no additional runtime headroom.
+
+Actual 27B quality loads were deferred to avoid paging pressure. No actual 27B load failure,
+throughput, task quality or impossibility after a different resource configuration is claimed.
+No new quantizations were downloaded. Q5/Q6 and the exact requested Qwen3.6-35B-A3B are not
+installed and remain pending experiments; the local Qwen3.6-27B estimates do not represent 35B-A3B.
 
 OpenAI's [Transformers execution guide](https://developers.openai.com/cookbook/articles/gpt-oss/run-transformers) quotes about 16 GB VRAM for gpt-oss-20b MXFP4 and notes different hardware support for its native MXFP4 kernels. That is a Transformers runtime statement, not proof of the exact LM Studio GGUF memory footprint on Ada. The GGUF artifact and LM Studio engine must be measured separately; do not assume native Blackwell/Hopper FP4 acceleration on the RTX 4070 Ti.
 
@@ -113,6 +170,12 @@ Configured context belongs in the load call for chat completions. Capture effect
 4. Run gpt-oss-20b with explicitly recorded partial offload if required. Qwen3.8-27B and Qwen3.6-35B-A3B are optional offload/lower-bit comparisons; verify that the latter is actually downloaded before requesting it.
 5. Add [Qwen3.5-4B](https://lmstudio.ai/models/qwen/qwen3.5-4b) as a lightweight efficiency control if needed. Larger Qwen3-Coder-Next/180B-class models are not plausible ordinary full-GPU candidates for this hardware; size and active-parameter claims do not bypass storage limits.
 
-For primary agent, lightweight worker, coding, research, content, and QA, the routing status remains **PENDING until measured role-specific success/hour exists**. Calculate successful tasks divided by total elapsed hours, including retries, recovery, and amortized model switches; report confidence/sample counts. Enforce safety/schema/source-fidelity minimums before ranking efficiency. A role may have no qualifying local model. Keep a human review path. Optional paid cloud escalation remains disabled at a $0 budget until explicitly approved.
+For primary agent, lightweight worker, coding, research, content, and QA, routing remains **PENDING
+until corrected v1.3 complete runs meet qualification and provide measured role-specific
+success/hour**. Exploratory v1.2 category outcomes cannot grant qualification. Calculate successful
+tasks divided by total elapsed hours, including retries, recovery, and amortized model switches;
+report confidence/sample counts. Enforce safety/schema/source-fidelity minimums before ranking
+efficiency. A role may have no qualifying local model. Keep a human review path. Optional paid cloud
+escalation remains disabled at a $0 budget until explicitly approved.
 
 Electricity cost requires measured energy or an explicitly labeled estimate and an operator-provided tariff. GPU utilization or TDP alone does not establish energy consumption. No cloud API price or realized revenue has been inferred from these local experiments.

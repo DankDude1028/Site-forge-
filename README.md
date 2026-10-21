@@ -65,10 +65,11 @@ lms server start --bind 127.0.0.1 --port 1234
 
 See [benchmark instructions](benchmarks/README.md), [official model research](docs/research/model-candidates.md),
 and [measured report](benchmarks/results/report.md). Open `benchmarks/results/model_comparison.html`
-for charts. Use the same fixture version/settings for comparisons. Early 1.0/1.1 exploratory runs
-retain strict failures and document contract ambiguities; those versions cannot select production
-routing winners. A fenced answer or a short smoke test is never silently counted as a valid strict
-tool response. Content grading is a constraint proxy; editorial quality still requires review.
+for charts. Compare matching fixture versions and settings. Versions 1.0–1.2 retain exploratory
+outcomes with documented contract and grading defects; they cannot select routing winners.
+Version 1.3 defines workflow symbols, research types and typed content facts with values, meanings
+and units. A fenced answer or short smoke test cannot qualify a strict native tool response.
+Editorial quality, originality and free-prose factuality still require review.
 
 Unavailable quantizations, the requested 35B-A3B model when not installed, unrun contexts and genuine
 long-context retrieval tests remain pending. Published file sizes and KV estimates are labeled

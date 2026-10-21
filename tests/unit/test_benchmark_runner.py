@@ -50,7 +50,7 @@ def fake_environment(monkeypatch):
             expected = task["expected"]
             if task.get("tools"):
                 expected = {"tool_calls": [{"id": "fixture-call", "type": "function", "function": {"name": expected["action"], "arguments": json.dumps(expected["arguments"])}}]}
-            return Completion(json.dumps(expected), model, .02, .01, 5, 500, "stop", {"completion_tokens": 5}, 2)
+            return Completion(json.dumps(expected), model, .02, .01, 5, 500, "tool_calls" if task.get("tools") else "stop", {"completion_tokens": 5}, 2)
 
     def host_inventory():
         return {"lms_loaded_models": {"exit_code": 0, "stdout": json.dumps([{
@@ -120,3 +120,13 @@ def test_actual_windows_executable_version_is_recorded():
     version = windows_file_version(os.path.join(os.environ["SystemRoot"], "System32", "kernel32.dll"))
     assert version is not None
     assert re.fullmatch(r"\d+\.\d+\.\d+\.\d+", version["file_version"])
+
+
+def test_diagnostic_preserves_native_provenance_from_raw_completion(tmp_path, fake_environment, monkeypatch):
+    from benchmarks.runners import diagnose
+    module.run(arguments(tmp_path))
+    monkeypatch.setattr(sys, "argv", ["diagnose", "--results", str(tmp_path / "results.json")])
+    diagnose.main()
+    diagnostic = json.loads((tmp_path / "diagnostic_results.json").read_text(encoding="utf-8"))
+    assert diagnostic["runs"][0]["primary_passed_original"] == 2
+    assert diagnostic["runs"][0]["semantic_diagnostic_passed"] == 2

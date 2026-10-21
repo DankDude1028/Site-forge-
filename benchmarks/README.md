@@ -8,15 +8,20 @@ source fidelity and evidence handling rather than live web knowledge.
 Workflow benchmark tasks grade ordered recovery-plan proposals; actual durable
 queue/worker recovery is exercised by integration/endurance tests separately.
 
-Version 1.2.0 contains **100 distinct tasks**: 25 tool/JSON/policy (five native
+Version 1.3.0 contains **100 distinct tasks**: 25 tool/JSON/policy (five native
 OpenAI function calls), 20 source fidelity, 20 coding tasks with executable
 fixture tests, 15 factual utility drafts, 15 workflow/recovery plans, and five
 efficiency/context tasks. The prior v1.0.0 fixture remains immutable for the
 initial measured run. The v1.1 revision replaced nested response placeholders
 with JSON Schema and added actual native tool calling. v1.2 documents the
 global policy action/reason vocabulary and numeric/boolean/string/null research
-answer contract. Earlier raw strict scores are retained for diagnostics but
-their ambiguous contracts cannot establish model quality or routing winners. Compare
+answer contract. v1.2 still had undocumented workflow codes, ambiguous research
+status labels, and a content proxy that could accept incorrect units. Its raw
+scores remain exploratory and cannot authorize routing. v1.3 publishes a sorted
+global workflow API vocabulary with distractors, clarifies status/attempt/query
+contracts, requires native-call provenance, and grades typed content fact slots
+by meaning, numeric value and canonical unit. Earlier raw strict scores remain
+unchanged; they cannot establish model quality or routing winners. Compare
 models using the same fixture hash, system prompt, context, settings and task
 coverage; do not mix versions into one headline score.
 
@@ -100,9 +105,14 @@ contents would satisfy the task. Diagnostics never overwrite the primary score.
 To diagnose an older baseline that predates that field, run
 `python -m benchmarks.runners.diagnose`; it writes `diagnostic_results.json`
 separately and leaves all original scores and raw responses untouched.
-Content grading checks facts, citations and practical advice constraints. It is
+Content grading compares unordered typed fact slots `{key,value,unit}`, citations,
+title/advice bounds and an explicitly required literal advice keyword. Numbers
+are compared numerically, but booleans cannot substitute for numbers. Fabricated
+units, swapped meanings and duplicate slots fail. Claim-related phrases produce
+review warnings instead of primary failures; a correct negated claim is not
+failed by substring matching. This is
 not a claim that an objective grader can establish originality or editorial
-quality; these require human review. The coding interpreter supports a bounded
+quality or free-prose factuality; these require human review. The coding interpreter supports a bounded
 documented Python subset and executes tests against AST nodes, never `exec` or
 `eval`; no imports, I/O, reflection, recursion or arbitrary attributes.
 
@@ -114,7 +124,7 @@ accuracy across a filled 32K window. Large models that exceed actual RAM/VRAM
 headroom must remain PENDING instead of forcing an unsafe allocation.
 
 `siteforge.model_router.ModelRouter` selects complete, measured, verified-context
-runs using qualified v1.2.0 contracts only. It requires at least five samples and >=80% success in the relevant
+runs using qualified v1.3.0 contracts only. It requires at least five samples and >=80% success in the relevant
 role categories, then maximizes successful tasks/hour. Missing evidence raises
 `NoMeasuredModel`. Paid escalation has no implicit route.
 
@@ -127,5 +137,5 @@ role categories, then maximizes successful tasks/hour. Missing evidence raises
 ```
 
 Fixture generation is deterministic: `python -m benchmarks.datasets.build`
-rebuilds v1.2.0 only. Changing a fixture requires a version/hash change. Runner
+rebuilds v1.3.0 only. Changing a fixture requires a version/hash change. Runner
 refuses a file whose SHA256 disagrees with its versioned manifest.

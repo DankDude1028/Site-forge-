@@ -8,7 +8,7 @@
     16384,
     32768
   ],
-  "qualified_dataset_version": "1.2.0",
+  "qualified_dataset_version": "1.3.0",
   "candidates": [
     {
       "source_model": "google/gemma-4-e4b",

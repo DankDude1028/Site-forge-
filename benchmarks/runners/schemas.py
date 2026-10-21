@@ -19,6 +19,8 @@ def response_schema(task: dict[str, Any]) -> dict[str, Any] | None:
         return None
     if task["evaluator"] == "coding":
         return shape({"code": ""})
+    if task["evaluator"] == "content_slots":
+        return shape({"title": "", "facts": [{"key": "", "value": 0.0, "unit": ""}], "advice": "", "citations": [""]})
     if task["evaluator"] == "content":
         return shape({"title": "", "facts": [""], "advice": "", "citations": [""]})
     if task["category"] == "research":

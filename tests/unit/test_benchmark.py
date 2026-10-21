@@ -21,7 +21,7 @@ def test_versioned_dataset_and_real_category_counts():
             response = task["expected"]
             if task["evaluator"] == "native_tool":
                 response = {"tool_calls": [{"id": "fixture-call", "type": "function", "function": {"name": response["action"], "arguments": json.dumps(response["arguments"])}}]}
-            assert grade(task, json.dumps(response))["passed"]
+            assert grade(task, json.dumps(response), finish_reason="tool_calls" if task["evaluator"] == "native_tool" else "stop")["passed"]
 
 
 REFERENCE = [
@@ -104,7 +104,7 @@ def test_reports_pending_and_xss_safe(tmp_path):
 
 def test_report_keeps_all_comparison_rows_before_details(tmp_path):
     common = {"model": "alias", "context": 4096, "quantization": "Q4", "settings": {},
-              "status": "complete", "dataset_version": "1.2.0", "dataset_sha256": "fixture", "results": []}
+              "status": "complete", "dataset_version": "1.3.0", "dataset_sha256": "fixture", "results": []}
     write_reports(tmp_path, {"runs": [{**common, "source_model": "candidate-a", "run_id": "run-a"},
                                      {**common, "source_model": "candidate-b", "run_id": "run-b"}]})
     report = (tmp_path / "report.md").read_text()
@@ -114,9 +114,9 @@ def test_report_keeps_all_comparison_rows_before_details(tmp_path):
 def test_router_requires_complete_measured_qualified_results(tmp_path):
     path = tmp_path / "results.json"
     row = {"category": "coding", "passed": True, "wall_seconds": 2}
-    runs = [{"model": "slow", "parallel_verified": True, "dataset_version": "1.2.0", "context": 4096, "actual_context": 4096, "status": "complete", "results": [row] * 5},
-            {"model": "fast", "parallel_verified": True, "dataset_version": "1.2.0", "context": 4096, "actual_context": 4096, "status": "complete", "results": [{**row, "wall_seconds": 1}] * 5},
-            {"model": "partial", "parallel_verified": True, "dataset_version": "1.2.0", "context": 4096, "actual_context": 4096, "status": "partial", "results": [{**row, "wall_seconds": .01}] * 5}]
+    runs = [{"model": "slow", "parallel_verified": True, "dataset_version": "1.3.0", "context": 4096, "actual_context": 4096, "status": "complete", "results": [row] * 5},
+            {"model": "fast", "parallel_verified": True, "dataset_version": "1.3.0", "context": 4096, "actual_context": 4096, "status": "complete", "results": [{**row, "wall_seconds": 1}] * 5},
+            {"model": "partial", "parallel_verified": True, "dataset_version": "1.3.0", "context": 4096, "actual_context": 4096, "status": "partial", "results": [{**row, "wall_seconds": .01}] * 5}]
     path.write_text(json.dumps({"runs": runs}))
     router = ModelRouter(path)
     assert router.select("coding").model == "fast"
@@ -154,7 +154,7 @@ def test_secondary_fence_diagnostic_preserves_primary_failure():
 
 def test_router_does_not_mix_candidates_sharing_alias(tmp_path):
     path = tmp_path / "results.json"
-    common = {"model": "same-alias", "parallel_verified": True, "dataset_version": "1.2.0", "actual_context": 4096, "context": 4096, "status": "complete"}
+    common = {"model": "same-alias", "parallel_verified": True, "dataset_version": "1.3.0", "actual_context": 4096, "context": 4096, "status": "complete"}
     runs = [{**common, "source_model": "candidate-a", "results": [{"category": "tool", "passed": True, "wall_seconds": 1}] * 3},
             {**common, "source_model": "candidate-b", "results": [{"category": "tool", "passed": True, "wall_seconds": 1}] * 3}]
     path.write_text(json.dumps({"runs": runs}))
@@ -164,7 +164,7 @@ def test_router_does_not_mix_candidates_sharing_alias(tmp_path):
 
 def test_router_minimum_context_excludes_faster_smaller_run_and_keeps_exact_filter(tmp_path):
     path = tmp_path / "results.json"
-    common = {"source_model": "same-model", "model": "alias", "dataset_version": "1.2.0",
+    common = {"source_model": "same-model", "model": "alias", "dataset_version": "1.3.0",
               "status": "complete", "parallel_verified": True, "quantization": "Q4_K_M"}
     path.write_text(json.dumps({"runs": [
         {**common, "context": 4096, "actual_context": 4096, "results": [{"category": "coding", "passed": True, "wall_seconds": 1}] * 5},
@@ -183,3 +183,99 @@ def test_router_minimum_context_excludes_faster_smaller_run_and_keeps_exact_filt
 def test_router_rejects_invalid_minimum_context(value, tmp_path):
     with pytest.raises(ValueError, match="Minimum context"):
         ModelRouter(tmp_path / "missing.json").select("coding", minimum_context=value)
+
+
+def content_card(task):
+    return {"title": "Useful utility card", "facts": [dict(item) for item in task["expected"]["fact_slots"]],
+            "advice": "Consider " + task["expected"]["advice"][0] + " before choosing.",
+            "citations": task["expected"]["citations"][:]}
+
+
+@pytest.mark.parametrize("index", range(15))
+def test_typed_content_facts_have_satisfiable_reference(index):
+    tasks, _ = load_tasks()
+    task = [item for item in tasks if item["category"] == "content"][index]
+    assert grade(task, json.dumps(content_card(task)))["passed"]
+
+
+def test_content_fabricated_units_or_meanings_fail_and_negation_is_not_banned():
+    tasks, _ = load_tasks()
+    task = next(item for item in tasks if item["id"] == "content-01")
+    fabricated = {"title": "Useful utility card", "facts": ["120 elephants and 75 miles are certified by imaginary tests."],
+                  "advice": "Consider overflow.", "citations": ["S1"]}
+    assert not grade(task, json.dumps(fabricated))["passed"]
+    card = content_card(task)
+    card["facts"][0]["unit"] = "mile"
+    assert not grade(task, json.dumps(card))["passed"]
+    card = content_card(task)
+    card["facts"][0]["value"], card["facts"][1]["value"] = card["facts"][1]["value"], card["facts"][0]["value"]
+    assert not grade(task, json.dumps(card))["passed"]
+    card = content_card(task)
+    card["advice"] = "Check overflow capacity; avoiding overflow is not guaranteed."
+    result = grade(task, json.dumps(card))
+    assert result["passed"] and result["review_warnings"]
+
+
+def test_content_slots_ignore_order_allow_numeric_formats_reject_duplicate_and_bool():
+    tasks, _ = load_tasks()
+    task = next(item for item in tasks if item["id"] == "content-01")
+    card = content_card(task)
+    card["facts"].reverse()
+    for item in card["facts"]:
+        item["value"] = float(item["value"])
+    assert grade(task, json.dumps(card))["passed"]
+    card["facts"].append(dict(card["facts"][0]))
+    assert not grade(task, json.dumps(card))["passed"]
+    card = content_card(task)
+    card["facts"][0]["value"] = True
+    assert not grade(task, json.dumps(card))["schema_valid"]
+
+
+def test_native_tool_grading_requires_native_finish_provenance():
+    tasks, _ = load_tasks()
+    task = next(item for item in tasks if item["evaluator"] == "native_tool")
+    expected = task["expected"]
+    text = json.dumps({"tool_calls": [{"id": "call-1", "type": "function", "function": {
+        "name": expected["action"], "arguments": json.dumps(expected["arguments"])}}]})
+    assert not grade(task, text, finish_reason="stop")["passed"]
+    assert not grade(task, text)["passed"]
+    assert grade(task, text, finish_reason="tool_calls")["passed"]
+
+
+def test_research_declared_types_and_numeric_equivalence_are_consistent():
+    tasks, _ = load_tasks()
+    numeric = next(item for item in tasks if item["id"] == "research-02")
+    assert grade(numeric, '{"answer":93.0,"citations":["S2"]}')["passed"]
+    assert not grade(numeric, '{"answer":"93 liters","citations":["S2"]}')["schema_valid"]
+    boolean = next(item for item in tasks if item["id"] == "research-08")
+    assert not grade(boolean, '{"answer":0,"citations":["S1"]}')["schema_valid"]
+
+
+def test_workflow_vocabulary_is_declared_global_sorted_and_not_ordered_answer():
+    tasks, _ = load_tasks()
+    vocabularies = []
+    for task in [item for item in tasks if item["category"] == "workflow"]:
+        encoded = task["prompt"].split("Workflow API vocabulary (global, sorted; includes distractors): ", 1)[1].split("\nReturn JSON", 1)[0]
+        vocabulary = json.loads(encoded)
+        assert list(vocabulary) == sorted(vocabulary)
+        assert "deploy_production" in vocabulary and "discard_checkpoint" in vocabulary
+        for step in task["expected"]["steps"]:
+            declared = step.split(":", 1)[0] + ":<seconds>" if ":" in step else step
+            assert declared in vocabulary
+        vocabularies.append(vocabulary)
+    assert all(vocabulary == vocabularies[0] for vocabulary in vocabularies)
+
+
+def test_v12_evidence_is_exploratory_and_cannot_authorize_any_route(tmp_path):
+    path = tmp_path / "results.json"
+    path.write_text(json.dumps({"runs": [{"status": "complete", "dataset_version": "1.2.0", "model": "old",
+        "context": 4096, "actual_context": 4096, "parallel_verified": True,
+        "results": [{"category": "content", "passed": True, "wall_seconds": 1}] * 15}]}))
+    with pytest.raises(NoMeasuredModel):
+        ModelRouter(path).select("content")
+
+
+def test_prior_dataset_bytes_remain_immutable():
+    from benchmarks.runners.run import DATASET
+    _, manifest = load_tasks(DATASET.with_name("tasks.v1.2.jsonl"))
+    assert manifest["sha256"] == "b471484e20b0c1a6afef6bcc20242e6240a23b4c53a39dd68791a3d03b108d1d"
