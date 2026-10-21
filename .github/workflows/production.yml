@@ -1,0 +1,32 @@
+name: Approved production release
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha: {description: 'Exact reviewed commit', required: true}
+      approval_id: {description: 'SiteForge exact-action approval ID', required: true}
+      preview_id: {description: 'Healthy ready preview deployment UUID', required: true}
+      request_id: {description: 'Stable release idempotency key; reuse after uncertain result', required: true}
+permissions: {contents: read}
+jobs:
+  release:
+    if: vars.SITEFORGE_PRODUCTION_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12', cache: pip}
+      - run: pip install -r requirements.lock
+      - name: Promote exact approved artifact and apply its preauthorized health guard
+        env:
+          SITEFORGE_API_URL: '${{ vars.SITEFORGE_API_URL }}'
+          SITEFORGE_RELEASE_TOKEN: '${{ secrets.SITEFORGE_RELEASE_TOKEN }}'
+          RELEASE_PREVIEW_ID: '${{ inputs.preview_id }}'
+          RELEASE_APPROVAL_ID: '${{ inputs.approval_id }}'
+          RELEASE_COMMIT_SHA: '${{ inputs.commit_sha }}'
+          RELEASE_REQUEST_ID: '${{ inputs.request_id }}'
+        run: |
+          python -m siteforge.release_client promote --preview-id "$RELEASE_PREVIEW_ID" --approval-id "$RELEASE_APPROVAL_ID" --commit-sha "$RELEASE_COMMIT_SHA" --request-id "$RELEASE_REQUEST_ID" > release-receipt.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: release-receipt, path: release-receipt.json}

@@ -1,0 +1,87 @@
+{
+  "captured_at": "2026-10-21T20:01:57.331133+00:00",
+  "dataset_version": "1.3.0",
+  "dataset_sha256": "ac59d435468237015e8d16d778fa6e461c27c7f10a249af3c9bd388391f78369",
+  "criteria": {
+    "minimum_samples_per_required_category": 5,
+    "minimum_success_fraction_per_required_category": 0.8,
+    "ranking": "measured successful tasks per task-request/grading hour; loads and report overhead separate",
+    "scope": "Complete recorded 100-task suites; one trial, fixed1024 output tokens, verified context and parallel1. Timings affected by concurrent development; small speed differences are not statistically established."
+  },
+  "roles": {
+    "primary": {
+      "role": "primary",
+      "model": "google/gemma-4-e4b",
+      "context": 8192,
+      "success_per_hour": 1167.5607429990127,
+      "success_rate": 0.85,
+      "samples": 40,
+      "evidence": "benchmarks/results/results.json",
+      "inference_identifier": "siteforge-benchmark",
+      "quantization": "Q4_K_M",
+      "dataset_version": "1.3.0",
+      "status": "qualified_conditional"
+    },
+    "worker": {
+      "role": "worker",
+      "model": "google/gemma-4-e4b",
+      "context": 8192,
+      "success_per_hour": 1242.396261117041,
+      "success_rate": 0.8666666666666667,
+      "samples": 30,
+      "evidence": "benchmarks/results/results.json",
+      "inference_identifier": "siteforge-benchmark",
+      "quantization": "Q4_K_M",
+      "dataset_version": "1.3.0",
+      "status": "qualified_conditional"
+    },
+    "coding": {
+      "role": "coding",
+      "model": "openai/gpt-oss-20b",
+      "context": 4096,
+      "success_per_hour": 603.9060948168183,
+      "success_rate": 0.85,
+      "samples": 20,
+      "evidence": "benchmarks/results/results.json",
+      "inference_identifier": "siteforge-benchmark",
+      "quantization": "MXFP4",
+      "dataset_version": "1.3.0",
+      "status": "qualified_conditional"
+    },
+    "research": {
+      "role": "research",
+      "model": "openai/gpt-oss-20b",
+      "context": 4096,
+      "success_per_hour": 977.5824389156718,
+      "success_rate": 0.85,
+      "samples": 20,
+      "evidence": "benchmarks/results/results.json",
+      "inference_identifier": "siteforge-benchmark",
+      "quantization": "MXFP4",
+      "dataset_version": "1.3.0",
+      "status": "qualified_conditional"
+    },
+    "content": {
+      "role": "content",
+      "model": "openai/gpt-oss-20b",
+      "context": 4096,
+      "success_per_hour": 523.8971239361822,
+      "success_rate": 1.0,
+      "samples": 15,
+      "evidence": "benchmarks/results/results.json",
+      "inference_identifier": "siteforge-benchmark",
+      "quantization": "MXFP4",
+      "dataset_version": "1.3.0",
+      "status": "qualified_conditional"
+    },
+    "qa": {
+      "status": "unqualified",
+      "reason": "No qualified measured local model for qa"
+    }
+  },
+  "cloud_escalation": {
+    "status": "disabled",
+    "external_budget_usd": "0",
+    "requires_explicit_approval": true
+  }
+}

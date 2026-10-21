@@ -1,0 +1,149 @@
+{
+  "captured_at": "2026-10-21T18:41:34.475869+00:00",
+  "inventory": {
+    "captured_at": "2026-10-21T18:41:34.480869+00:00",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.14",
+    "logical_cpu_count": 16,
+    "psutil_available": true,
+    "lm_studio_application": {
+      "executable": "<USERPROFILE>\\AppData\\Local\\Programs\\LM Studio\\LM Studio.exe",
+      "version_info": {
+        "file_version": "0.4.0.0",
+        "product_version": "0.4.25.0"
+      },
+      "source": "running application Windows VERSIONINFO"
+    },
+    "physical_memory_bytes": 16984162304,
+    "available_memory_bytes": 6479441920,
+    "nvidia": {
+      "argv": [
+        "C:\\WINDOWS\\system32\\nvidia-smi.EXE",
+        "--query-gpu=name,driver_version,memory.total",
+        "--format=csv,noheader,nounits"
+      ],
+      "exit_code": 0,
+      "stdout": "NVIDIA GeForce RTX 4070 Ti, 617.42, 12282",
+      "stderr": ""
+    },
+    "lms_version": {
+      "argv": [
+        "<USERPROFILE>\\.lmstudio\\bin\\lms.EXE",
+        "--version"
+      ],
+      "exit_code": 0,
+      "stdout": "CLI commit: 69d945a",
+      "stderr": ""
+    },
+    "lms_loaded_models": {
+      "argv": [
+        "<USERPROFILE>\\.lmstudio\\bin\\lms.EXE",
+        "ps",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "[]",
+      "stderr": ""
+    }
+  },
+  "records": [
+    {
+      "source_model": "qwen/qwen3.6-27b",
+      "gpu_placement": "max",
+      "context": 4096,
+      "kind": "LM Studio resource estimate only; no model load or inference",
+      "command": {
+        "argv": [
+          "<USERPROFILE>\\.lmstudio\\bin\\lms.EXE",
+          "load",
+          "qwen/qwen3.6-27b",
+          "--estimate-only",
+          "--context-length",
+          "4096",
+          "--parallel",
+          "1",
+          "--gpu",
+          "max",
+          "--yes"
+        ],
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "Model: qwen/qwen3.6-27b\nContext Length: 4,096\nGPU Offload: 100%\nEstimated GPU Memory:   18.47 GiB\nEstimated Total Memory: 18.47 GiB\n\nEstimate: This model may be loaded based on your resource guardrails settings."
+      }
+    },
+    {
+      "source_model": "qwen/qwen3.6-27b",
+      "gpu_placement": "0.5",
+      "context": 4096,
+      "kind": "LM Studio resource estimate only; no model load or inference",
+      "command": {
+        "argv": [
+          "<USERPROFILE>\\.lmstudio\\bin\\lms.EXE",
+          "load",
+          "qwen/qwen3.6-27b",
+          "--estimate-only",
+          "--context-length",
+          "4096",
+          "--parallel",
+          "1",
+          "--gpu",
+          "0.5",
+          "--yes"
+        ],
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "Model: qwen/qwen3.6-27b\nContext Length: 4,096\nGPU Offload: 50%\nEstimated GPU Memory:   9.57 GiB\nEstimated Total Memory: 18.47 GiB\n\nEstimate: This model may be loaded based on your resource guardrails settings."
+      }
+    },
+    {
+      "source_model": "qwen/qwen3.8-27b",
+      "gpu_placement": "max",
+      "context": 4096,
+      "kind": "LM Studio resource estimate only; no model load or inference",
+      "command": {
+        "argv": [
+          "<USERPROFILE>\\.lmstudio\\bin\\lms.EXE",
+          "load",
+          "qwen/qwen3.8-27b",
+          "--estimate-only",
+          "--context-length",
+          "4096",
+          "--parallel",
+          "1",
+          "--gpu",
+          "max",
+          "--yes"
+        ],
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "Model: qwen/qwen3.8-27b\nContext Length: 4,096\nGPU Offload: 100%\nEstimated GPU Memory:   18.75 GiB\nEstimated Total Memory: 18.75 GiB\n\nEstimate: This model may be loaded based on your resource guardrails settings."
+      }
+    },
+    {
+      "source_model": "qwen/qwen3.8-27b",
+      "gpu_placement": "0.5",
+      "context": 4096,
+      "kind": "LM Studio resource estimate only; no model load or inference",
+      "command": {
+        "argv": [
+          "<USERPROFILE>\\.lmstudio\\bin\\lms.EXE",
+          "load",
+          "qwen/qwen3.8-27b",
+          "--estimate-only",
+          "--context-length",
+          "4096",
+          "--parallel",
+          "1",
+          "--gpu",
+          "0.5",
+          "--yes"
+        ],
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "Model: qwen/qwen3.8-27b\nContext Length: 4,096\nGPU Offload: 50%\nEstimated GPU Memory:   9.57 GiB\nEstimated Total Memory: 18.75 GiB\n\nEstimate: This model may be loaded based on your resource guardrails settings."
+      }
+    }
+  ],
+  "quality_status": "PENDING: estimates do not demonstrate usable load, speed, quality or RAM/offload headroom",
+  "quantization_status": "Only installed Q4_K_M artifacts considered; Q5/Q6 and exact 35B-A3B are not installed"
+}

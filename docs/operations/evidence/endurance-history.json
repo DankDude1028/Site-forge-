@@ -1,0 +1,193 @@
+{
+  "captured_at": "2026-10-21T20:43:48.671341+00:00",
+  "scope": "Separate source-bound observations. Never sum time or tasks across these runs.",
+  "runs": [
+    {
+      "local_report": "runtime/endurance/report.json",
+      "run_id": "4c1ec950-2bc9-4ec9-9ffa-708465746539",
+      "kind": "72-hour fixture endurance",
+      "status": "interrupted_for_source_update",
+      "started_at": "2026-10-21T17:50:40.036688+00:00",
+      "implementation_sha256": null,
+      "active_seconds": 2234.109999999986,
+      "completed_tasks": 12,
+      "failure_count": 0
+    },
+    {
+      "local_report": "runtime/endurance-4970-smoke/report.json",
+      "run_id": "8b25b66f-705d-4784-8c90-37454ca4b9d7",
+      "kind": "72-hour fixture endurance",
+      "status": "smoke_passed",
+      "started_at": "2026-10-21T20:03:04.481944+00:00",
+      "implementation_sha256": "da61714d800417505eb33c646b0fab7ec758f347a655acf3af0a3f559cc3c47f",
+      "active_seconds": 11.719000000011874,
+      "completed_tasks": 9,
+      "failure_count": 0
+    },
+    {
+      "local_report": "runtime/endurance-6ef15a0-smoke/report.json",
+      "run_id": "14213299-86be-4f82-8122-7e0f5006cb29",
+      "kind": "smoke",
+      "status": "smoke_passed",
+      "started_at": "2026-10-21T20:43:12.246643+00:00",
+      "implementation_sha256": "5c5e92decd949cce6f959f60fcedeb7f35b8c65d6abcdad9404351b8c85dae82",
+      "active_seconds": 10.812999999994645,
+      "completed_tasks": 9,
+      "failure_count": 0
+    },
+    {
+      "local_report": "runtime/endurance-992735c-smoke/report.json",
+      "run_id": "7e58a8f7-d50c-4e88-8921-6b5389a40547",
+      "kind": "smoke",
+      "status": "smoke_passed",
+      "started_at": "2026-10-21T20:40:17.126862+00:00",
+      "implementation_sha256": "308b1a56e12e4436d43a4bcbd416c518dfb698b5def7a25949b6921183f2eddd",
+      "active_seconds": 10.84399999998277,
+      "completed_tasks": 9,
+      "failure_count": 0
+    },
+    {
+      "local_report": "runtime/endurance-before-fence-fix-interrupted/report.json",
+      "run_id": "89f64a27-55ff-4fcd-b2d5-8a9a02c0e17a",
+      "kind": "72-hour fixture endurance",
+      "status": "interrupted",
+      "started_at": "2026-10-21T20:29:38.046503+00:00",
+      "implementation_sha256": "8f9f08015c17206d11cdf55c0a1d8d641275a191ecf511fcb7a050015a504703",
+      "active_seconds": 169.1720000000205,
+      "completed_tasks": 3,
+      "failure_count": 0
+    },
+    {
+      "local_report": "runtime/endurance-before-release-interrupted/report.json",
+      "run_id": "53eac094-356e-4121-b8c7-92a8040210f8",
+      "kind": "72-hour fixture endurance",
+      "status": "interrupted",
+      "started_at": "2026-10-21T20:03:04.481944+00:00",
+      "implementation_sha256": "da61714d800417505eb33c646b0fab7ec758f347a655acf3af0a3f559cc3c47f",
+      "active_seconds": 441.375,
+      "completed_tasks": 3,
+      "failure_count": 0
+    },
+    {
+      "local_report": "runtime/endurance-build-test-interrupted/report.json",
+      "run_id": "e2638a4c-6b84-4c28-b46a-ad301372ea8a",
+      "kind": "72-hour fixture endurance",
+      "status": "interrupted",
+      "started_at": "2026-10-21T20:40:16.802611+00:00",
+      "implementation_sha256": "308b1a56e12e4436d43a4bcbd416c518dfb698b5def7a25949b6921183f2eddd",
+      "active_seconds": 75.71900000001187,
+      "completed_tasks": 3,
+      "failure_count": 0
+    },
+    {
+      "local_report": "runtime/endurance-current/report.json",
+      "run_id": "65fd89a4-a8d0-42cd-8e1e-8dae5a5a61f9",
+      "kind": "72-hour fixture endurance",
+      "status": "interrupted_for_source_update",
+      "started_at": "2026-10-21T19:15:49.030863+00:00",
+      "implementation_sha256": "8d5b871cb113493be94eeac2bf6e5844a7a528762ff3dca4c1fa1d606af86975",
+      "active_seconds": 225.76500000001397,
+      "completed_tasks": 3,
+      "failure_count": 0
+    },
+    {
+      "local_report": "runtime/endurance-current-smoke/report.json",
+      "run_id": "265ce755-1a12-4708-a12c-9328afc649f3",
+      "kind": "72-hour fixture endurance",
+      "status": "smoke_passed",
+      "started_at": "2026-10-21T19:15:23.195862+00:00",
+      "implementation_sha256": "8d5b871cb113493be94eeac2bf6e5844a7a528762ff3dca4c1fa1d606af86975",
+      "active_seconds": 13.51500000001397,
+      "completed_tasks": 9,
+      "failure_count": 0
+    },
+    {
+      "local_report": "runtime/endurance-final/report.json",
+      "run_id": "d5dadf17-189c-4a1b-8df7-a3d2d77de910",
+      "kind": "72-hour fixture endurance",
+      "status": "interrupted_for_source_update",
+      "started_at": "2026-10-21T18:30:48.210469+00:00",
+      "implementation_sha256": "49d8bb14f6c552f2886d82390cde7e8b8ae3db7ae5b00c3989f6bd90516ccdab",
+      "active_seconds": 300.6720000000205,
+      "completed_tasks": 3,
+      "failure_count": 0
+    },
+    {
+      "local_report": "runtime/endurance-final-source/report.json",
+      "run_id": "30d00b7f-dc31-4571-b54f-5a0d2c432a26",
+      "kind": "72-hour fixture endurance",
+      "status": "running",
+      "started_at": "2026-10-21T20:43:11.997084+00:00",
+      "implementation_sha256": "5c5e92decd949cce6f959f60fcedeb7f35b8c65d6abcdad9404351b8c85dae82",
+      "active_seconds": 35.60999999998603,
+      "completed_tasks": 3,
+      "failure_count": 0
+    },
+    {
+      "local_report": "runtime/endurance-final-source-smoke/report.json",
+      "run_id": "df7fe90e-0bcd-4862-93c7-42b94f0960e0",
+      "kind": "72-hour fixture endurance",
+      "status": "smoke_passed",
+      "started_at": "2026-10-21T19:45:50.003811+00:00",
+      "implementation_sha256": "3d8949d23d05a2fc55a8e56089882fdbb4efb8efde75b820c8d57cf5678c4477",
+      "active_seconds": 13.51600000000326,
+      "completed_tasks": 9,
+      "failure_count": 0
+    },
+    {
+      "local_report": "runtime/endurance-final-v13/report.json",
+      "run_id": "81cbae59-89b9-4912-98a1-783476d73a6a",
+      "kind": "72-hour fixture endurance",
+      "status": "interrupted_for_source_update",
+      "started_at": "2026-10-21T18:48:50.714501+00:00",
+      "implementation_sha256": "52b6f2f1397f3aaf0dfc05175d7a441e2fd13e57c0c7907d642a3179c7058541",
+      "active_seconds": 341.5789999999979,
+      "completed_tasks": 3,
+      "failure_count": 0
+    },
+    {
+      "local_report": "runtime/endurance-portability-interrupted/report.json",
+      "run_id": "77430dcc-7a82-4dff-a0e6-0be1aecf7e13",
+      "kind": "72-hour fixture endurance",
+      "status": "interrupted_for_source_update",
+      "started_at": "2026-10-21T19:46:54.314595+00:00",
+      "implementation_sha256": "3d8949d23d05a2fc55a8e56089882fdbb4efb8efde75b820c8d57cf5678c4477",
+      "active_seconds": 80.64100000000326,
+      "completed_tasks": 3,
+      "failure_count": 0
+    },
+    {
+      "local_report": "runtime/endurance-release-fixed-smoke/report.json",
+      "run_id": "41854d38-e49b-487a-9df5-12a492994357",
+      "kind": "smoke",
+      "status": "smoke_passed",
+      "started_at": "2026-10-21T20:29:38.402616+00:00",
+      "implementation_sha256": "8f9f08015c17206d11cdf55c0a1d8d641275a191ecf511fcb7a050015a504703",
+      "active_seconds": 14.687000000005355,
+      "completed_tasks": 9,
+      "failure_count": 0
+    },
+    {
+      "local_report": "runtime/endurance-smoke/report.json",
+      "run_id": "10af2bc9-64c4-489a-a6c8-7363fb1b79c7",
+      "kind": "smoke",
+      "status": "smoke_passed",
+      "started_at": "2026-10-21T17:28:27.362139+00:00",
+      "implementation_sha256": null,
+      "active_seconds": 7.155999999988126,
+      "completed_tasks": 6,
+      "failure_count": 0
+    },
+    {
+      "local_report": "runtime/endurance-smoke-v2/report.json",
+      "run_id": "06ddc8f1-ebc1-40ca-9e35-3b9a9d067d8a",
+      "kind": "smoke",
+      "status": "smoke_passed",
+      "started_at": "2026-10-21T17:50:26.884551+00:00",
+      "implementation_sha256": null,
+      "active_seconds": 10.90700000000652,
+      "completed_tasks": 9,
+      "failure_count": 0
+    }
+  ]
+}

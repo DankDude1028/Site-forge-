@@ -1,0 +1,12 @@
+.git
+.env
+.env.*
+!.env.example
+.venv
+runtime
+**/node_modules
+**/__pycache__
+**/dist
+**/.astro
+**/test-results
+**/.netlify

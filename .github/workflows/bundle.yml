@@ -1,0 +1,79 @@
+name: Prepare reviewed static bundle
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha: {description: 'Exact reviewed source commit SHA', required: true}
+      site_id: {description: 'Internal SiteForge site UUID', required: true}
+      mode:
+        description: 'Build variant; neither variant publishes'
+        required: true
+        type: choice
+        options: [preview, production]
+      canonical_origin: {description: 'Configured HTTPS production origin', required: true}
+      preview_id: {description: 'Production variant only: ready normal preview UUID', required: false}
+      preview_tree_sha256: {description: 'Production variant only: reviewed preview tree SHA256', required: false}
+permissions: {contents: read}
+jobs:
+  build:
+    if: vars.SITEFORGE_BUNDLES_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate exact source identity
+        env:
+          REVIEWED_COMMIT: '${{ inputs.commit_sha }}'
+        run: |
+          [[ "$REVIEWED_COMMIT" =~ ^([a-f0-9]{40}|[a-f0-9]{64})$ ]] || exit 1
+      - uses: actions/checkout@v4
+        with:
+          ref: '${{ inputs.commit_sha }}'
+          persist-credentials: false
+      - name: Confirm checked-out commit
+        env:
+          REVIEWED_COMMIT: '${{ inputs.commit_sha }}'
+        run: test "$(git rev-parse HEAD)" = "$REVIEWED_COMMIT"
+      - uses: actions/setup-node@v4
+        with: {node-version: '24', cache: npm, cache-dependency-path: 'packages/site-templates/label-roll-planner/package-lock.json'}
+      - name: Test and build without release credentials
+        working-directory: packages/site-templates/label-roll-planner
+        env:
+          SITEFORGE_BUILD_MODE: '${{ inputs.mode }}'
+          SITEFORGE_SITE_URL: '${{ inputs.canonical_origin }}'
+        run: npm ci && npm test && npm run typecheck && npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: compiled-static-bundle
+          path: packages/site-templates/label-roll-planner/dist
+          if-no-files-found: error
+  transfer:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: protected-preview
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '${{ github.workflow_sha }}'
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with: {name: compiled-static-bundle, path: runtime/compiled-bundle}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12', cache: pip}
+      - run: pip install -r requirements.lock
+      - name: Transfer hashes and bytes for separate owner review
+        env:
+          SITEFORGE_API_URL: '${{ vars.SITEFORGE_API_URL }}'
+          SITEFORGE_RELEASE_TOKEN: '${{ secrets.SITEFORGE_RELEASE_TOKEN }}'
+          BUNDLE_SITE_ID: '${{ inputs.site_id }}'
+          BUNDLE_COMMIT: '${{ inputs.commit_sha }}'
+          BUNDLE_MODE: '${{ inputs.mode }}'
+          BUNDLE_ORIGIN: '${{ inputs.canonical_origin }}'
+          BUNDLE_PREVIEW_ID: '${{ inputs.preview_id }}'
+          BUNDLE_PREVIEW_TREE: '${{ inputs.preview_tree_sha256 }}'
+        run: |
+          EXTRA=()
+          if [ "$BUNDLE_MODE" = production ]; then
+            EXTRA=(--preview-deployment-id "$BUNDLE_PREVIEW_ID" --source-preview-tree-sha256 "$BUNDLE_PREVIEW_TREE")
+          fi
+          python -m siteforge.bundle_client --directory runtime/compiled-bundle --site-id "$BUNDLE_SITE_ID" --commit-sha "$BUNDLE_COMMIT" --mode "$BUNDLE_MODE" --canonical-origin "$BUNDLE_ORIGIN" "${EXTRA[@]}" > bundle-receipt.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: bundle-receipt, path: bundle-receipt.json}

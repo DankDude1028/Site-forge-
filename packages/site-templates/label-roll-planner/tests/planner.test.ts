@@ -1,0 +1,38 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { planLabels } from '../src/lib/planner.ts';
+
+test('a real batch rounds the allowance and whole rolls independently', () => {
+  assert.deepEqual(planLabels({ quantity: 250, labelsPerItem: 2, wastePercent: 5,
+    labelsPerRoll: 500, rollsOnHand: 1 }), { baseLabels: 500, labelsNeeded: 525,
+    rollsRequired: 2, rollsToOrder: 1, labelsLeft: 475 });
+});
+test('exact capacity and on-hand stock need no unnecessary order', () => {
+  const result = planLabels({ quantity: 100, labelsPerItem: 1, wastePercent: 0,
+    labelsPerRoll: 100, rollsOnHand: 4 });
+  assert.equal(result.rollsToOrder, 0);
+  assert.equal(result.labelsLeft, 0);
+});
+test('a fractional allowance on a single item still reserves a whole label', () => {
+  assert.equal(planLabels({ quantity: 1, labelsPerItem: 1, wastePercent: 0.1,
+    labelsPerRoll: 1, rollsOnHand: 0 }).rollsRequired, 2);
+});
+test('invalid, fractional, nonfinite, negative and oversized counts are rejected', () => {
+  const base = { quantity: 250, labelsPerItem: 2, wastePercent: 5, labelsPerRoll: 500, rollsOnHand: 1 };
+  for (const bad of [{ quantity: 0 }, { quantity: 1.5 }, { quantity: 1_000_001 },
+    { labelsPerItem: 101 }, { labelsPerRoll: 0 }, { rollsOnHand: -1 },
+    { wastePercent: NaN }, { wastePercent: Infinity }, { wastePercent: -1 }, { wastePercent: 101 }]) {
+    assert.throws(() => planLabels({ ...base, ...bad }), RangeError);
+  }
+});
+test('larger batches cannot need fewer rolls and coverage always includes allowance', () => {
+  for (let quantity = 1; quantity < 3000; quantity += 17) {
+    const inputs = { quantity, labelsPerItem: 3, wastePercent: 7.5, labelsPerRoll: 240, rollsOnHand: 0 };
+    const current = planLabels(inputs);
+    const next = planLabels({ ...inputs, quantity: quantity + 1 });
+    assert.ok(next.rollsRequired >= current.rollsRequired);
+    assert.ok(current.labelsNeeded >= current.baseLabels);
+    assert.ok(current.rollsRequired * inputs.labelsPerRoll >= current.labelsNeeded);
+    assert.ok(current.labelsLeft >= 0 && current.labelsLeft < inputs.labelsPerRoll);
+  }
+});

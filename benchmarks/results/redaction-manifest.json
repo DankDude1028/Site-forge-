@@ -1,0 +1,238 @@
+{
+  "version": 1,
+  "generated_at": "2026-10-21T20:01:58.453822+00:00",
+  "scope": "USERPROFILE and hostname replacement in incidental metadata only; no prompt, model answer, native arguments, schema, task grade or hash redaction",
+  "placeholders": [
+    "<USERPROFILE>",
+    "<HOSTNAME>"
+  ],
+  "private_originals": "Exact original bytes preserved under ignored runtime/private-benchmarks/<UTC>/original; not uploaded",
+  "original_files": {
+    "diagnostic_results.json": {
+      "sha256": "eadd78fddb853050b3bf1f3dc3efa9e3394d183cd4c78e637463104fef2bc7e2",
+      "bytes": 37361
+    },
+    "environment/fit-estimates.json": {
+      "sha256": "6a0b045f8ee8072096d38d092e3797aa5cde81727b8029b1eba8d7d88293ead4",
+      "bytes": 4931
+    },
+    "environment/gpu.csv": {
+      "sha256": "72f40ec01adb036e28b7149bdc76d760a09c4c15a8b50fb1c87149248b77eaea",
+      "bytes": 89
+    },
+    "environment/hardware.json": {
+      "sha256": "fc5db2c166dd6e07e7bd68c1a48c0b4bd03a61290651de456babe571b7504eb0",
+      "bytes": 353
+    },
+    "environment/lmstudio-app.json": {
+      "sha256": "8ab8166466cbe3f25b2d65f86b4987e97e0d1254dc5c4fe2fbe650d437a9d128",
+      "bytes": 125
+    },
+    "environment/models.json": {
+      "sha256": "3d16a5f8754e8266b2af70fe6db795048556be8c94a825f437287756d0c3b528",
+      "bytes": 3278
+    },
+    "model_comparison.html": {
+      "sha256": "93478e9fb33e78905f62bd25f5d29083d0f9febe73864d6a8caf874d21cfd831",
+      "bytes": 26492
+    },
+    "qualification-session.json": {
+      "sha256": "a4aaeb0b2796c698398a42b108c42d28bc6ff2c67eab4f80112c81ef837a0cfe",
+      "bytes": 12119
+    },
+    "report.md": {
+      "sha256": "a9d332c096d56b1992579668a98d0c7756dc92ba9373c93e2e782ecbd8448e12",
+      "bytes": 34730
+    },
+    "results.csv": {
+      "sha256": "b00fd2af1e73444f31b8a8a8f4d0c6460c80429f3e122036fdb55112648a3142",
+      "bytes": 401417
+    },
+    "results.json": {
+      "sha256": "382e65234f807044805f40168c3c20bd7f323b9d83653bb378aaf7650a20fc49",
+      "bytes": 8653644
+    },
+    "routing.json": {
+      "sha256": "250ceed86bee09978f3cda9b4d539d663d50ce9c48e294b078ce7b5e39d05c61",
+      "bytes": 3056
+    }
+  },
+  "protected_evidence": {
+    "task_rows_unchanged": true,
+    "system_prompts_unchanged": true,
+    "prompt_hashes_verified": true,
+    "response_hashes_verified": true,
+    "completion_text_and_native_arguments_unchanged": true
+  },
+  "metadata_fields": {
+    "environment/fit-estimates.json": [
+      "/inventory/lm_studio_application/executable",
+      "/inventory/lms_loaded_models/argv/0",
+      "/inventory/lms_version/argv/0",
+      "/records/0/command/argv/0",
+      "/records/1/command/argv/0",
+      "/records/2/command/argv/0",
+      "/records/3/command/argv/0"
+    ],
+    "qualification-session.json": [
+      "/phases/0/command/0",
+      "/phases/1/command/0",
+      "/phases/2/command/0",
+      "/phases/3/command/0",
+      "/phases/4/command/0",
+      "/phases/5/command/0",
+      "/phases/6/command/0",
+      "/phases/7/command/0",
+      "/phases/8/command/0"
+    ],
+    "results.json": [
+      "/runs/0/inventories/0/lms_loaded_models/argv/0",
+      "/runs/0/inventories/0/lms_version/argv/0",
+      "/runs/1/inventories/0/lms_loaded_models/argv/0",
+      "/runs/1/inventories/0/lms_version/argv/0",
+      "/runs/10/inventories/0/lm_studio_application/executable",
+      "/runs/10/inventories/0/lms_loaded_models/argv/0",
+      "/runs/10/inventories/0/lms_version/argv/0",
+      "/runs/10/inventories/1/lm_studio_application/executable",
+      "/runs/10/inventories/1/lms_loaded_models/argv/0",
+      "/runs/10/inventories/1/lms_version/argv/0",
+      "/runs/10/load_command/argv/0",
+      "/runs/11/inventories/0/lm_studio_application/executable",
+      "/runs/11/inventories/0/lms_loaded_models/argv/0",
+      "/runs/11/inventories/0/lms_version/argv/0",
+      "/runs/11/inventories/1/lm_studio_application/executable",
+      "/runs/11/inventories/1/lms_loaded_models/argv/0",
+      "/runs/11/inventories/1/lms_version/argv/0",
+      "/runs/11/load_command/argv/0",
+      "/runs/12/inventories/0/lm_studio_application/executable",
+      "/runs/12/inventories/0/lms_loaded_models/argv/0",
+      "/runs/12/inventories/0/lms_version/argv/0",
+      "/runs/12/inventories/1/lm_studio_application/executable",
+      "/runs/12/inventories/1/lms_loaded_models/argv/0",
+      "/runs/12/inventories/1/lms_version/argv/0",
+      "/runs/12/load_command/argv/0",
+      "/runs/13/inventories/0/lm_studio_application/executable",
+      "/runs/13/inventories/0/lms_loaded_models/argv/0",
+      "/runs/13/inventories/0/lms_version/argv/0",
+      "/runs/13/inventories/1/lm_studio_application/executable",
+      "/runs/13/inventories/1/lms_loaded_models/argv/0",
+      "/runs/13/inventories/1/lms_version/argv/0",
+      "/runs/13/load_command/argv/0",
+      "/runs/14/inventories/0/lm_studio_application/executable",
+      "/runs/14/inventories/0/lms_loaded_models/argv/0",
+      "/runs/14/inventories/0/lms_version/argv/0",
+      "/runs/14/inventories/1/lm_studio_application/executable",
+      "/runs/14/inventories/1/lms_loaded_models/argv/0",
+      "/runs/14/inventories/1/lms_version/argv/0",
+      "/runs/14/load_command/argv/0",
+      "/runs/15/inventories/0/lm_studio_application/executable",
+      "/runs/15/inventories/0/lms_loaded_models/argv/0",
+      "/runs/15/inventories/0/lms_version/argv/0",
+      "/runs/15/inventories/1/lm_studio_application/executable",
+      "/runs/15/inventories/1/lms_loaded_models/argv/0",
+      "/runs/15/inventories/1/lms_version/argv/0",
+      "/runs/15/load_command/argv/0",
+      "/runs/2/inventories/0/lms_loaded_models/argv/0",
+      "/runs/2/inventories/0/lms_version/argv/0",
+      "/runs/3/inventories/0/lms_loaded_models/argv/0",
+      "/runs/3/inventories/0/lms_version/argv/0",
+      "/runs/3/inventories/1/lms_loaded_models/argv/0",
+      "/runs/3/inventories/1/lms_version/argv/0",
+      "/runs/3/load_command/argv/0",
+      "/runs/4/inventories/0/lm_studio_application/executable",
+      "/runs/4/inventories/0/lms_loaded_models/argv/0",
+      "/runs/4/inventories/0/lms_version/argv/0",
+      "/runs/4/inventories/1/lm_studio_application/executable",
+      "/runs/4/inventories/1/lms_loaded_models/argv/0",
+      "/runs/4/inventories/1/lms_version/argv/0",
+      "/runs/4/load_command/argv/0",
+      "/runs/5/inventories/0/lm_studio_application/executable",
+      "/runs/5/inventories/0/lms_loaded_models/argv/0",
+      "/runs/5/inventories/0/lms_version/argv/0",
+      "/runs/5/inventories/1/lm_studio_application/executable",
+      "/runs/5/inventories/1/lms_loaded_models/argv/0",
+      "/runs/5/inventories/1/lms_version/argv/0",
+      "/runs/5/load_command/argv/0",
+      "/runs/6/inventories/0/lm_studio_application/executable",
+      "/runs/6/inventories/0/lms_loaded_models/argv/0",
+      "/runs/6/inventories/0/lms_version/argv/0",
+      "/runs/6/inventories/1/lm_studio_application/executable",
+      "/runs/6/inventories/1/lms_loaded_models/argv/0",
+      "/runs/6/inventories/1/lms_version/argv/0",
+      "/runs/6/load_command/argv/0",
+      "/runs/7/inventories/0/lm_studio_application/executable",
+      "/runs/7/inventories/0/lms_loaded_models/argv/0",
+      "/runs/7/inventories/0/lms_version/argv/0",
+      "/runs/7/inventories/1/lm_studio_application/executable",
+      "/runs/7/inventories/1/lms_loaded_models/argv/0",
+      "/runs/7/inventories/1/lms_version/argv/0",
+      "/runs/7/load_command/argv/0",
+      "/runs/8/inventories/0/lm_studio_application/executable",
+      "/runs/8/inventories/0/lms_loaded_models/argv/0",
+      "/runs/8/inventories/0/lms_version/argv/0",
+      "/runs/8/inventories/1/lm_studio_application/executable",
+      "/runs/8/inventories/1/lms_loaded_models/argv/0",
+      "/runs/8/inventories/1/lms_version/argv/0",
+      "/runs/8/load_command/argv/0",
+      "/runs/9/inventories/0/lm_studio_application/executable",
+      "/runs/9/inventories/0/lms_loaded_models/argv/0",
+      "/runs/9/inventories/0/lms_version/argv/0",
+      "/runs/9/inventories/1/lm_studio_application/executable",
+      "/runs/9/inventories/1/lms_loaded_models/argv/0",
+      "/runs/9/inventories/1/lms_version/argv/0",
+      "/runs/9/load_command/argv/0"
+    ]
+  },
+  "credential_scan": "No selected credential-shaped patterns found; heuristic only",
+  "export_files": {
+    "diagnostic_results.json": {
+      "sha256": "eadd78fddb853050b3bf1f3dc3efa9e3394d183cd4c78e637463104fef2bc7e2",
+      "bytes": 37361
+    },
+    "environment/fit-estimates.json": {
+      "sha256": "582416710cc888683fcfecc71815a56b17f73b84aa74b3477532e5b118c67d4c",
+      "bytes": 4763
+    },
+    "environment/gpu.csv": {
+      "sha256": "72f40ec01adb036e28b7149bdc76d760a09c4c15a8b50fb1c87149248b77eaea",
+      "bytes": 89
+    },
+    "environment/hardware.json": {
+      "sha256": "b4110d2a394fce0b6f0f366360bf83029ea6f431c6be265c41c3e0da3f2f5876",
+      "bytes": 339
+    },
+    "environment/lmstudio-app.json": {
+      "sha256": "990f384342101e6cfda5b5bba90d27bbf14801814ec5bf37acf1006a523fc20d",
+      "bytes": 120
+    },
+    "environment/models.json": {
+      "sha256": "2a15cd99df9096b61ca07c7a6f5292f7de3c1af26552b11b76bb684ae453064a",
+      "bytes": 4223
+    },
+    "qualification-session.json": {
+      "sha256": "675ae828b3c184e3b08ff7267ee4bd5c92f33c553bd7a8e4a326644ad45d74b1",
+      "bytes": 11764
+    },
+    "results.json": {
+      "sha256": "3ee8891d0abd0ef1e6057c0d03cddcb7cee48e0c75d00840fdf5728938879ebb",
+      "bytes": 8653359
+    },
+    "routing.json": {
+      "sha256": "ff6439ce1f729cdc84c1c91ee474db119293291869062c936df8aa7d5f3fe091",
+      "bytes": 2969
+    },
+    "model_comparison.html": {
+      "sha256": "93478e9fb33e78905f62bd25f5d29083d0f9febe73864d6a8caf874d21cfd831",
+      "bytes": 26492
+    },
+    "results.csv": {
+      "sha256": "b00fd2af1e73444f31b8a8a8f4d0c6460c80429f3e122036fdb55112648a3142",
+      "bytes": 401417
+    },
+    "report.md": {
+      "sha256": "883408f28a34165fbae94842cd1714edbc45647dc6a58e6e575cd68b5dca67e6",
+      "bytes": 34729
+    }
+  },
+  "derived_formatting": "Removed trailing whitespace from the empty category heading in report.md; raw task evidence unchanged."
+}
