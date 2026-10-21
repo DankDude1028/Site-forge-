@@ -1,0 +1,185 @@
+{
+  "run_url": "https://github.com/DankDude1028/Site-forge-/actions/runs/39672699385",
+  "source_commit": "6ef15a0cf86cebd7eeb50d0801389825bb490fca",
+  "conclusion": "success",
+  "python": {
+    "passed": 526,
+    "skipped": 6,
+    "warnings": 1,
+    "seconds": 63.4,
+    "mypy_files": 28
+  },
+  "jobs": {
+    "python": "success",
+    "web": "success",
+    "container": "success"
+  },
+  "web": {
+    "dashboard_node_tests": 2,
+    "dashboard_playwright_tests": 3,
+    "utility_node_tests": 8,
+    "utility_playwright_tests": 4,
+    "actual_astro_build_modes": [
+      "preview",
+      "production"
+    ],
+    "builds_typechecks": "passed",
+    "npm_audits": "zero known vulnerabilities at scan time"
+  },
+  "docker": {
+    "actual_boundary_test_passed": true,
+    "tests": 1,
+    "seconds": 1.18,
+    "scope": "Hosted Linux, not Windows Docker acceptance"
+  },
+  "pip_audit": "No known vulnerabilities in locked requirements at scan time",
+  "python_artifact_id": 12380033711,
+  "selected_junit_cases": [
+    {
+      "class": "tests.integration.test_api",
+      "test": "test_postgres_atomic_skip_locked_claims_and_audit_trigger",
+      "seconds": 1.057,
+      "passed": true
+    },
+    {
+      "class": "tests.integration.test_bundle_api",
+      "test": "test_authenticated_static_transfer_seals_exact_bytes_without_provider_effect",
+      "seconds": 0.241,
+      "passed": true
+    },
+    {
+      "class": "tests.integration.test_encrypted_backup_restore",
+      "test": "test_actual_encrypted_backup_restore_preserves_all_tables_and_checkpoint",
+      "seconds": 1.082,
+      "passed": true
+    },
+    {
+      "class": "tests.integration.test_postgres_restore",
+      "test": "test_actual_postgres_dump_restore_preserves_queue_receipts_and_guards",
+      "seconds": 1.175,
+      "passed": true
+    },
+    {
+      "class": "tests.integration.test_release_api",
+      "test": "test_rollback_guard_requires_separate_site_capability_and_tenant",
+      "seconds": 0.153,
+      "passed": true
+    },
+    {
+      "class": "tests.integration.test_runtime_drill",
+      "test": "test_actual_api_and_worker_process_loss_preserves_checkpoint_and_recovers_chain",
+      "seconds": 18.31,
+      "passed": true
+    },
+    {
+      "class": "tests.integration.test_runtime_drill",
+      "test": "test_drill_refuses_existing_evidence_without_overwriting_it",
+      "seconds": 0.001,
+      "passed": true
+    },
+    {
+      "class": "tests.integration.test_runtime_drill",
+      "test": "test_failed_owned_server_start_is_bounded_cleaned_and_retained",
+      "seconds": 0.316,
+      "passed": true
+    },
+    {
+      "class": "tests.unit.test_backups",
+      "test": "test_uri_rejects_remote_unverified_tls_and_implicit_or_injected_settings[postgresql://user:password@db.example.test/database?sslmode=disable]",
+      "seconds": 0.001,
+      "passed": true
+    },
+    {
+      "class": "tests.unit.test_backups",
+      "test": "test_uri_rejects_remote_unverified_tls_and_implicit_or_injected_settings[postgresql://user:password@db.example.test/database?sslmode=require]",
+      "seconds": 0.001,
+      "passed": true
+    },
+    {
+      "class": "tests.unit.test_backups",
+      "test": "test_uri_rejects_remote_unverified_tls_and_implicit_or_injected_settings[postgresql://user:password@127.0.0.1/database?options=evil]",
+      "seconds": 0.001,
+      "passed": true
+    },
+    {
+      "class": "tests.unit.test_backups",
+      "test": "test_uri_rejects_remote_unverified_tls_and_implicit_or_injected_settings[postgresql://user:password@127.0.0.1/database?host=elsewhere]",
+      "seconds": 0.001,
+      "passed": true
+    },
+    {
+      "class": "tests.unit.test_backups",
+      "test": "test_uri_rejects_remote_unverified_tls_and_implicit_or_injected_settings[postgresql://user:password@127.0.0.1/unsafe%20database]",
+      "seconds": 0.001,
+      "passed": true
+    },
+    {
+      "class": "tests.unit.test_backups",
+      "test": "test_uri_rejects_remote_unverified_tls_and_implicit_or_injected_settings[postgresql://user@127.0.0.1/database]",
+      "seconds": 0.001,
+      "passed": true
+    },
+    {
+      "class": "tests.unit.test_backups",
+      "test": "test_uri_rejects_remote_unverified_tls_and_implicit_or_injected_settings[sqlite:///not-postgresql]",
+      "seconds": 0.001,
+      "passed": true
+    },
+    {
+      "class": "tests.unit.test_release",
+      "test": "test_preapproved_health_failure_rolls_back_once_and_verifies_previous_content",
+      "seconds": 0.438,
+      "passed": true
+    },
+    {
+      "class": "tests.unit.test_release",
+      "test": "test_normal_noindex_preview_is_never_a_production_artifact",
+      "seconds": 0.138,
+      "passed": true
+    },
+    {
+      "class": "tests.unit.test_release",
+      "test": "test_concurrent_health_guards_have_one_durable_rollback_claim",
+      "seconds": 0.475,
+      "passed": true
+    },
+    {
+      "class": "tests.unit.test_release",
+      "test": "test_stale_reconcile_cannot_unfence_pending_rollback_or_allow_new_publication[healthy]",
+      "seconds": 0.771,
+      "passed": true
+    },
+    {
+      "class": "tests.unit.test_release",
+      "test": "test_stale_reconcile_cannot_unfence_pending_rollback_or_allow_new_publication[health_failed]",
+      "seconds": 0.609,
+      "passed": true
+    },
+    {
+      "class": "tests.unit.test_release",
+      "test": "test_losing_guard_reconciles_peer_claim_after_forced_interleaving[after_health]",
+      "seconds": 0.429,
+      "passed": true
+    },
+    {
+      "class": "tests.unit.test_release",
+      "test": "test_losing_guard_reconciles_peer_claim_after_forced_interleaving[during_history]",
+      "seconds": 0.426,
+      "passed": true
+    },
+    {
+      "class": "tests.unit.test_utc_datetime",
+      "test": "test_type_preserves_postgres_aware_utc_and_only_repairs_sqlite_naive_reads",
+      "seconds": 0.001,
+      "passed": true
+    }
+  ],
+  "superseded_run": {
+    "source_commit": "992735c08c92685b5c773eebb343a062bdd37b59",
+    "run_url": "https://github.com/DankDude1028/Site-forge-/actions/runs/39672220415",
+    "python": "526 passed, 6 skipped, 1 warning",
+    "container": "passed",
+    "web_failure": "New Astro test attempted cross-device asset rename into /tmp; corrected with same-filesystem temporary output in 6ef15a0"
+  },
+  "scope": "Bounded CI/fixture verification; not production deployment or 72-hour acceptance"
+}
