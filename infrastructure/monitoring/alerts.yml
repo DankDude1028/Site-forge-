@@ -1,0 +1,13 @@
+groups:
+  - name: siteforge
+    rules:
+      - alert: SiteForgeUnavailable
+        expr: up{job="siteforge"} == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations: {summary: "SiteForge supervisor unavailable"}
+      - alert: SiteForgeWorkerOffline
+        expr: siteforge_worker_heartbeat_age_seconds > 180
+        for: 3m
+        labels: {severity: warning}
+        annotations: {summary: "GPU work waits until the Windows worker reconnects"}

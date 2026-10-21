@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: siteforge
+      POSTGRES_USER: siteforge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD locally}
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: ["postgres-data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U siteforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  api:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile
+    environment:
+      SITEFORGE_DATABASE_URL: postgresql+psycopg://siteforge:${POSTGRES_PASSWORD}@postgres:5432/siteforge
+      SITEFORGE_OWNER_TOKEN: ${SITEFORGE_OWNER_TOKEN:?Set a random owner token}
+      SITEFORGE_WORKER_TOKEN: ${SITEFORGE_WORKER_TOKEN:?Set a distinct random worker token}
+    ports: ["127.0.0.1:8080:8080"]
+    depends_on:
+      postgres: {condition: service_healthy}
+volumes:
+  postgres-data:
