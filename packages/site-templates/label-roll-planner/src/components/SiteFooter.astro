@@ -1,0 +1,8 @@
+---
+const { mode } = Astro.props;
+---
+<footer class="site-footer shell">
+  <span>Rollwise · label roll calculator{mode === 'preview' ? ' (preview)' : ''}</span>
+  <span>No ads. No affiliate links. No account needed.</span>
+  <a href="/privacy/">Privacy &amp; assumptions</a>
+</footer>

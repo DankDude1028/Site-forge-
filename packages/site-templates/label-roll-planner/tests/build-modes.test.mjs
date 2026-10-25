@@ -16,9 +16,20 @@ test('actual Astro preview and production outputs have separate complete SEO con
     for (const mode of ['preview', 'production']) {
       const origin = mode === 'production' ? 'https://rollwise.net' : 'https://preview.invalid';
       const out = join(temporary, mode);
+      const details = mode === 'production' ? { SITEFORGE_HOST_NAME: 'Netlify',
+        SITEFORGE_HOST_PRIVACY_URL: 'https://www.netlify.com/privacy/', SITEFORGE_CONTACT_EMAIL: 'hello@rollwise.net' }
+        : { SITEFORGE_HOST_NAME: '', SITEFORGE_HOST_PRIVACY_URL: '', SITEFORGE_CONTACT_EMAIL: '' };
       const build = spawnSync(process.execPath, ['node_modules/astro/bin/astro.mjs', 'build', '--outDir', out],
-        { cwd: root, env: { ...process.env, SITEFORGE_BUILD_MODE: mode, SITEFORGE_SITE_URL: origin }, encoding: 'utf8', timeout: 60_000 });
+        { cwd: root, env: { ...process.env, SITEFORGE_BUILD_MODE: mode, SITEFORGE_SITE_URL: origin, ...details }, encoding: 'utf8', timeout: 60_000 });
       assert.equal(build.status, 0, build.stderr + build.stdout);
+      const privacy = await readFile(join(out, 'privacy/index.html'), 'utf8');
+      assert.ok(!privacy.includes('synthetic research'), 'Internal research notes never reach visitors');
+      if (mode === 'production') {
+        assert.ok(privacy.includes('href="mailto:hello@rollwise.net"') && privacy.includes('href="https://www.netlify.com/privacy/"'));
+        assert.ok(!privacy.includes('added before launch'));
+      } else {
+        assert.ok(privacy.includes('added before launch'));
+      }
       for (const [path, route] of [['index.html', '/'], ['privacy/index.html', '/privacy/']]) {
         const html = await readFile(join(out, path), 'utf8');
         assert.ok(html.includes(`name="robots" content="${mode === 'production' ? 'index, follow' : 'noindex, nofollow'}"`));
@@ -32,6 +43,10 @@ test('actual Astro preview and production outputs have separate complete SEO con
       assert.ok(sitemap.includes(`<loc>${origin}/</loc>`));
       assert.ok(sitemap.includes(`<loc>${origin}/privacy/</loc>`));
     }
+    const missing = spawnSync(process.execPath, ['node_modules/astro/bin/astro.mjs', 'build', '--outDir', join(temporary, 'missing')],
+      { cwd: root, env: { ...process.env, SITEFORGE_BUILD_MODE: 'production', SITEFORGE_SITE_URL: 'https://rollwise.net',
+        SITEFORGE_HOST_NAME: '', SITEFORGE_HOST_PRIVACY_URL: '', SITEFORGE_CONTACT_EMAIL: '' }, encoding: 'utf8', timeout: 60_000 });
+    assert.notEqual(missing.status, 0, 'A production build without host and contact details must fail');
   } finally {
     // Resolve and verify the exact fresh direct child before any recursive deletion.
     const resolvedTemporary = await realpath(temporary);

@@ -1,6 +1,47 @@
 ---
+import '@fontsource/bricolage-grotesque/latin-700.css';
+import '@fontsource/source-sans-3/latin-400.css';
+import '@fontsource/source-sans-3/latin-600.css';
+import '../styles/site.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
 import { getSiteConfig } from '../../site-config.mjs';
+import { getLaunchDetails } from '../../launch-details.mjs';
 const config = getSiteConfig();
+const details = getLaunchDetails(config.mode);
 const canonical = new URL('/privacy/', Astro.site);
+const updated = '22 October 2026';
 ---
-<!doctype html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Privacy &amp; assumptions — Rollwise</title><meta name="robots" content={config.robots} /><link rel="canonical" href={canonical} /><meta name="description" content="How the calculator handles data and its planning assumptions." /></head><body><main style="max-width:680px;margin:60px auto;padding:24px;font:18px/1.7 Arial;color:#173d38"><a href="/">← Back to calculator</a><h1>Privacy &amp; assumptions</h1><p>The calculator runs in your browser. It does not send inputs to a server, use cookies, store your figures, load advertising, or contact analytics services. Hosting providers may process basic request logs; review the chosen host's privacy terms.</p><p>Results assume full, identical rolls. The waste percentage adds an allowance to the base label count. It does not model printer yield, roll leaders, label dimensions, or partially used rolls. Confirm those details with your printer.</p><p>{config.mode === 'preview' ? 'This is a private preview. ' : ''}This utility uses synthetic research; demand has not been independently validated. There are no affiliate links or enrolled monetization providers.</p></main></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy &amp; assumptions | Rollwise</title>
+    <meta name="robots" content={config.robots} />
+    <link rel="canonical" href={canonical} />
+    <meta name="description" content="How the Rollwise calculator handles your data, who hosts it, and the assumptions behind its numbers." />
+  </head>
+  <body>
+    <a href="#main" class="skip">Skip to content</a>
+    <SiteHeader mode={config.mode} />
+    <main id="main" class="shell prose">
+      <p><a href="/">Back to the calculator</a></p>
+      <h1>Privacy &amp; assumptions</h1>
+      <p class="updated">Last updated {updated}</p>
+      <h2>What happens to what you type</h2>
+      <p>The calculator runs entirely in your browser. The numbers you enter are not sent to a server or stored. Rollwise sets no cookies, runs no analytics and shows no ads or affiliate links.</p>
+      <h2>Hosting</h2>
+      {details.host
+        ? <p>Rollwise is hosted by {details.host}. Like most web hosts, {details.host} may keep basic request logs, such as IP addresses and the pages requested, to keep the site secure and running. See <a href={details.hostPrivacyUrl}>{details.host}'s privacy policy</a>.</p>
+        : <p>This preview is not published yet. The hosting provider and a link to its privacy policy are added before launch.</p>}
+      <h2>Contact</h2>
+      {details.contactEmail
+        ? <p>Questions or corrections: <a href={`mailto:${details.contactEmail}`}>{details.contactEmail}</a></p>
+        : <p>A contact address is added before launch.</p>}
+      <h2>Assumptions behind the numbers</h2>
+      <p>Results assume full, identical rolls. The extra allowance adds a percentage to the base label count for setup, misprints and the occasional crooked label. It is not a yield-loss rate, and it does not model printer yield, roll leaders, label dimensions or partly used rolls. Check those details with your printer.</p>
+    </main>
+    <SiteFooter mode={config.mode} />
+  </body>
+</html>
