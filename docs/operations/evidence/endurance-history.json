@@ -1,7 +1,19 @@
 {
-  "captured_at": "2026-10-21T20:43:48.671341+00:00",
+  "captured_at": "2026-10-25T00:59:39.853121+00:00",
   "scope": "Separate source-bound observations. Never sum time or tasks across these runs.",
   "runs": [
+    {
+      "local_report": "runtime/endurance-dbbff82/report.json",
+      "run_id": "0dc2d6a6-8587-4f14-b595-c1d4106128dc",
+      "kind": "72-hour fixture endurance",
+      "status": "fixture_soak_passed",
+      "started_at": "2026-10-21T21:32:22.646026+00:00",
+      "finished_at": "2026-10-24T21:41:04.637861+00:00",
+      "implementation_sha256": "5c5e92decd949cce6f959f60fcedeb7f35b8c65d6abcdad9404351b8c85dae82",
+      "active_seconds": 259200.06199999998,
+      "completed_tasks": 1296,
+      "failure_count": 0
+    },
     {
       "local_report": "runtime/endurance/report.json",
       "run_id": "4c1ec950-2bc9-4ec9-9ffa-708465746539",
@@ -116,12 +128,14 @@
       "local_report": "runtime/endurance-final-source/report.json",
       "run_id": "30d00b7f-dc31-4571-b54f-5a0d2c432a26",
       "kind": "72-hour fixture endurance",
-      "status": "running",
+      "status": "killed_with_launching_session",
       "started_at": "2026-10-21T20:43:11.997084+00:00",
+      "last_heartbeat_at": "2026-10-21T21:06:41.024144+00:00",
       "implementation_sha256": "5c5e92decd949cce6f959f60fcedeb7f35b8c65d6abcdad9404351b8c85dae82",
-      "active_seconds": 35.60999999998603,
-      "completed_tasks": 3,
-      "failure_count": 0
+      "active_seconds": 1390.2189999999828,
+      "completed_tasks": 9,
+      "failure_count": 0,
+      "note": "Launched by Start-Endurance.ps1 as a child of an agent session; no runner process remained at 2026-10-21T21:08:39Z and no finished_at was written."
     },
     {
       "local_report": "runtime/endurance-final-source-smoke/report.json",

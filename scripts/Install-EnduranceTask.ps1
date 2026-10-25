@@ -1,7 +1,8 @@
 param([string]$TaskName = 'SiteForge-Fixture-Endurance', [string]$RunDirectory = 'runtime\endurance')
 $ErrorActionPreference = 'Stop'
 $taskRoot = Split-Path -Parent $PSScriptRoot
-$pythonPath = Join-Path $taskRoot '.venv\Scripts\python.exe'
+# Windowless interpreter: closing a console window must not end an unattended soak.
+$pythonPath = Join-Path $taskRoot '.venv\Scripts\pythonw.exe'
 if (-not (Test-Path -LiteralPath $pythonPath)) { throw 'Run scripts/Setup.ps1 first.' }
 $runPath = [IO.Path]::GetFullPath((Join-Path $taskRoot $RunDirectory)).TrimEnd([IO.Path]::DirectorySeparatorChar,[IO.Path]::AltDirectorySeparatorChar)
 if (-not $runPath.StartsWith($taskRoot + [IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase) -or $runPath.Contains('"')) { throw 'Run directory must be a valid path inside this workspace.' }

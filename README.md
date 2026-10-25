@@ -150,10 +150,12 @@ scheduling, protected off-host storage and key custody remain operator acceptanc
 ```powershell
 # Fast smoke evidence (not 72-hour acceptance)
 .\.venv\Scripts\python.exe -m siteforge.endurance --root runtime/smoke --hours 0.02 --cycles 3 --interval 0
-# Actual wall-clock fixture run in a hidden background process
-.\scripts\Start-Endurance.ps1 -RunDirectory runtime/endurance-final-source
-# Optional current-user logon recovery, no administrator rights
-.\scripts\Install-EnduranceTask.ps1 -RunDirectory runtime/endurance-final-source
+# 72-hour run: windowless Task Scheduler process that outlives the launching session and
+# resumes at current-user logon, no administrator rights. Use a new run directory each time.
+.\scripts\Install-EnduranceTask.ps1 -RunDirectory runtime/endurance-<commit>
+Start-ScheduledTask -TaskName SiteForge-Fixture-Endurance
+# Short hidden background run; it stops when the launching session's processes are closed
+.\scripts\Start-Endurance.ps1 -RunDirectory runtime/endurance-<commit>
 ```
 
 The runner counts observed active time, persists progress, prevents parallel ownership with an OS

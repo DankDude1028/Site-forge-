@@ -138,18 +138,23 @@ documents that boundary; a pattern scan does not guarantee every possible secret
 ## Endurance and remaining acceptance
 
 The [start snapshot](evidence/endurance-start.json) records run
-`30d00b7f-dc31-4571-b54f-5a0d2c432a26`, started **2026-10-21 20:43:11.997084 UTC**, on commit
-`6ef15a0c`, implementation SHA-256
+`0dc2d6a6-8587-4f14-b595-c1d4106128dc`, started **2026-10-21 21:32 UTC** by Task Scheduler, on
+commit `dbbff826`, implementation SHA-256
 `5c5e92decd949cce6f959f60fcedeb7f35b8c65d6abcdad9404351b8c85dae82`.
-At capture it was **running**, with **3 tasks, no failures and 35.610 active seconds**. This is a
-SQLite fixture pipeline with injected failures, not service/provider fault injection. Local report:
-`runtime/endurance-final-source/report.json`. **Actual 72-hour result: PENDING.**
+At capture it was **running**, with **3 tasks and no failures**. This is a SQLite fixture pipeline
+with injected failures, not service/provider fault injection. Local report:
+`runtime/endurance-dbbff82/report.json`. **Result: `fixture_soak_passed` at 2026-10-24 21:41:04 UTC**, with 72.000 observed hours, 1,296 tasks, all 2,654 injected faults recovered and zero failures, unauthorized, duplicate or lost effects ([final report](evidence/endurance-final.json)). Production-like endurance remains **PENDING**.
+
+The previous run `30d00b7f` was started with `Start-Endurance.ps1` as a child of an agent session
+and was hard-stopped with that session after **1,390.219 active seconds and 9 tasks**; its last
+heartbeat was **21:06:41 UTC** and it never wrote `finished_at`. Long runs now use the windowless
+Task Scheduler launcher so they do not depend on any interactive or agent session.
 
 [Separate smoke](evidence/smoke.json), run `14213299-86be-4f82-8122-7e0f5006cb29`, passed **9 tasks
 in 10.813 seconds**. [History](evidence/endurance-history.json) preserves interrupted runs including
 `89f64a27` (169.172 seconds), `e2638a4c` (75.719 seconds) and `53eac094` (441.375 seconds).
 **No smoke, interrupted time or tasks carry forward.** No notification promise or scheduled
-follow-up task has been installed.
+follow-up task has been installed; the only scheduled task is the soak runner itself.
 
 Fixture acceptance needs **259,200 observed active seconds and at least 900 tasks**, zero unauthorized/
 duplicate/lost effects, all injected faults recovered, RSS growth at most 256 MiB, queue latency at

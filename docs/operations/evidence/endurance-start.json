@@ -1,10 +1,11 @@
 {
-  "source_commit": "6ef15a0cf86cebd7eeb50d0801389825bb490fca",
-  "snapshot_captured_at": "2026-10-21T20:43:48.610762+00:00",
+  "source_commit": "dbbff826c5d54c646ab30d28d1c2c29470d2ec55",
+  "snapshot_captured_at": "2026-10-21T21:33:18.700539+00:00",
   "acceptance_status": "PENDING",
   "scope_note": "Point-in-time fixture snapshot, not live telemetry or 72-hour acceptance",
-  "run_id": "30d00b7f-dc31-4571-b54f-5a0d2c432a26",
-  "started_at": "2026-10-21T20:43:11.997084+00:00",
+  "launcher": "Task Scheduler (scripts/Install-EnduranceTask.ps1, pythonw.exe)",
+  "run_id": "0dc2d6a6-8587-4f14-b595-c1d4106128dc",
+  "started_at": "2026-10-21T21:32:22.646026+00:00",
   "status": "running",
   "implementation_sha256": "5c5e92decd949cce6f959f60fcedeb7f35b8c65d6abcdad9404351b8c85dae82",
   "kind": "72-hour fixture endurance",
@@ -19,7 +20,7 @@
     "maximum_observed_heartbeat_gap_seconds": 15,
     "all_injected_failures_recovered": true
   },
-  "active_seconds": 35.60999999998603,
+  "active_seconds": 51.48499999998603,
   "cycles": 1,
   "completed_tasks": 3,
   "failures": [],
@@ -46,11 +47,11 @@
   "lost_tasks": 0,
   "external_network_calls": 0,
   "scope": "SQLite fixture agent pipeline; injected model/network errors, persisted lease expiry, DB reconnect. PostgreSQL/service/OS/network acceptance separate.",
-  "baseline_rss_mib": 64.8125,
+  "baseline_rss_mib": 65.37109375,
   "unobserved_gap_seconds": 0.0,
-  "maximum_queue_latency_seconds_observed": 0.399059,
-  "pid": 274012,
-  "heartbeat_at": "2026-10-21T20:43:48.451423+00:00",
-  "rss_mib": 67.99609375,
-  "rss_growth_mib": 3.18359375
+  "maximum_queue_latency_seconds_observed": 0.962161,
+  "pid": 168396,
+  "heartbeat_at": "2026-10-21T21:33:16.324258+00:00",
+  "rss_mib": 68.84375,
+  "rss_growth_mib": 3.47265625
 }
