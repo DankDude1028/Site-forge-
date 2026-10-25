@@ -2,7 +2,7 @@
 
 Bundle transfer is disabled by default. It transfers bounded compiled static bytes into the configured supervisor artifact root; it never executes a build, installs dependencies, provisions a site, contacts a provider, or publishes a deployment. The API separately requires an authenticated owner or a short-lived release token scoped to the exact site and `upload_bundle`, tenant membership, configured site bindings, and an inactive kill switch.
 
-The build environment contains no provider or supervisor credentials. Build the trusted template with `SITEFORGE_BUILD_MODE=preview` (the default) or `production`, and `SITEFORGE_SITE_URL` set to a canonical HTTPS origin. Output remains `dist/`. Production rejects a missing origin, credentials, subpaths, queries, fragments, loopback, IP literals, and placeholder domains. A build does not authorize a deployment.
+The build environment contains no provider or supervisor credentials. Build the trusted template with `SITEFORGE_BUILD_MODE=preview` (the default) or `production`, and `SITEFORGE_SITE_URL` set to a canonical HTTPS origin. Output remains `dist/`. Production rejects a missing origin, credentials, subpaths, queries, fragments, loopback, IP literals, and placeholder domains. Production also requires the public privacy-page details `SITEFORGE_HOST_NAME`, `SITEFORGE_HOST_PRIVACY_URL` (HTTPS) and `SITEFORGE_CONTACT_EMAIL`, which the bundle workflow takes as the `host_name`, `host_privacy_url` and `contact_email` inputs. Previews show "added before launch" placeholders instead of invented details. A build does not authorize a deployment.
 
 | Mode | HTML robots | robots.txt | Canonical and sitemap |
 | --- | --- | --- | --- |

@@ -12,6 +12,9 @@ on:
       canonical_origin: {description: 'Configured HTTPS production origin', required: true}
       preview_id: {description: 'Production variant only: ready normal preview UUID', required: false}
       preview_tree_sha256: {description: 'Production variant only: reviewed preview tree SHA256', required: false}
+      host_name: {description: 'Production variant only: public web host named on the privacy page', required: false}
+      host_privacy_url: {description: "Production variant only: HTTPS link to the host's privacy policy", required: false}
+      contact_email: {description: 'Production variant only: public contact address for the privacy page', required: false}
 permissions: {contents: read}
 jobs:
   build:
@@ -38,6 +41,9 @@ jobs:
         env:
           SITEFORGE_BUILD_MODE: '${{ inputs.mode }}'
           SITEFORGE_SITE_URL: '${{ inputs.canonical_origin }}'
+          SITEFORGE_HOST_NAME: '${{ inputs.host_name }}'
+          SITEFORGE_HOST_PRIVACY_URL: '${{ inputs.host_privacy_url }}'
+          SITEFORGE_CONTACT_EMAIL: '${{ inputs.contact_email }}'
         run: npm ci && npm test && npm run typecheck && npm run build
       - uses: actions/upload-artifact@v4
         with:

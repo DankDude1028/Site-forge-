@@ -26,10 +26,10 @@ export function planLabels(input: LabelInputs): LabelPlan {
     throw new RangeError('Check the labels per roll and rolls on hand.');
   }
   if (!Number.isFinite(wastePercent) || wastePercent < 0 || wastePercent > 100) {
-    throw new RangeError('Waste buffer must be between 0% and 100%.');
+    throw new RangeError('Extra allowance must be between 0% and 100%.');
   }
   const baseLabels = quantity * labelsPerItem;
-  // Waste is an additional allowance, not a yield-loss calculation.
+  // The allowance is extra stock, not a yield-loss calculation.
   const labelsNeeded = Math.ceil(baseLabels * (100 + wastePercent) / 100);
   const rollsRequired = Math.ceil(labelsNeeded / labelsPerRoll);
   return { baseLabels, labelsNeeded, rollsRequired,
