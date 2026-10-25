@@ -14,3 +14,5 @@
   --error: #a3261a;
 }
 :where(body) { font-family: var(--body); color: var(--ink); background: var(--paper); }
+/* Functional contract: the calculator hides stale results and empty messages with the hidden attribute. */
+[hidden] { display: none !important; }
