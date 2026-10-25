@@ -88,6 +88,9 @@ function calculate(when: Announce): boolean {
     setText('needed', numbers.format(result.labelsNeeded));
     setText('required', numbers.format(result.rollsRequired));
     setText('left', numbers.format(result.labelsLeft));
+    // Set the visible caption summary
+    const captionText = `${numbers.format(result.rollsToOrder)} ${result.rollsToOrder === 1 ? 'roll' : 'rolls'} to order · ${numbers.format(result.labelsLeft)} spare labels on the last roll`;
+    setText('roll-caption', captionText);
     setText('result-kind', edited ? 'Your batch' : 'Sample batch. Change any number to plan yours.');
     const enough = document.getElementById('enough');
     if (enough) enough.hidden = result.rollsToOrder !== 0;

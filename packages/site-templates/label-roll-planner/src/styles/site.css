@@ -33,10 +33,21 @@ h1, h2 { font-family: var(--display); font-weight: 700; letter-spacing: -0.02em;
   border-top: 2px solid var(--ink); color: var(--ink-soft); font-size: 15px; }
 
 /* Calculator page */
-.home { display: grid; grid-template-columns: 1fr 1.1fr; gap: 56px; padding: 56px 0 64px; }
+/* Desktop: the calculator sits beside the headline and the reading key fills the space under the intro.
+   Source order (intro, calculator, key) is the phone order, so the key follows the result there. */
+.home { display: grid; grid-template-columns: 1fr 1.1fr; grid-template-areas: "intro sheet" "key sheet" "explain explain";
+  grid-template-rows: auto 1fr auto; gap: 32px 56px; padding: 56px 0 64px; }
+.intro { grid-area: intro; }
+.sheet { grid-area: sheet; }
+.result-key { grid-area: key; align-self: start; position: sticky; top: 24px; }
+.explain { grid-area: explain; }
 .intro h1 { font-size: clamp(40px, 4.6vw, 60px); margin: 8px 0 20px; }
 .lede { font-size: 19px; color: var(--ink-soft); max-width: 470px; margin: 0 0 20px; }
 .trust { font-size: 16px; font-weight: 600; border-left: 4px solid var(--kraft); padding-left: 12px; max-width: 470px; }
+
+.result-key { margin: 0; padding: 20px; max-width: 470px; background: var(--panel); border-left: none; color: var(--ink-soft); font-size: 16px; display: grid; gap: 15px; }
+.result-key h2 { font-family: var(--display); font-weight: 700; margin-top: 0; margin-bottom: 10px; font-size: 20px; color: var(--ink); }
+.result-key p { margin: 0; line-height: 1.5; }
 
 .sheet { --m: 16px; position: relative; padding: var(--m); background:
   linear-gradient(var(--ink), var(--ink)) left 0 top var(--m) / 11px 1.5px no-repeat,
@@ -66,6 +77,7 @@ input[aria-invalid="true"] { border-color: var(--error); border-width: 2px; }
 button { width: 100%; min-height: 52px; margin-top: 24px; border: 0; border-radius: 2px; background: var(--ink);
   color: var(--paper); font: 600 18px/1 var(--body); cursor: pointer; }
 button:hover { background: #2c3f45; }
+.live-hint { margin: 8px 0 0; color: var(--ink-soft); font-size: 14px; }
 #error { margin: 8px 0 0; color: var(--error); font-weight: 600; }
 #error:empty { display: none; }
 
@@ -92,9 +104,11 @@ output[hidden] { display: none; }
 dl { margin: 0; border-top: 1.5px solid var(--edge); }
 dl div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid #d3d9d1; }
 dd { margin: 0; font-weight: 600; }
+#roll-caption { font-size: 14px; color: var(--ink-soft); margin: 8px 0 14px; padding: 0; border: none; background: transparent; }
+#roll-caption:empty { display:none; }
 .note { margin: 10px 0 0; color: var(--ink-soft); font-size: 15px; }
 
-.explain { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1.1fr; gap: 56px; padding-top: 40px; border-top: 1.5px dashed var(--kraft); }
+.explain { display: grid; grid-template-columns: 1fr 1.1fr; gap: 56px; padding-top: 40px; border-top: 1.5px dashed var(--kraft); }
 .explain h2 { font-size: 34px; margin: 0; }
 .explain p { margin: 0 0 14px; color: var(--ink-soft); }
 .explain .example { color: var(--ink); font-weight: 600; }
@@ -109,7 +123,8 @@ dd { margin: 0; font-weight: 600; }
 
 @media (max-width: 860px) {
   .home, .explain { grid-template-columns: 1fr; gap: 28px; }
-  .home { padding-top: 32px; }
+  .home { padding-top: 32px; grid-template-areas: "intro" "sheet" "key" "explain"; grid-template-rows: none; }
+  .result-key { position: static; max-width: none; }
   .descriptor { display: none; }
 }
 @media (max-width: 480px) {
