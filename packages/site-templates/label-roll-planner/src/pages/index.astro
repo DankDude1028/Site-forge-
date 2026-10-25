@@ -47,6 +47,7 @@ const canonical = new URL('/', Astro.site);
               <p class="field-error" id="waste-error"></p>
             </div>
             <button type="submit">Calculate my rolls</button>
+            <p class="live-hint">Results update as you type. The button jumps to your result.</p>
             <p id="error" role="alert"></p>
           </form>
           <output id="result" for="quantity labels perRoll onHand waste">
@@ -54,6 +55,7 @@ const canonical = new URL('/', Astro.site);
             <p class="answer"><strong id="order">1</strong> <span id="order-label">roll to order</span></p>
             <p class="enough" id="enough" hidden>You already have enough rolls for this batch.</p>
             <div class="strip" id="strip" aria-hidden="true"></div>
+            <div id="roll-caption" aria-hidden="true"></div>
             <p class="legend" aria-hidden="true"><span><i class="key key-order"></i>to order</span><span><i class="key key-have"></i>already have</span><span><i class="key key-spare"></i>spare labels</span></p>
             <dl>
               <div><dt>Labels to print, with allowance</dt><dd id="needed">525</dd></div>
@@ -66,6 +68,10 @@ const canonical = new URL('/', Astro.site);
           <noscript><p>This calculator needs JavaScript. Formula: round up items × labels per item × (1 + allowance ÷ 100), divide by labels on each roll and round up again, then subtract the full rolls you already have.</p></noscript>
         </div>
       </section>
+      <aside class="result-key" aria-labelledby="guide-title">
+        <h2 id="guide-title">Reading your result</h2>
+        <p><strong>Rolls to order:</strong> What you need to buy. <strong>Labels to print, with allowance:</strong> Your batch plus the extra %. <strong>Rolls this batch uses:</strong> Including the ones on your shelf. <strong>Spare labels on those rolls:</strong> What's left on the last roll.</p>
+      </aside>
       <section class="explain" aria-labelledby="how">
         <h2 id="how">The math, out in the open</h2>
         <div>
