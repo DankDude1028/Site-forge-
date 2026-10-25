@@ -163,6 +163,11 @@ class PolicyService:
             audit(session, org_id, actor, "budget.configure", period, amount=str(limit), currency=currency)
             return {"period": period, "currency": currency, "limit_amount": limit}
 
+    def has_budget(self, org_id: str, period: str, currency: str = "USD") -> bool:
+        with self.db.transaction() as session:
+            return session.scalar(select(Budget.id).where(Budget.org_id == org_id, Budget.period == period,
+                                                          Budget.currency == currency)) is not None
+
     @staticmethod
     def _budget_alerts(session: Session, budget: Budget) -> None:
         """Persist threshold notices once under the caller's organization lock.
@@ -262,9 +267,17 @@ class PolicyService:
                 "instruction": "Reconcile provider state before retrying an unknown outcome; this is an authorization intent."}
 
     def reconcile(self, org_id: str, receipt_id: str, status: str, provider_reference: str,
-                  actor: str) -> dict[str, Any]:
+                  actor: str, actual_amount: Decimal | str | None = None) -> dict[str, Any]:
+        """Release the reservation; a success books the measured amount when supplied.
+
+        A measured amount may exceed the authorization only if the provider billed more
+        than the approved bound; it is booked as billed and flagged in the audit trail.
+        """
         if status not in {"succeeded", "failed", "unknown"} or not provider_reference:
             raise DomainError("reconciliation requires an outcome and provider reference", 422)
+        if actual_amount is not None and status != "succeeded":
+            raise DomainError("only a succeeded outcome books a measured amount", 422)
+        measured = None if actual_amount is None else money(actual_amount)
         with self.db.transaction() as session:
             session.scalar(select(Organization).where(Organization.id == org_id).with_for_update())
             receipt = tenant_row(session, Receipt, org_id, receipt_id, lock=True)
@@ -272,6 +285,7 @@ class PolicyService:
                 if receipt.status != status or receipt.provider_reference != provider_reference:
                     raise DomainError("final receipt cannot be rewritten")
                 return self._receipt(receipt, replay=True)
+            booked = receipt.amount if measured is None else measured
             if status != "unknown":
                 budgets = session.scalars(select(Budget).where(Budget.org_id == org_id,
                                                                Budget.currency == receipt.currency,
@@ -280,12 +294,16 @@ class PolicyService:
                 for budget in budgets:
                     budget.reserved_amount -= receipt.amount
                     if status == "succeeded":
-                        budget.used_amount += receipt.amount
+                        budget.used_amount += booked
+                        self._budget_alerts(session, budget)
                 approval = tenant_row(session, Approval, org_id, receipt.approval_id)
                 if status == "succeeded" and approval.task_id:
                     task = tenant_row(session, Task, org_id, approval.task_id, lock=True)
-                    task.actual_cost += receipt.amount
+                    task.actual_cost += booked
             receipt.status, receipt.provider_reference = status, provider_reference
             audit(session, org_id, actor, "action.reconcile", receipt.id, outcome=status,
-                  provider_reference=provider_reference)
+                  provider_reference=provider_reference,
+                  **({} if status != "succeeded" else {
+                      "booked_amount": str(booked), "authorized_amount": str(receipt.amount),
+                      "exceeded_authorization": booked > receipt.amount}))
             return self._receipt(receipt)

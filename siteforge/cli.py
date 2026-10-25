@@ -18,7 +18,7 @@ def load_environment(path: Path = Path('.env')) -> None:
     for line in path.read_text(encoding='utf-8-sig').splitlines():
         if line.strip() and not line.lstrip().startswith('#') and '=' in line:
             key, value = line.split('=', 1)
-            if key.startswith(('SITEFORGE_', 'DATABASE_URL', 'LMSTUDIO_')):
+            if key.startswith(('SITEFORGE_', 'DATABASE_URL', 'LMSTUDIO_')) or key == 'ANTHROPIC_API_KEY':
                 os.environ.setdefault(key, value.strip())
 
 
@@ -116,6 +116,50 @@ def import_results(args: argparse.Namespace) -> None:
         db.dispose()
 
 
+ADVISOR_ROOT = Path('runtime/advisor')
+
+
+def advisor_command(args: argparse.Namespace) -> None:
+    from .advisor import (advisor_settings, build_request, ensure_budgets, file_stem, request_approval, run_review,
+                          save_request)
+    from .db import Database
+    from .policy import PolicyService
+    from .queue import DomainError
+    load_environment()
+    db = Database(os.environ['SITEFORGE_DATABASE_URL'])
+    policy, org = PolicyService(db), os.environ['SITEFORGE_ORG_ID']
+    try:
+        if args.action == 'propose':
+            document = build_request(
+                args.kind.replace('-', '_'), args.site_id, args.brief.read_text(encoding='utf-8'),
+                documents=[(path.name, path.read_text(encoding='utf-8')) for path in args.text],
+                screenshots=[(path.name, path.read_bytes()) for path in args.screenshot],
+                effort=args.effort, max_tokens=args.max_tokens)
+            path = save_request(document, ADVISOR_ROOT)
+            approval = request_approval(policy, org, document, 'advisor-cli')
+            print(json.dumps({'approval_id': approval['id'], 'request': str(path),
+                              'worst_case_usd': document['max_cost'], 'status': approval['status'],
+                              'next': 'Review and approve it on the dashboard Approvals page, then run '
+                                      'siteforge advisor run with this approval id and request path.'},
+                             indent=2, default=str))
+            return
+        settings = advisor_settings()
+        if settings['enabled'] != 'true':
+            raise SystemExit('Paid advisor calls are off. Set SITEFORGE_ADVISOR_ENABLED=true in .env to allow them.')
+        if not os.environ.get('ANTHROPIC_API_KEY'):
+            raise SystemExit('Set ANTHROPIC_API_KEY in the ignored .env file; never commit or paste it elsewhere.')
+        ensure_budgets(policy, org, monthly=settings['monthly'], daily=settings['daily'])
+        import anthropic
+        result = run_review(policy, org, args.approval_id, args.request, anthropic.Anthropic(),
+                            results_root=ADVISOR_ROOT)
+        print(json.dumps({key: result[key] for key in ('status', 'served_by', 'measured_cost', 'approved_max_cost')}
+                         | {'result': str(ADVISOR_ROOT / f"{file_stem(result['request_sha256'])}.result.json")}, indent=2))
+    except DomainError as error:
+        raise SystemExit(f'Advisor stopped: {error}') from error
+    finally:
+        db.dispose()
+
+
 def main() -> None:
     parser=argparse.ArgumentParser(description=__doc__)
     commands=parser.add_subparsers(dest='command',required=True)
@@ -129,6 +173,20 @@ def main() -> None:
     results=commands.add_parser('import-benchmarks')
     results.add_argument('--path',type=Path,default=Path('benchmarks/results/results.json'))
     results.set_defaults(handler=import_results)
+    advisor=commands.add_parser('advisor', help='Owner-approved, capped Claude Opus 5.5 checkpoint reviews')
+    actions=advisor.add_subparsers(dest='action', required=True)
+    propose=actions.add_parser('propose', help='Prepare a review and request owner approval; sends nothing')
+    propose.add_argument('--kind', choices=['site-review', 'research-check'], required=True)
+    propose.add_argument('--site-id', required=True)
+    propose.add_argument('--brief', type=Path, required=True, help='Who the site or packet serves and why')
+    propose.add_argument('--text', type=Path, action='append', default=[], help='Page text or evidence packet; repeatable')
+    propose.add_argument('--screenshot', type=Path, action='append', default=[], help='PNG screenshot; repeatable')
+    propose.add_argument('--effort', choices=['low', 'medium', 'high'], default='medium')
+    propose.add_argument('--max-tokens', type=int, default=16000)
+    run=actions.add_parser('run', help='Send one owner-approved review')
+    run.add_argument('--approval-id', required=True)
+    run.add_argument('--request', type=Path, required=True)
+    advisor.set_defaults(handler=advisor_command)
     args=parser.parse_args()
     args.handler(args)
 

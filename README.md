@@ -145,6 +145,11 @@ transfer/SEO checks. `.netlify` is ignored. No live deployment was performed.
 archives, retain verified local history and restore only into new disposable databases. Production
 scheduling, protected off-host storage and key custody remain operator acceptance work.
 
+The default-disabled [Opus 5.5 advisor](docs/operations/advisor.md) sends owner-started site reviews
+and research checks to Claude Opus 5.5. Each review is a `spend_money` approval bound to the exact
+request hash and its worst-case cost, reserved against daily and monthly caps, sent once and booked
+at measured cost. It is tested with a fake client only; no live call has been made.
+
 ## Endurance and acceptance
 
 ```powershell

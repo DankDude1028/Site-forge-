@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import select
 
 from siteforge.contracts import ActionExecution, ActionRequest
-from siteforge.db import Budget, Database, Notification, Receipt, Site
+from siteforge.db import AuditEvent, Budget, Database, Notification, Receipt, Site
 from siteforge.policy import AGENT_TOOLS, PolicyService, decision, money
 from siteforge.queue import DomainError, QueueService
 
@@ -41,6 +41,32 @@ def approve(service, org, request):
     item = service.request_approval(org, request, "agent")
     service.decide(org, item["id"], "owner", True)
     return item["id"]
+
+
+def test_reconcile_books_measured_amount_and_flags_overruns(policy_system):
+    db, org, site, service, _ = policy_system
+    service.set_budget(org, "2026-10", "10", "owner")
+    service.set_budget(org, "2026-10-21", "5", "owner")
+    receipts = []
+    for key in ("first", "second", "third"):
+        request = ActionRequest(agent_type="quality", action="spend_money", site_id=site, payload={"key": key},
+                                amount="1", idempotency_key=f"request-{key}")
+        item = service.request_approval(org, request, "agent")
+        service.decide(org, item["id"], "owner", True)
+        receipts.append(service.authorize(org, item["id"], ActionExecution(
+            action="spend_money", site_id=site, payload={"key": key}, amount="1", idempotency_key=f"effect-{key}"),
+            "owner"))
+    with pytest.raises(DomainError, match="only a succeeded outcome"):
+        service.reconcile(org, receipts[0]["id"], "failed", "provider", "owner", actual_amount="0.1")
+    service.reconcile(org, receipts[0]["id"], "succeeded", "provider-1", "owner", actual_amount="0.25")
+    service.reconcile(org, receipts[1]["id"], "succeeded", "provider-2", "owner", actual_amount="1.5")
+    service.reconcile(org, receipts[2]["id"], "succeeded", "provider-3", "owner")
+    with db.transaction() as session:
+        month = session.scalar(select(Budget).where(Budget.period == "2026-10"))
+        assert (month.used_amount, month.reserved_amount) == (Decimal("2.750000"), Decimal("0"))
+        flags = [event.detail.get("exceeded_authorization") for event in session.scalars(
+            select(AuditEvent).where(AuditEvent.action == "action.reconcile")).all()]
+    assert sorted(flags) == [False, False, True]
 
 
 def test_all_seven_agents_default_deny_and_restricted():

@@ -23,6 +23,7 @@ and [runbook](runbook.md). Public JSON files are point-in-time snapshots, not li
 | Production-like endurance | PENDING | PostgreSQL/service/provider faults, six-hour worker disconnection, real network outage and OS crash acceptance remain separate from SQLite fixtures/process drills. |
 | Protected Netlify/live release | BLOCKED; defaults disabled | Netlify requires reauthentication and a protected target is absent. No live Netlify mutation or hosted protection/health/rollback proof occurred. [Releases](releases.md), [bundle transfer](bundles.md). |
 | Production operations/economics | PENDING | Authorized costs, hosting/TLS/roles/secrets/egress/monitoring, applied protections, production backups, live metrics, demand and realized revenue remain unverified. |
+| Opus 5.5 advisor | ONE LIVE REVIEW MEASURED; not benchmark-qualified | Owner-approved per review, worst-case reservation against $3/day and $15/month owner caps, sent once, booked at measured cost. 12 advisor tests and 1 reconciliation test pass with no network. First live site review on 2026-10-22, approval `341bb922`: served by `claude-opus-5-5` with no fallback, `end_turn`, schema-valid JSON, **7,356 input / 3,435 output tokens, $0.098124 booked against a $0.833299 authorization**. Day and month budgets show the same used amount and zero reserved. One review is not a quality benchmark. [Advisor](advisor.md). |
 
 ## Implemented scope and limits
 
