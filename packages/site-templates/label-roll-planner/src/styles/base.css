@@ -16,3 +16,6 @@
 :where(body) { font-family: var(--body); color: var(--ink); background: var(--paper); }
 /* Functional contract: the calculator hides stale results and empty messages with the hidden attribute. */
 [hidden] { display: none !important; }
+/* Fallback icon size: the header logo mark is an inline SVG with no width attribute, which otherwise fills the
+   screen. Zero specificity, so any size a design sets wins. */
+:where(.brand-mark) { width: 2rem; height: 2rem; flex: none; }
