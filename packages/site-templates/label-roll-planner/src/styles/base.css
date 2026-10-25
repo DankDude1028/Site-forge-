@@ -1,0 +1,16 @@
+/* Locked fallback tokens. :where() gives these zero specificity, so any :root rule in a design's own stylesheet
+   overrides them, but a design that forgets a token still renders with the bundled fonts and readable colours. */
+:where(:root) {
+  --display: 'Bricolage Grotesque', 'Arial Narrow', Arial, sans-serif;
+  --body: 'Source Sans 3', 'Segoe UI', Arial, sans-serif;
+  --paper: #ffffff;
+  --panel: #eef1ec;
+  --ink: #1b2a2f;
+  --ink-soft: #4a5550;
+  --edge: #6b7775;
+  --kraft: #b98b5e;
+  --kraft-light: #ead9c4;
+  --accent: #d9482b;
+  --error: #a3261a;
+}
+:where(body) { font-family: var(--body); color: var(--ink); background: var(--paper); }
