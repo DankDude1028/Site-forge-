@@ -108,6 +108,15 @@ def test_request_binds_exact_bytes_and_worst_case_cost(advisor_system):
                    results_root=root / "advisor")
 
 
+def test_design_score_requests_calibrated_integer_scores_from_screenshots():
+    document = build_request("design_score", uuid4(), "Score this page.", screenshots=[("home.png", png())])
+    schema = document["params"]["output_config"]["format"]["schema"]
+    assert schema["properties"]["scores"]["properties"]["overall"] == {"type": "integer", "enum": list(range(1, 11))}
+    assert "Calibrate strictly" in document["params"]["system"]
+    with pytest.raises(DomainError, match="at least one screenshot"):
+        build_request("design_score", uuid4(), "Score this page.")
+
+
 def test_worst_case_covers_full_output_on_both_models():
     # 10k input and 16k output on Opus 5.5 ($5 max input, $20 output) then Opus 4.8 ($6.25, $25).
     assert max_cost(10_000, 16_000) == Decimal("0.832500")

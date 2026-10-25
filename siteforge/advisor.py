@@ -37,7 +37,7 @@ MAX_IMAGES = 6
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
 MAX_TEXT_BYTES = 200_000
 DEFAULT_MAX_TOKENS = 16_000
-Kind = Literal["site_review", "research_check"]
+Kind = Literal["site_review", "research_check", "design_score"]
 Effort = Literal["low", "medium", "high"]
 
 
@@ -107,12 +107,32 @@ SYSTEM_PROMPTS: dict[str, str] = {
         "and policy problems.\n\n"
         "You cannot browse; when the packet lacks evidence, say what is missing instead of filling "
         "it in. " + UNTRUSTED),
+    "design_score": (
+        "You are the art director who scores SiteForge websites against award-level web design, the "
+        "standard of sites featured on Awwwards, SiteInspire or Godly. Judge only what the screenshots "
+        "and page text show.\n\n"
+        "Calibrate strictly; most competent sites score 5 or 6, so do not inflate:\n"
+        "1-3 broken or amateur. 4-5 competent but template-like. 6 tidy with some character. "
+        "7 distinctive and polished with a clear point of view. 8 memorable, with strong craft "
+        "throughout. 9 award-level: a bold, cohesive concept executed with precision, a signature "
+        "visual idea, refined typography and detail, excellent on mobile. 10 sets a reference.\n\n"
+        "Score each dimension on that scale. The overall score is your judgment, not an average; "
+        "weigh impact, concept and craft most. The site must stay usable, accessible and honest: "
+        "penalize low contrast, unreadable or tiny text, decoration that hides or slows the core "
+        "task, broken mobile layouts and anything that misleads. As findings, list the changes that "
+        "would raise the score most, highest impact first, each specific enough for a developer "
+        "(name the element and give colors, sizes and techniques). Use verdict 'ready' only for an "
+        "overall score of 9 or more.\n\n" + UNTRUSTED),
 }
 AREAS: dict[str, list[str]] = {
     "site_review": ["correctness", "compliance", "usefulness", "accessibility", "visual_design"],
     "research_check": ["claim_support", "demand", "competition", "monetization", "licensing",
                        "maintenance", "risk"],
+    "design_score": ["concept", "typography", "color", "layout", "imagery", "detail_and_motion",
+                     "mobile", "accessibility", "subject_fit"],
 }
+SCORE_DIMENSIONS = ["overall", "impact", "typography", "color", "layout", "imagery", "craft", "mobile",
+                    "subject_fit"]
 
 
 def result_schema(kind: Kind) -> dict[str, Any]:
@@ -134,6 +154,11 @@ def result_schema(kind: Kind) -> dict[str, Any]:
             "properties": {"distinctiveness": {"type": "string", "enum": ["generic", "somewhat_distinct", "distinct"]},
                            "generic_patterns": {"type": "array", "items": {"type": "string"}},
                            "direction": {"type": "string"}}}
+    if kind == "design_score":
+        score = {"type": "integer", "enum": list(range(1, 11))}
+        properties["scores"] = {"type": "object", "additionalProperties": False, "required": SCORE_DIMENSIONS,
+                                "properties": {name: score for name in SCORE_DIMENSIONS}}
+        properties["strengths"] = {"type": "array", "items": {"type": "string"}}
     return {"type": "object", "additionalProperties": False, "required": sorted(properties),
             "properties": properties}
 
@@ -205,6 +230,8 @@ def build_request(kind: Kind, site_id: UUID | str, brief: str, *,
         raise DomainError("unknown advisor review kind", 422)
     if kind == "research_check" and screenshots:
         raise DomainError("research checks take an evidence packet, not screenshots", 422)
+    if kind == "design_score" and not screenshots:
+        raise DomainError("design scores need at least one screenshot", 422)
     if len(screenshots) > MAX_IMAGES:
         raise DomainError(f"at most {MAX_IMAGES} screenshots per review", 422)
     if not 1024 <= max_tokens <= 32_000:
@@ -274,7 +301,7 @@ def load_request(path: Path) -> dict[str, Any]:
 
 def request_approval(policy: PolicyService, org_id: str, document: dict[str, Any],
                      requester: str) -> dict[str, Any]:
-    agent = AgentType.quality if document["kind"] == "site_review" else AgentType.research
+    agent = AgentType.research if document["kind"] == "research_check" else AgentType.quality
     payload = approval_payload(document)
     return policy.request_approval(org_id, ActionRequest(
         agent_type=agent, action="spend_money", payload=payload, site_id=document["site_id"],
