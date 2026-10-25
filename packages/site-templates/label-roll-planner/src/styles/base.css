@@ -19,3 +19,10 @@
 /* Fallback icon size: the header logo mark is an inline SVG with no width attribute, which otherwise fills the
    screen. Zero specificity, so any size a design sets wins. */
 :where(.brand-mark) { width: 2rem; height: 2rem; flex: none; }
+/* Fallback roll strip: calculator.ts draws one span per roll. A design that drops these rules leaves them 0x0 and the
+   result visual blank, which passes every test. Zero specificity, so any roll styling a design sets wins. */
+:where(.strip) { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+:where(.roll) { display: inline-block; width: 40px; height: 40px; border: 2px solid var(--ink); border-radius: 50%;
+  background: var(--ink); }
+:where(.roll.have) { background: var(--paper); }
+:where(.roll.partial) { background: conic-gradient(var(--ink) 0 var(--used), var(--paper) var(--used) 100%); }
