@@ -5,6 +5,7 @@ import '@fontsource/source-sans-3/latin-600.css';
 import '../styles/site.css';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
+import Calculator from '../components/Calculator.astro';
 import { getSiteConfig } from '../../site-config.mjs';
 const config = getSiteConfig();
 const canonical = new URL('/', Astro.site);
@@ -29,45 +30,7 @@ const canonical = new URL('/', Astro.site);
         <p class="lede">Enter your batch and your roll size. Rollwise rounds up to whole labels and whole rolls, adds a small allowance for setup and misprints, and takes off the rolls already on your shelf.</p>
         <p class="trust">No inputs leave your browser. No account, no ads, no tracking.</p>
       </div>
-      <section class="sheet" aria-labelledby="planner-title">
-        <div class="planner">
-          <h2 id="planner-title">Plan your label run</h2>
-          <p class="planner-intro">Results update as you type.</p>
-          <form id="planner" novalidate>
-            <div class="fields">
-              <div><label for="quantity">Items in this batch</label><input id="quantity" name="quantity" type="number" min="1" max="1000000" step="1" value="250" required inputmode="numeric" aria-describedby="quantity-error" /><p class="field-error" id="quantity-error"></p></div>
-              <div><label for="labels">Labels per item</label><input id="labels" name="labels" type="number" min="1" max="100" step="1" value="2" required inputmode="numeric" aria-describedby="labels-error" /><p class="field-error" id="labels-error"></p></div>
-              <div><label for="perRoll">Labels on each roll</label><input id="perRoll" name="perRoll" type="number" min="1" max="1000000" step="1" value="500" required inputmode="numeric" aria-describedby="perRoll-error" /><p class="field-error" id="perRoll-error"></p></div>
-              <div><label for="onHand">Full rolls you already have</label><input id="onHand" name="onHand" type="number" min="0" max="1000000" step="1" value="1" required inputmode="numeric" aria-describedby="onHand-error" /><p class="field-error" id="onHand-error"></p></div>
-            </div>
-            <div class="allowance">
-              <label for="waste">Extra allowance (%)</label>
-              <p class="help" id="waste-help">For setup, misprints and the occasional crooked label.</p>
-              <input id="waste" name="waste" type="number" min="0" max="100" step="0.1" value="5" required aria-describedby="waste-help waste-error" inputmode="decimal" />
-              <p class="field-error" id="waste-error"></p>
-            </div>
-            <button type="submit">Calculate my rolls</button>
-            <p class="live-hint">Results update as you type. The button jumps to your result.</p>
-            <p id="error" role="alert"></p>
-          </form>
-          <output id="result" for="quantity labels perRoll onHand waste">
-            <p class="result-kind" id="result-kind">Sample batch. Change any number to plan yours.</p>
-            <p class="answer"><strong id="order">1</strong> <span id="order-label">roll to order</span></p>
-            <p class="enough" id="enough" hidden>You already have enough rolls for this batch.</p>
-            <div class="strip" id="strip" aria-hidden="true"></div>
-            <div id="roll-caption" aria-hidden="true"></div>
-            <p class="legend" aria-hidden="true"><span><i class="key key-order"></i>to order</span><span><i class="key key-have"></i>already have</span><span><i class="key key-spare"></i>spare labels</span></p>
-            <dl>
-              <div><dt>Labels to print, with allowance</dt><dd id="needed">525</dd></div>
-              <div><dt>Rolls this batch uses</dt><dd id="required">2</dd></div>
-              <div><dt>Spare labels on those rolls</dt><dd id="left">475</dd></div>
-            </dl>
-            <p class="note">Counts the full rolls you already have. Partly used rolls are not included.</p>
-          </output>
-          <p class="visually-hidden" id="announce" aria-live="polite"></p>
-          <noscript><p>This calculator needs JavaScript. Formula: round up items × labels per item × (1 + allowance ÷ 100), divide by labels on each roll and round up again, then subtract the full rolls you already have.</p></noscript>
-        </div>
-      </section>
+      <Calculator />
       <aside class="result-key" aria-labelledby="guide-title">
         <h2 id="guide-title">Reading your result</h2>
         <p><strong>Rolls to order:</strong> What you need to buy. <strong>Labels to print, with allowance:</strong> Your batch plus the extra %. <strong>Rolls this batch uses:</strong> Including the ones on your shelf. <strong>Spare labels on those rolls:</strong> What's left on the last roll.</p>

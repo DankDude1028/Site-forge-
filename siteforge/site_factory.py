@@ -125,7 +125,8 @@ def inspect_preview(root: Path, slug: str) -> dict[str, Any]:
         if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != item["sha256"]:
             failures.append(f"Artifact integrity failed: {item['path']}")
     critical = ("site-config.mjs", "astro.config.mjs", "src/pages/index.astro",
-                "src/pages/privacy.astro", "src/pages/robots.txt.ts", "src/pages/sitemap.xml.ts")
+                "src/pages/privacy.astro", "src/pages/robots.txt.ts", "src/pages/sitemap.xml.ts",
+                "src/components/Calculator.astro")
     critical_sources: dict[str, str] = {}
     trusted_configuration = True
     listed = {item["path"] for item in manifest.get("files", [])}
@@ -136,6 +137,7 @@ def inspect_preview(root: Path, slug: str) -> dict[str, Any]:
             trusted_configuration = False
         critical_sources[relative] = source.read_text(encoding="utf-8") if source.is_file() else ""
     page = critical_sources["src/pages/index.astro"]
+    calculator = critical_sources["src/components/Calculator.astro"]
     configuration = critical_sources["site-config.mjs"]
     # This is a trusted-source inspection, never evidence that Astro ran. Runtime
     # build environment and the final compiled bytes have separate validation.
@@ -149,9 +151,11 @@ def inspect_preview(root: Path, slug: str) -> dict[str, Any]:
         "preview_crawl_route": trusted_configuration and "config.mode === 'production'" in crawl_route
                                and "User-agent: *\\nDisallow: /\\n" in crawl_route,
         "language": 'lang="en"' in page,
-        "accessible_form": '<label for="quantity"' in page and 'aria-live="polite"' in page,
+        # The calculator contract lives in a locked component the page must render.
+        "accessible_form": ("<Calculator />" in page and '<label for="quantity"' in calculator
+                            and 'aria-live="polite"' in calculator),
         "metadata": 'name="description"' in page and "<title>" in page,
-        "no_secret_input": 'type="password"' not in page,
+        "no_secret_input": 'type="password"' not in page + calculator,
         "local_only_calculator": "No inputs leave your browser" in page,
         "production_disabled": manifest.get("production_authorized") is False,
         "reference_math": plan_labels(250, 2, 5, 500, 1)["rolls_to_order"] == 1,
