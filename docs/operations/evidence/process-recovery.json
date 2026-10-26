@@ -1,0 +1,215 @@
+{
+  "checkpoint": {
+    "at": "2026-10-21T19:46:00.710162+00:00",
+    "checkpoint_id": "addc8d38-8b4f-4b04-bffe-bf0cff6907d5",
+    "checkpoint_sha256": "a48d18d53f9c6ee8c89c98fb0bbcd12a4aadd586d547dc827ebd678b5c6c5fd9",
+    "pid": 215060,
+    "task_id": "4a9c20e2-71e4-433e-8194-2e0ed9daf261"
+  },
+  "elapsed_seconds": 22.437,
+  "events": [
+    {
+      "at": "2026-10-21T19:45:56.180053+00:00",
+      "elapsed_seconds": 0.515,
+      "event": "process_started",
+      "kind": "supervisor",
+      "pid": 174576
+    },
+    {
+      "at": "2026-10-21T19:45:58.572597+00:00",
+      "elapsed_seconds": 2.906,
+      "event": "supervisor_ready",
+      "pid": 174576
+    },
+    {
+      "at": "2026-10-21T19:45:58.810185+00:00",
+      "elapsed_seconds": 3.14,
+      "event": "process_started",
+      "kind": "checkpoint_worker",
+      "pid": 215060
+    },
+    {
+      "at": "2026-10-21T19:46:00.754672+00:00",
+      "elapsed_seconds": 5.093,
+      "event": "checkpoint_persisted",
+      "sha256": "a48d18d53f9c6ee8c89c98fb0bbcd12a4aadd586d547dc827ebd678b5c6c5fd9",
+      "task_id": "4a9c20e2-71e4-433e-8194-2e0ed9daf261"
+    },
+    {
+      "abrupt": true,
+      "at": "2026-10-21T19:46:00.785197+00:00",
+      "elapsed_seconds": 5.125,
+      "event": "process_stopped",
+      "exit_code": 1,
+      "pid": 215060
+    },
+    {
+      "abrupt": true,
+      "at": "2026-10-21T19:46:00.820200+00:00",
+      "elapsed_seconds": 5.156,
+      "event": "process_stopped",
+      "exit_code": 1,
+      "pid": 174576
+    },
+    {
+      "at": "2026-10-21T19:46:01.864476+00:00",
+      "elapsed_seconds": 6.203,
+      "error_type": "ConnectTimeout",
+      "event": "http_outage_observed"
+    },
+    {
+      "at": "2026-10-21T19:46:01.881038+00:00",
+      "elapsed_seconds": 6.218,
+      "event": "process_started",
+      "kind": "supervisor",
+      "pid": 216052
+    },
+    {
+      "at": "2026-10-21T19:46:04.160965+00:00",
+      "elapsed_seconds": 8.5,
+      "event": "supervisor_restarted",
+      "pid": 216052
+    },
+    {
+      "at": "2026-10-21T19:46:04.185971+00:00",
+      "elapsed_seconds": 8.515,
+      "event": "checkpoint_survived_process_restart",
+      "sha256": "a48d18d53f9c6ee8c89c98fb0bbcd12a4aadd586d547dc827ebd678b5c6c5fd9"
+    },
+    {
+      "at": "2026-10-21T19:46:15.631678+00:00",
+      "elapsed_seconds": 19.968,
+      "event": "lease_expired",
+      "persisted_expires_at": "2026-10-21T19:46:15.498523+00:00"
+    },
+    {
+      "at": "2026-10-21T19:46:15.652689+00:00",
+      "elapsed_seconds": 19.984,
+      "event": "process_started",
+      "kind": "recovery_worker",
+      "pid": 163292
+    },
+    {
+      "at": "2026-10-21T19:46:18.028097+00:00",
+      "elapsed_seconds": 22.359,
+      "event": "stale_completion_rejected",
+      "status_code": 409
+    },
+    {
+      "at": "2026-10-21T19:46:18.040097+00:00",
+      "attempts": [
+        2,
+        1,
+        1
+      ],
+      "elapsed_seconds": 22.375,
+      "event": "fixture_chain_completed"
+    },
+    {
+      "abrupt": false,
+      "at": "2026-10-21T19:46:18.054107+00:00",
+      "elapsed_seconds": 22.39,
+      "event": "process_stopped",
+      "exit_code": 0,
+      "pid": 163292
+    },
+    {
+      "abrupt": false,
+      "at": "2026-10-21T19:46:18.079347+00:00",
+      "elapsed_seconds": 22.421,
+      "event": "process_stopped",
+      "exit_code": 1,
+      "pid": 216052
+    }
+  ],
+  "external_provider_calls": 0,
+  "finished_at": "2026-10-21T19:46:18.105172+00:00",
+  "fixture_retry_backoff_seconds": [
+    0,
+    0,
+    0
+  ],
+  "is_72_hour_acceptance": false,
+  "lease_seconds": 15,
+  "model_calls": 0,
+  "owned_subprocesses_cleaned": true,
+  "postgresql_tested": false,
+  "processes": [
+    {
+      "exit_code": 1,
+      "kind": "supervisor",
+      "pid": 174576,
+      "started_at": "2026-10-21T19:45:56.180053+00:00",
+      "stopped_at": "2026-10-21T19:46:00.820200+00:00"
+    },
+    {
+      "exit_code": 1,
+      "kind": "checkpoint_worker",
+      "pid": 215060,
+      "started_at": "2026-10-21T19:45:58.810185+00:00",
+      "stopped_at": "2026-10-21T19:46:00.785197+00:00"
+    },
+    {
+      "exit_code": 1,
+      "kind": "supervisor",
+      "pid": 216052,
+      "started_at": "2026-10-21T19:46:01.881038+00:00",
+      "stopped_at": "2026-10-21T19:46:18.079347+00:00"
+    },
+    {
+      "exit_code": 0,
+      "kind": "recovery_worker",
+      "pid": 163292,
+      "started_at": "2026-10-21T19:46:15.652689+00:00",
+      "stopped_at": "2026-10-21T19:46:18.054107+00:00"
+    }
+  ],
+  "quality_static_passed": true,
+  "recovery_worker": {
+    "at": "2026-10-21T19:46:17.770018+00:00",
+    "pid": 163292,
+    "processed_tasks": 3
+  },
+  "run_id": "0553d540-0470-4b1e-a662-d7f837d8c40d",
+  "scope": "actual isolated SQLite supervisor and HTTP WindowsWorker subprocess fault drill",
+  "started_at": "2026-10-21T19:45:55.663119+00:00",
+  "status": "passed",
+  "task_ids": [
+    "4a9c20e2-71e4-433e-8194-2e0ed9daf261",
+    "7bcaf29b-da37-4719-afbb-5d2534b690a5",
+    "12c2bb34-e3c7-4834-afb6-9ca4ba3f8728"
+  ],
+  "tasks": [
+    {
+      "agent_type": "research",
+      "artifact_hashes": [
+        "da442a00b168b3a9049dc08279707ac30ae9a320d2ce89c0a9b3c3670f43b736",
+        "9aadb89e78cd1e7827c735d598d6bfb02ebdb6f2f8fe05f7459cae18f0cd9861"
+      ],
+      "attempt": 2,
+      "id": "4a9c20e2-71e4-433e-8194-2e0ed9daf261",
+      "status": "completed"
+    },
+    {
+      "agent_type": "developer",
+      "artifact_hashes": [
+        "e3ed9076270b1bdee0bacd8879fa8018447e20b2acc88fcdc738c971ae61e742",
+        "5ad37e74faa59f9c2754ecd44352fb429282b2d312d40fa2288bec3fa4a2b48c"
+      ],
+      "attempt": 1,
+      "id": "7bcaf29b-da37-4719-afbb-5d2534b690a5",
+      "status": "completed"
+    },
+    {
+      "agent_type": "quality",
+      "artifact_hashes": [
+        "3098a03509992cd7bd534cc27bfe1d08f7c9f65d6862f90fa6a83df53e3e9007",
+        "21438797fb022b9a3c867f8da9d07732b951dde2b1e3cc700e167c32dbe745aa"
+      ],
+      "attempt": 1,
+      "id": "12c2bb34-e3c7-4834-afb6-9ca4ba3f8728",
+      "status": "completed"
+    }
+  ],
+  "evidence_scope_note": "Actual local CLI drill before Windows process-flag portability and compact native-tool path fixes; no models or external providers were called."
+}

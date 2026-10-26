@@ -1,0 +1,328 @@
+{
+  "started_at": "2026-10-21T18:48:01.215463+00:00",
+  "status": "completed_with_command_failures",
+  "dataset_version": "1.3.0",
+  "dataset_sha256": "ac59d435468237015e8d16d778fa6e461c27c7f10a249af3c9bd388391f78369",
+  "phases": [
+    {
+      "name": "google/gemma-4-e4b:Q4_K_M:4096",
+      "started_at": "2026-10-21T18:48:01.260481+00:00",
+      "status": "completed",
+      "command": [
+        "<USERPROFILE>\\Documents\\Codex\\2026-10-21\\read-the-attached-siteforge-master-prompt\\siteforge\\.venv\\Scripts\\python.exe",
+        "-m",
+        "benchmarks.runners.run",
+        "--model",
+        "siteforge-benchmark",
+        "--source-model",
+        "google/gemma-4-e4b",
+        "--quantization",
+        "Q4_K_M",
+        "--context",
+        "4096",
+        "--parallel",
+        "1",
+        "--load",
+        "--structured-json",
+        "--max-tokens",
+        "1024",
+        "--timeout",
+        "120"
+      ],
+      "returncode": 0,
+      "finished_at": "2026-10-21T18:56:23.776089+00:00"
+    },
+    {
+      "name": "google/gemma-4-e4b:Q4_K_M:8192",
+      "started_at": "2026-10-21T18:56:23.815089+00:00",
+      "status": "completed",
+      "command": [
+        "<USERPROFILE>\\Documents\\Codex\\2026-10-21\\read-the-attached-siteforge-master-prompt\\siteforge\\.venv\\Scripts\\python.exe",
+        "-m",
+        "benchmarks.runners.run",
+        "--model",
+        "siteforge-benchmark",
+        "--source-model",
+        "google/gemma-4-e4b",
+        "--quantization",
+        "Q4_K_M",
+        "--context",
+        "8192",
+        "--parallel",
+        "1",
+        "--load",
+        "--structured-json",
+        "--max-tokens",
+        "1024",
+        "--timeout",
+        "120"
+      ],
+      "returncode": 0,
+      "finished_at": "2026-10-21T19:04:24.306627+00:00"
+    },
+    {
+      "name": "actual-native-portfolio-http-worker-first-attempt",
+      "started_at": "2026-10-21T19:04:24.307628+00:00",
+      "status": "completed",
+      "command": [
+        "<USERPROFILE>\\Documents\\Codex\\2026-10-21\\read-the-attached-siteforge-master-prompt\\siteforge\\.venv\\Scripts\\python.exe",
+        "-m",
+        "runtime.run_native_demo"
+      ],
+      "returncode": 0,
+      "finished_at": "2026-10-21T19:04:25.853429+00:00",
+      "actual_task_status": "failed_before_inference_due_sqlite_timezone_loss",
+      "command_success_is_not_agent_success": true
+    },
+    {
+      "name": "openai/gpt-oss-20b:MXFP4:4096",
+      "started_at": "2026-10-21T19:04:25.898175+00:00",
+      "status": "command_failed",
+      "command": [
+        "<USERPROFILE>\\Documents\\Codex\\2026-10-21\\read-the-attached-siteforge-master-prompt\\siteforge\\.venv\\Scripts\\python.exe",
+        "-m",
+        "benchmarks.runners.run",
+        "--model",
+        "siteforge-benchmark",
+        "--source-model",
+        "openai/gpt-oss-20b",
+        "--quantization",
+        "MXFP4",
+        "--context",
+        "4096",
+        "--parallel",
+        "1",
+        "--load",
+        "--structured-json",
+        "--max-tokens",
+        "1024",
+        "--timeout",
+        "120"
+      ],
+      "returncode": 1,
+      "finished_at": "2026-10-21T19:05:39.288595+00:00"
+    },
+    {
+      "name": "qwen/qwen3.5-9b:Q4_K_M:4096",
+      "started_at": "2026-10-21T19:05:39.406495+00:00",
+      "status": "completed",
+      "command": [
+        "<USERPROFILE>\\Documents\\Codex\\2026-10-21\\read-the-attached-siteforge-master-prompt\\siteforge\\.venv\\Scripts\\python.exe",
+        "-m",
+        "benchmarks.runners.run",
+        "--model",
+        "siteforge-benchmark",
+        "--source-model",
+        "qwen/qwen3.5-9b",
+        "--quantization",
+        "Q4_K_M",
+        "--context",
+        "4096",
+        "--parallel",
+        "1",
+        "--load",
+        "--structured-json",
+        "--max-tokens",
+        "1024",
+        "--timeout",
+        "120"
+      ],
+      "returncode": 0,
+      "finished_at": "2026-10-21T19:19:26.929376+00:00"
+    },
+    {
+      "name": "google/gemma-4-12b-qat:Q4_0:4096",
+      "started_at": "2026-10-21T19:19:27.159969+00:00",
+      "status": "completed",
+      "command": [
+        "<USERPROFILE>\\Documents\\Codex\\2026-10-21\\read-the-attached-siteforge-master-prompt\\siteforge\\.venv\\Scripts\\python.exe",
+        "-m",
+        "benchmarks.runners.run",
+        "--model",
+        "siteforge-benchmark",
+        "--source-model",
+        "google/gemma-4-12b-qat",
+        "--quantization",
+        "Q4_0",
+        "--context",
+        "4096",
+        "--parallel",
+        "1",
+        "--load",
+        "--structured-json",
+        "--max-tokens",
+        "1024",
+        "--timeout",
+        "120"
+      ],
+      "returncode": 0,
+      "finished_at": "2026-10-21T19:40:40.572578+00:00"
+    },
+    {
+      "name": "openai/gpt-oss-20b:MXFP4:4096:full-rerun-after-report-io-fix",
+      "started_at": "2026-10-21T19:41:04.847015+00:00",
+      "status": "completed",
+      "command": [
+        "<USERPROFILE>\\Documents\\Codex\\2026-10-21\\read-the-attached-siteforge-master-prompt\\siteforge\\.venv\\Scripts\\python.exe",
+        "-m",
+        "benchmarks.runners.run",
+        "--model",
+        "siteforge-benchmark",
+        "--source-model",
+        "openai/gpt-oss-20b",
+        "--quantization",
+        "MXFP4",
+        "--context",
+        "4096",
+        "--parallel",
+        "1",
+        "--load",
+        "--structured-json",
+        "--max-tokens",
+        "1024",
+        "--timeout",
+        "120"
+      ],
+      "returncode": 0,
+      "finished_at": "2026-10-21T19:49:14.034384+00:00"
+    },
+    {
+      "name": "google/gemma-4-e4b:Q4_K_M:16384:efficiency-probe",
+      "started_at": "2026-10-21T19:49:14.038390+00:00",
+      "status": "completed",
+      "command": [
+        "<USERPROFILE>\\Documents\\Codex\\2026-10-21\\read-the-attached-siteforge-master-prompt\\siteforge\\.venv\\Scripts\\python.exe",
+        "-m",
+        "benchmarks.runners.run",
+        "--model",
+        "siteforge-benchmark",
+        "--source-model",
+        "google/gemma-4-e4b",
+        "--quantization",
+        "Q4_K_M",
+        "--context",
+        "16384",
+        "--parallel",
+        "1",
+        "--load",
+        "--structured-json",
+        "--max-tokens",
+        "1024",
+        "--timeout",
+        "120",
+        "--category",
+        "efficiency"
+      ],
+      "returncode": 0,
+      "finished_at": "2026-10-21T19:49:37.644005+00:00"
+    },
+    {
+      "name": "google/gemma-4-e4b:Q4_K_M:32768:efficiency-probe",
+      "started_at": "2026-10-21T19:49:37.647004+00:00",
+      "status": "completed",
+      "command": [
+        "<USERPROFILE>\\Documents\\Codex\\2026-10-21\\read-the-attached-siteforge-master-prompt\\siteforge\\.venv\\Scripts\\python.exe",
+        "-m",
+        "benchmarks.runners.run",
+        "--model",
+        "siteforge-benchmark",
+        "--source-model",
+        "google/gemma-4-e4b",
+        "--quantization",
+        "Q4_K_M",
+        "--context",
+        "32768",
+        "--parallel",
+        "1",
+        "--load",
+        "--structured-json",
+        "--max-tokens",
+        "1024",
+        "--timeout",
+        "120",
+        "--category",
+        "efficiency"
+      ],
+      "returncode": 0,
+      "finished_at": "2026-10-21T19:49:57.679954+00:00"
+    }
+  ],
+  "scope": "Actual sequential RTX 4070 Ti LM Studio qualification; no paid APIs or external provider effects",
+  "comparison_limits": "One trial per task; fixed 1024 output-token budget; concurrent software development can affect timing. Context and quantization comparisons must retain their recorded settings. 16K/32K runs below are five efficiency fixture allocation probes with short prompts, not full quality or long-context retrieval qualification.",
+  "finished_at": "2026-10-21T19:49:57.683955+00:00",
+  "benchmark_harness_commit": "d64e46954ee10998185febf7a418758bf407d357",
+  "frozen_quality_contract_files": {
+    "benchmarks/runners/run.py": {
+      "working_tree_sha256": "8061a40fd0c7ac892c8d43618bd4ff872e350c199fcabeb2d0b0d14751ec198b",
+      "git_blob_sha256": "8061a40fd0c7ac892c8d43618bd4ff872e350c199fcabeb2d0b0d14751ec198b",
+      "difference": null
+    },
+    "benchmarks/runners/schemas.py": {
+      "working_tree_sha256": "a11eaf7a194fe8aeb198e1034567be0a0a9ed836fcfef9801538f96347d1f91b",
+      "git_blob_sha256": "a11eaf7a194fe8aeb198e1034567be0a0a9ed836fcfef9801538f96347d1f91b",
+      "difference": null
+    },
+    "benchmarks/evaluators/grade.py": {
+      "working_tree_sha256": "4acd44938924cd9f66241554f96f947c05a080ab3eabcb23a10ed989493316c3",
+      "git_blob_sha256": "4acd44938924cd9f66241554f96f947c05a080ab3eabcb23a10ed989493316c3",
+      "difference": null
+    },
+    "benchmarks/datasets/tasks.v1.3.jsonl": {
+      "working_tree_sha256": "ac59d435468237015e8d16d778fa6e461c27c7f10a249af3c9bd388391f78369",
+      "git_blob_sha256": "ac59d435468237015e8d16d778fa6e461c27c7f10a249af3c9bd388391f78369",
+      "difference": null
+    },
+    "benchmarks/datasets/manifest.v1.3.json": {
+      "working_tree_sha256": "d739a5126523cb95638216cc41a35bdaebc174ba03b8523b8a6a34dbe982cd75",
+      "git_blob_sha256": "e8f101555f7b857d520f91fab451973b7afe9fda88eaebbc112b1ab3dda164dc",
+      "difference": "CRLF-only manifest formatting"
+    },
+    "siteforge/lmstudio.py": {
+      "working_tree_sha256": "161ce2597a1699f6a7178fee9202a33e7f3266e13163d0942be8572a850e3b89",
+      "git_blob_sha256": "161ce2597a1699f6a7178fee9202a33e7f3266e13163d0942be8572a850e3b89",
+      "difference": null
+    }
+  },
+  "persistence_fix": {
+    "scope": "Windows atomic file replace retries only; no prompt, grade, modelclient, dataset or inference setting changes",
+    "original_interruption_run_id": "8fa9c004-3e06-4308-944d-661ff09723ea",
+    "recovery": "Fresh identical full GPT-OSS suite; original17 raw outcomes retained, excluded from routing because incomplete."
+  },
+  "post_qualification_native_integration": {
+    "source_commit": "4970d4f5616d82f255a1690325cc2478ba615441",
+    "evidence": "docs/operations/evidence/native-agent.json",
+    "attempts": [
+      {
+        "task_id": "0ee01e99-5085-4b2a-822f-54fff1887240",
+        "task_status": "failed",
+        "captured_at": "2026-10-21T19:04:25.736688+00:00",
+        "source_hash_before": "b38d632563212f4feae489621a0742c148e6adfa7161ee04e7529a7254820a7f",
+        "source_hash_after": "b38d632563212f4feae489621a0742c148e6adfa7161ee04e7529a7254820a7f",
+        "cause_or_scope": "Blocked before inference by SQLite deadline timezone loss; fixed",
+        "external_effects": []
+      },
+      {
+        "task_id": "f0b63a7c-afeb-4910-854a-bce81e0d9c4e",
+        "task_status": "failed",
+        "captured_at": "2026-10-21T19:52:05.784930+00:00",
+        "source_hash_before": "eb9c541d406ae4de9e4b6808853a990f0f9763f77ee0cb41359febda920209a7",
+        "source_hash_after": "eb9c541d406ae4de9e4b6808853a990f0f9763f77ee0cb41359febda920209a7",
+        "cause_or_scope": "Native calls rejected by overlong Windows action paths and misleading prerequisite order; SDK fixed",
+        "external_effects": []
+      },
+      {
+        "task_id": "40d9ae85-dc31-4218-9230-7bcb8ff7e728",
+        "task_status": "completed",
+        "captured_at": "2026-10-21T19:59:32.070419+00:00",
+        "source_hash_before": "da61714d800417505eb33c646b0fab7ec758f347a655acf3af0a3f559cc3c47f",
+        "source_hash_after": "da61714d800417505eb33c646b0fab7ec758f347a655acf3af0a3f559cc3c47f",
+        "cause_or_scope": "Completed bounded internal scoring and proposed workflow; no scheduling/provider effect",
+        "external_effects": []
+      }
+    ],
+    "final_status": "completed",
+    "model_auto_load": false,
+    "model_loaded_explicitly_before_worker": true,
+    "scope": "Separate application integration checks; no benchmark task grades or responses changed"
+  }
+}

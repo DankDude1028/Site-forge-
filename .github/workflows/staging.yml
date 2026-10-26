@@ -1,0 +1,35 @@
+name: Protected preview
+on:
+  workflow_dispatch:
+    inputs:
+      ref: {description: 'Exact reviewed commit SHA', required: true}
+      site_id: {description: 'Internal SiteForge site UUID', required: true}
+      directory: {description: 'Reviewed built bundle directory already staged in supervisor preview root', required: true}
+      approval_id: {description: 'Exact deploy_preview approval UUID', required: true}
+      request_id: {description: 'Stable preview idempotency key', required: true}
+permissions: {contents: read}
+jobs:
+  preview:
+    if: vars.SITEFORGE_PREVIEWS_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: protected-preview
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ inputs.ref }}'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12', cache: pip}
+      - run: pip install -r requirements.lock
+      - name: Execute exact approved preview through supervisor
+        env:
+          SITEFORGE_API_URL: '${{ vars.SITEFORGE_API_URL }}'
+          SITEFORGE_RELEASE_TOKEN: '${{ secrets.SITEFORGE_RELEASE_TOKEN }}'
+          PREVIEW_SITE_ID: '${{ inputs.site_id }}'
+          PREVIEW_COMMIT_SHA: '${{ inputs.ref }}'
+          PREVIEW_DIRECTORY: '${{ inputs.directory }}'
+          PREVIEW_APPROVAL_ID: '${{ inputs.approval_id }}'
+          PREVIEW_REQUEST_ID: '${{ inputs.request_id }}'
+        run: |
+          python -m siteforge.release_client preview --site-id "$PREVIEW_SITE_ID" --commit-sha "$PREVIEW_COMMIT_SHA" --directory "$PREVIEW_DIRECTORY" --approval-id "$PREVIEW_APPROVAL_ID" --request-id "$PREVIEW_REQUEST_ID" > preview-receipt.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: preview-receipt, path: preview-receipt.json}

@@ -21,3 +21,4 @@ test-results/
 runtime/
 *.log
 *.egg-info/
+.inference.mutex

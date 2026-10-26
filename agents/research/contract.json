@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "role": "research",
+  "allowed_tools": [
+    "read_sources",
+    "read_web",
+    "write_evidence"
+  ],
+  "max_attempts": 3,
+  "max_cost_usd": "0",
+  "escalation": "owner_review",
+  "inputs": "AgentContext",
+  "outputs": "AgentResult",
+  "fixture_mode_explicit": true,
+  "model_proposals_execute": false
+}

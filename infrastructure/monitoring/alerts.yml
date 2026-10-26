@@ -7,7 +7,7 @@ groups:
         labels: {severity: critical}
         annotations: {summary: "SiteForge supervisor unavailable"}
       - alert: SiteForgeWorkerOffline
-        expr: siteforge_worker_heartbeat_age_seconds > 180
+        expr: sum(siteforge_workers{state="online"}) == 0
         for: 3m
         labels: {severity: warning}
         annotations: {summary: "GPU work waits until the Windows worker reconnects"}
