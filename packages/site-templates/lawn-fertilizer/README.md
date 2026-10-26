@@ -1,4 +1,4 @@
-# Lawn fertilizer calculator (Turfwise, working name)
+# Lawn fertilizer calculator (Lawn Numbers, lawnnumbers.com)
 
 SiteForge's first real launch candidate, chosen on 2026-10-26. A browser-local calculator turns the lawn area, the
 three numbers on the bag, the bag weight and a nitrogen rate into:
@@ -35,7 +35,7 @@ checks each page's SEO contract in both build modes. The browser tests cover liv
 requests, axe accessibility on every page, phone width and reduced motion.
 
 Still open before launch:
-- the owner picks the final name and domain;
+- connect lawnnumbers.com (bought by the owner on 2026-10-26);
 - the hosting and contact details;
 - more substantive pages (guides by grass type and lawn size) before any ad network application;
 - the privacy page must be updated before any analytics or ads are added.

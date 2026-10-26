@@ -35,7 +35,7 @@ const faqs = [
 ];
 
 const jsonLd = [
-  { '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Turfwise lawn fertilizer calculator',
+  { '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Lawn Numbers fertilizer calculator',
     applicationCategory: 'UtilitiesApplication', operatingSystem: 'Any', isAccessibleForFree: true,
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
     description: 'Works out how many pounds of lawn fertilizer to spread and how many bags to buy, from your lawn size and the numbers on the bag.' },
@@ -43,7 +43,7 @@ const jsonLd = [
     mainEntity: faqs.map((item) => ({ '@type': 'Question', name: item.q, acceptedAnswer: { '@type': 'Answer', text: item.a } })) },
 ];
 ---
-<Base title="Lawn Fertilizer Calculator: How Much to Spread and Buy | Turfwise"
+<Base title="Lawn Fertilizer Calculator: How Much to Spread and Buy | Lawn Numbers"
   description="Free lawn fertilizer calculator. Enter your lawn size and the numbers on the bag to get pounds to spread, bags to buy, your spreader target and when to feed your grass."
   path="/" jsonLd={jsonLd}>
   <main id="main">
@@ -55,7 +55,7 @@ const jsonLd = [
           <h1 id="hero-title">How much fertilizer does your lawn <em>really</em> need?</h1>
         </div>
         <div class="hero-side">
-          <p class="lede">Type your lawn size and the three numbers on the bag. Turfwise works out the pounds to spread, the bags to buy and the setting to aim for, then shows when your grass wants feeding.</p>
+          <p class="lede">Type your lawn size and the three numbers on the bag. Lawn Numbers works out the pounds to spread, the bags to buy and the setting to aim for, then shows when your grass wants feeding.</p>
           <ul class="trust">
             <li>Formulas from university extension guides</li>
             <li>What you type never leaves your browser</li>

@@ -16,17 +16,17 @@ test('actual Astro preview and production outputs have separate complete SEO con
   const temporary = await mkdtemp(join(temporaryParent, 'astro-build-'));
   try {
     for (const mode of ['preview', 'production']) {
-      const origin = mode === 'production' ? 'https://turfwise.net' : 'https://preview.invalid';
+      const origin = mode === 'production' ? 'https://lawnnumbers.com' : 'https://preview.invalid';
       const out = join(temporary, mode);
       const details = mode === 'production' ? { SITEFORGE_HOST_NAME: 'Netlify',
-        SITEFORGE_HOST_PRIVACY_URL: 'https://www.netlify.com/privacy/', SITEFORGE_CONTACT_EMAIL: 'hello@turfwise.net' }
+        SITEFORGE_HOST_PRIVACY_URL: 'https://www.netlify.com/privacy/', SITEFORGE_CONTACT_EMAIL: 'hello@lawnnumbers.com' }
         : { SITEFORGE_HOST_NAME: '', SITEFORGE_HOST_PRIVACY_URL: '', SITEFORGE_CONTACT_EMAIL: '' };
       const build = spawnSync(process.execPath, ['node_modules/astro/bin/astro.mjs', 'build', '--outDir', out],
         { cwd: root, env: { ...process.env, SITEFORGE_BUILD_MODE: mode, SITEFORGE_SITE_URL: origin, ...details }, encoding: 'utf8', timeout: 60_000 });
       assert.equal(build.status, 0, build.stderr + build.stdout);
       const privacy = await readFile(join(out, 'privacy/index.html'), 'utf8');
       if (mode === 'production') {
-        assert.ok(privacy.includes('href="mailto:hello@turfwise.net"') && privacy.includes('href="https://www.netlify.com/privacy/"'));
+        assert.ok(privacy.includes('href="mailto:hello@lawnnumbers.com"') && privacy.includes('href="https://www.netlify.com/privacy/"'));
         assert.ok(!privacy.includes('added before launch'));
       } else {
         assert.ok(privacy.includes('added before launch'));
@@ -37,7 +37,7 @@ test('actual Astro preview and production outputs have separate complete SEO con
         assert.ok(html.includes(`rel="canonical" href="${origin}${route}"`), path);
         assert.ok(!html.includes(mode === 'production' ? 'noindex' : 'content="index, follow"'), path);
         assert.equal((html.match(/<h1[\s>]/g) ?? []).length, 1, `${path} has exactly one h1`);
-        assert.ok(/<title>[^<]+\| Turfwise<\/title>/.test(html) && html.includes('name="description"'), path);
+        assert.ok(/<title>[^<]+\| Lawn Numbers<\/title>/.test(html) && html.includes('name="description"'), path);
         assert.equal(html.includes('Proof · not published'), mode === 'preview', `${path} marks only previews as proofs`);
       }
       const home = await readFile(join(out, 'index.html'), 'utf8');
@@ -50,7 +50,7 @@ test('actual Astro preview and production outputs have separate complete SEO con
       for (const [, route] of pages) assert.ok(sitemap.includes(`<loc>${origin}${route}</loc>`), route);
     }
     const missing = spawnSync(process.execPath, ['node_modules/astro/bin/astro.mjs', 'build', '--outDir', join(temporary, 'missing')],
-      { cwd: root, env: { ...process.env, SITEFORGE_BUILD_MODE: 'production', SITEFORGE_SITE_URL: 'https://turfwise.net',
+      { cwd: root, env: { ...process.env, SITEFORGE_BUILD_MODE: 'production', SITEFORGE_SITE_URL: 'https://lawnnumbers.com',
         SITEFORGE_HOST_NAME: '', SITEFORGE_HOST_PRIVACY_URL: '', SITEFORGE_CONTACT_EMAIL: '' }, encoding: 'utf8', timeout: 60_000 });
     assert.notEqual(missing.status, 0, 'A production build without host and contact details must fail');
   } finally {
