@@ -297,9 +297,11 @@ def build_request(kind: Kind, site_id: UUID | str, brief: str, *,
     if model == HAIKU_MODEL and input_bound > HAIKU_PROMPT_LIMIT:
         raise DomainError(f"Haiku prompts over {HAIKU_PROMPT_LIMIT} tokens are billed at long-context rates; "
                           "send less text or fewer screenshots", 422)
-    # Haiku 5.5 has no server-side fallback. A design lead's files are tested before use, so a refusal only
-    # costs that round and needs no second model.
-    fallbacks = [{"model": FALLBACK_MODEL}] if model == ADVISOR_MODEL and kind != "design_lead" else []
+    # Only reviews fall back to a second model. Every design score must come from the same calibrated judge, a
+    # design lead's files are tested before use (a refusal only costs that round), and Haiku 5.5 has no
+    # server-side fallback.
+    reviews = ("site_review", "research_check")
+    fallbacks = [{"model": FALLBACK_MODEL}] if model == ADVISOR_MODEL and kind in reviews else []
     models = [model, *(fallback["model"] for fallback in fallbacks)]
     return {"version": 1, "kind": kind, "site_id": str(site_id), "nonce": uuid4().hex,
             "params": params, "fallbacks": fallbacks,

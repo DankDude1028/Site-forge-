@@ -113,6 +113,9 @@ def test_design_score_requests_calibrated_integer_scores_from_screenshots():
     schema = document["params"]["output_config"]["format"]["schema"]
     assert schema["properties"]["scores"]["properties"]["overall"] == {"type": "integer", "enum": list(range(1, 11))}
     assert "Calibrate strictly" in document["params"]["system"]
+    # Every score comes from the same judge, so its worst case is one model's full output.
+    assert document["fallbacks"] == []
+    assert Decimal(document["max_cost"]) == max_cost(document["input_token_bound"], 16_000, [ADVISOR_MODEL])
     with pytest.raises(DomainError, match="at least one screenshot"):
         build_request("design_score", uuid4(), "Score this page.")
 
