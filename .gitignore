@@ -20,5 +20,6 @@ playwright-report/
 test-results/
 runtime/
 *.log
+!experiments/design-lab/logs/*.log
 *.egg-info/
 .inference.mutex

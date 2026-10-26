@@ -1,0 +1,866 @@
+<title>SiteForge Launch Shortlist</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&amp;family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<style>
+:root {
+  /* Layout: one reading column of "scouting cards" — the answer first, the ranked board next, the evidence after */
+  --bg: #F2F4F1;
+  --surface: #FFFFFF;
+  --ink: #16201B;
+  --muted: #55615A;
+  --rule: #D6DDD8;
+  --track: #E3E8E4;
+  --accent: #2848B8;
+  --accent-soft: #E7ECFB;
+  --good: #1D7A4B;
+  --good-soft: #E2F1E8;
+  --mid: #8F6200;
+  --mid-soft: #FAF0D7;
+  --weak: #AE3A2D;
+  --weak-soft: #F7E4E1;
+  --font-display: "Archivo", "Arial Narrow", Arial, sans-serif;
+  --font-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1412; --surface: #161F1B; --ink: #E5EBE7; --muted: #9BA7A0; --rule: #29342F; --track: #26302B;
+    --accent: #97ACFF; --accent-soft: #1D2646; --good: #6CD29D; --good-soft: #143022; --mid: #E8B954; --mid-soft: #322811;
+    --weak: #F2897C; --weak-soft: #3A1D19; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1412; --surface: #161F1B; --ink: #E5EBE7; --muted: #9BA7A0; --rule: #29342F; --track: #26302B;
+  --accent: #97ACFF; --accent-soft: #1D2646; --good: #6CD29D; --good-soft: #143022; --mid: #E8B954; --mid-soft: #322811;
+  --weak: #F2897C; --weak-soft: #3A1D19; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 1.0625rem; line-height: 1.55; -webkit-text-size-adjust: 100%; }
+a { color: var(--accent); text-underline-offset: 2px; text-decoration-thickness: 1px; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+.wrap { max-width: 46rem; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 72px; display: grid; gap: 44px; }
+section { display: grid; gap: 16px; min-width: 0; }
+h1, h2, h3 { font-family: var(--font-display); font-stretch: 84%; text-wrap: balance; margin: 0; line-height: 1.08; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.1rem, 7vw, 3.1rem); font-weight: 800; }
+h2 { font-size: clamp(1.55rem, 4.6vw, 2rem); font-weight: 750; }
+h3 { font-size: 1.35rem; font-weight: 720; }
+p { margin: 0; max-width: 65ch; }
+ul, ol { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+.eyebrow { font-family: var(--font-data); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); }
+.lede { font-size: 1.15rem; color: var(--ink); }
+.muted { color: var(--muted); }
+.small { font-size: 0.9rem; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* Masthead */
+.masthead { display: grid; gap: 14px; padding-bottom: 6px; border-bottom: 1px solid var(--rule); padding-block-end: 24px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-family: var(--font-data); font-size: 0.75rem; padding: 4px 9px; border-radius: 999px; background: var(--surface); border: 1px solid var(--rule); color: var(--muted); white-space: nowrap; }
+
+/* Picks */
+.picks { list-style: none; padding: 0; display: grid; gap: 12px; }
+.pick { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 16px; display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: start; }
+.pick .rank { grid-row: span 2; font-family: var(--font-display); font-stretch: 80%; font-weight: 800; font-size: 2.6rem; line-height: 0.9; color: var(--accent); min-width: 1.4ch; }
+.pick h3 { font-size: 1.25rem; }
+.pick h3 a { color: inherit; text-decoration: none; }
+.pick h3 a:hover { text-decoration: underline; }
+.pick p { color: var(--ink); }
+.pick .why { grid-column: 2; font-size: 0.98rem; color: var(--muted); }
+.expect { background: var(--mid-soft); border: 1px solid color-mix(in srgb, var(--mid) 35%, transparent); border-radius: 12px; padding: 16px; display: grid; gap: 8px; }
+.expect strong { color: var(--ink); }
+
+/* Ranked board */
+.board { list-style: none; padding: 0; display: grid; gap: 2px; background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding-block: 6px; }
+.board li { display: grid; grid-template-columns: 2rem 1fr auto; gap: 4px 10px; align-items: center; padding: 9px 14px; }
+.board li + li { border-top: 1px solid var(--rule); }
+.board .r { font-family: var(--font-data); font-size: 0.85rem; color: var(--muted); }
+.board .n { min-width: 0; display: grid; gap: 5px; }
+.board .n a { color: var(--ink); text-decoration: none; font-weight: 700; font-size: 0.98rem; }
+.board .n a:hover { text-decoration: underline; }
+.board .s { font-family: var(--font-display); font-stretch: 84%; font-weight: 750; font-size: 1.25rem; text-align: right; min-width: 2.6ch; }
+.board .y { font-family: var(--font-data); font-size: 0.72rem; color: var(--muted); }
+.track { height: 7px; background: var(--track); border-radius: 4px; overflow: hidden; }
+.track i { display: block; height: 100%; width: calc(var(--v) * 10%); border-radius: 4px; background: var(--fill, var(--accent)); }
+.g-good { --fill: var(--good); color: var(--good); }
+.g-mid { --fill: var(--mid); color: var(--mid); }
+.g-weak { --fill: var(--weak); color: var(--weak); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.85rem; color: var(--muted); }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; background: var(--fill); }
+
+/* Factors explainer */
+.factors { display: grid; gap: 10px; margin: 0; }
+.factors div { display: grid; grid-template-columns: 3.4rem 1fr; gap: 10px; align-items: baseline; }
+.factors dt { font-family: var(--font-data); font-size: 0.85rem; color: var(--accent); font-weight: 500; }
+.factors dd { margin: 0; }
+
+/* Idea cards */
+.ideas { display: grid; gap: 18px; }
+.idea { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: 18px; display: grid; gap: 16px; min-width: 0; scroll-margin-top: 16px; }
+.idea-head { display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; align-items: start; }
+.idea-head .eyebrow { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.tag { font-family: var(--font-data); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); }
+.tag.top { background: var(--good-soft); color: var(--good); }
+.tag.no { background: var(--weak-soft); color: var(--weak); }
+.idea-head h3 { min-width: 0; }
+.pitch { grid-column: 1 / -1; color: var(--muted); font-size: 1rem; }
+.score { text-align: right; display: grid; justify-items: end; gap: 0; }
+.score b { font-family: var(--font-display); font-stretch: 80%; font-weight: 800; font-size: 2.5rem; line-height: 0.9; }
+.score small { font-family: var(--font-data); font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stat { background: var(--bg); border-radius: 8px; padding: 9px 10px; display: grid; gap: 2px; min-width: 0; }
+.stat span { font-family: var(--font-data); font-size: 0.66rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.stat b { font-family: var(--font-display); font-stretch: 86%; font-size: 1.1rem; font-weight: 720; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.bars { display: grid; gap: 7px; }
+.bars div { display: grid; grid-template-columns: 7.6rem 1fr 1.6rem; gap: 10px; align-items: center; font-size: 0.85rem; }
+.bars div span:first-child { color: var(--muted); }
+.bars div span:last-child { font-family: var(--font-data); text-align: right; font-variant-numeric: tabular-nums; }
+.part { display: grid; gap: 6px; min-width: 0; }
+.part h4 { margin: 0; font-family: var(--font-data); font-size: 0.72rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.part ul { gap: 5px; }
+.est { font-family: var(--font-data); font-size: 0.68rem; padding: 1px 6px; border-radius: 4px; background: var(--mid-soft); color: var(--mid); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+.assume { font-size: 0.92rem; color: var(--muted); }
+.skipped { background: var(--surface); border: 1px dashed var(--rule); border-radius: 12px; padding: 16px; display: grid; gap: 8px; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 0.88rem; }
+th, td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-family: var(--font-data); font-size: 0.7rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); background: var(--bg); }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+.formula { font-family: var(--font-data); font-size: 0.85rem; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; overflow-x: auto; line-height: 1.6; }
+
+/* Lists of gaps / rules / steps */
+.cards { display: grid; gap: 10px; list-style: none; padding: 0; }
+.cards li { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 13px 15px; display: grid; gap: 4px; }
+.cards li strong { font-family: var(--font-display); font-stretch: 88%; font-size: 1.05rem; font-weight: 720; }
+.steps { counter-reset: s; }
+.steps li { grid-template-columns: 2rem 1fr; column-gap: 10px; }
+.steps li::before { counter-increment: s; content: counter(s); grid-row: span 2; font-family: var(--font-display); font-stretch: 80%; font-weight: 800; font-size: 1.6rem; line-height: 1; color: var(--accent); }
+.need { font-family: var(--font-data); font-size: 0.7rem; color: var(--weak); text-transform: uppercase; letter-spacing: 0.06em; }
+.ok { font-family: var(--font-data); font-size: 0.7rem; color: var(--good); text-transform: uppercase; letter-spacing: 0.06em; }
+footer { border-top: 1px solid var(--rule); padding-top: 18px; color: var(--muted); font-size: 0.88rem; display: grid; gap: 8px; }
+
+@media (max-width: 30rem) {
+  body { font-size: 1.03rem; }
+  .stats { grid-template-columns: 1fr 1fr; }
+  .stats .stat:last-child { grid-column: 1 / -1; }
+  .bars div { grid-template-columns: 6.6rem 1fr 1.5rem; }
+  .idea { padding: 16px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .track i { transition: width 0.6s ease; }
+}
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <span class="eyebrow">Research report for the SiteForge owner</span>
+  <h1>Which site should SiteForge launch first?</h1>
+  <p class="lede">We looked at 15 small, single-purpose tools SiteForge could build today. Each one was checked for real searches, who already ranks on Google, how it could make money, what it would cost, and what could go wrong.</p>
+  <div class="meta">
+    <span class="chip">Checked 25 Oct 2026</span>
+    <span class="chip">US search data</span>
+    <span class="chip">Money figures are estimates</span>
+  </div>
+</header>
+
+<section id="answer" aria-labelledby="answer-h">
+  <span class="eyebrow">The short answer</span>
+  <h2 id="answer-h">Build these three, in this order</h2>
+  <ol class="picks">
+    <li class="pick">
+      <span class="rank" aria-hidden="true">1</span>
+      <h3><a href="#lawn">Lawn fertilizer &amp; grass seed calculator</a></h3>
+      <p class="why">Real, repeated confusion (people can't turn "24-0-11" on a bag into pounds to spread). The sites that rank are old university forms, the easiest competition of any idea with solid demand. Advertisers pay about $9.79 a click on this search, so visitors are worth money. It needs accurate maths more than visual polish. Launch now so Google has it indexed before the March to May 2027 lawn season.</p>
+    </li>
+    <li class="pick">
+      <span class="rank" aria-hidden="true">2</span>
+      <h3><a href="#drinks">Party &amp; wedding drinks planner</a></h3>
+      <p class="why">The biggest demand we found that a new site can realistically compete for: about 30,000 US searches a month. A one-tool site registered in April 2026 already reaches Google's first page. People on wedding forums complain that calculators disagree, so a clear shopping list in real bottle and case sizes is a genuine improvement. Needs to be live by February for wedding season.</p>
+    </li>
+    <li class="pick">
+      <span class="rank" aria-hidden="true">3</span>
+      <h3><a href="#lumber">Lumber &amp; cut-list planner</a></h3>
+      <p class="why">The largest prize on the list (about 40,000 searches a month) and no season. The popular free cutting optimizer limits how often you can use it, and the board-foot calculators that rank are simple lumberyard forms. It is the most work to build and test, so it comes third.</p>
+    </li>
+  </ol>
+  <div class="expect">
+    <strong>Set expectations: year-one money will be small.</strong>
+    <p>Our estimate for all three together is roughly <b class="num">$20 to $550</b> in the first year (<a href="#money">how we got this</a>). New sites take months to appear in Google, and most single tools earn modestly. Year one is about getting a genuinely useful tool found and used. Each site can then grow with sibling tools on the same domain. Running cost is about $11 a year per site for the domain; hosting can stay free.</p>
+  </div>
+</section>
+
+<section id="ranking" aria-labelledby="ranking-h">
+  <span class="eyebrow">All 15 ideas</span>
+  <h2 id="ranking-h">The ranked board</h2>
+  <p class="muted small">Score out of 10 using SiteForge's own weights (<a href="#scoring">explained below</a>). Tap a name for the full card. The small figure is the year-one money estimate.</p>
+  <div class="legend"><span class="g-good" style="color:var(--muted)">6.5 and up: strong</span><span class="g-mid" style="color:var(--muted)">5.5 to 6.4: fair</span><span class="g-weak" style="color:var(--muted)">below 5.5: weak</span></div>
+  <ol class="board">
+    <li class="g-good"><span class="r">1</span><span class="n"><a href="#lawn">Lawn fertilizer &amp; seed calculator</a><span class="track"><i style="--v:7.0"></i></span><span class="y">Year 1: $4–100</span></span><span class="s">7.0</span></li>
+    <li class="g-good"><span class="r">2</span><span class="n"><a href="#drinks">Party &amp; wedding drinks planner</a><span class="track"><i style="--v:6.6"></i></span><span class="y">Year 1: $8–110</span></span><span class="s">6.6</span></li>
+    <li class="g-good"><span class="r">3</span><span class="n"><a href="#lumber">Lumber &amp; cut-list planner</a><span class="track"><i style="--v:6.5"></i></span><span class="y">Year 1: $10–340</span></span><span class="s">6.5</span></li>
+    <li class="g-good"><span class="r">4</span><span class="n"><a href="#shifts">Shift-pattern calendar</a><span class="track"><i style="--v:6.5"></i></span><span class="y">Year 1: $2–75</span></span><span class="s">6.5</span></li>
+    <li class="g-mid"><span class="r">5</span><span class="n"><a href="#quilt">Quilt maths kit</a><span class="track"><i style="--v:6.3"></i></span><span class="y">Year 1: $2–90</span></span><span class="s">6.3</span></li>
+    <li class="g-mid"><span class="r">6</span><span class="n"><a href="#print3d">3D-print cost &amp; quote calculator</a><span class="track"><i style="--v:6.0"></i></span><span class="y">Year 1: $1–45</span></span><span class="s">6.0</span></li>
+    <li class="g-mid"><span class="r">7</span><span class="n"><a href="#soil">Raised-bed soil calculator</a><span class="track"><i style="--v:5.9"></i></span><span class="y">Year 1: $2–85</span></span><span class="s">5.9</span></li>
+    <li class="g-mid"><span class="r">8</span><span class="n"><a href="#candle">Candle batch calculator</a><span class="track"><i style="--v:5.6"></i></span><span class="y">Year 1: $1–15</span></span><span class="s">5.6</span></li>
+    <li class="g-mid"><span class="r">9</span><span class="n"><a href="#golf">Golf handicap calculator</a><span class="track"><i style="--v:5.6"></i></span><span class="y">Year 1: $3–110</span></span><span class="s">5.6</span></li>
+    <li class="g-weak"><span class="r">10</span><span class="n"><a href="#epoxy">Epoxy &amp; resin pour calculator</a><span class="track"><i style="--v:5.3"></i></span><span class="y">Year 1: $1–30</span></span><span class="s">5.3</span></li>
+    <li class="g-weak"><span class="r">11</span><span class="n"><a href="#roundrobin">Round-robin &amp; league scheduler</a><span class="track"><i style="--v:5.2"></i></span><span class="y">Year 1: $1–15</span></span><span class="s">5.2</span></li>
+    <li class="g-weak"><span class="r">12</span><span class="n"><a href="#maker">Maker pricing kit (with Rollwise)</a><span class="track"><i style="--v:5.2"></i></span><span class="y">Year 1: $0–10</span></span><span class="s">5.2</span></li>
+    <li class="g-weak"><span class="r">13</span><span class="n"><a href="#pool">Pool chemistry calculator</a><span class="track"><i style="--v:5.2"></i></span><span class="y">Year 1: $1–20 · not advised</span></span><span class="s">5.2</span></li>
+    <li class="g-weak"><span class="r">14</span><span class="n"><a href="#sourdough">Sourdough baker's-percentage calculator</a><span class="track"><i style="--v:5.1"></i></span><span class="y">Year 1: $1–12</span></span><span class="s">5.1</span></li>
+    <li class="g-weak"><span class="r">15</span><span class="n"><a href="#etsy">Etsy fee &amp; profit calculator</a><span class="track"><i style="--v:4.6"></i></span><span class="y">Year 1: $0–10 · not advised</span></span><span class="s">4.6</span></li>
+  </ol>
+</section>
+
+<section id="scoring" aria-labelledby="scoring-h">
+  <span class="eyebrow">How to read the score</span>
+  <h2 id="scoring-h">Five things, weighted the way SiteForge already scores ideas</h2>
+  <p>SiteForge's Research agent uses fixed weights for every opportunity. We used the same ones so this report matches what the system will do. Each factor gets 0 to 10, then the weights give the final score. Treat scores as roughly plus or minus one point; two ideas a few tenths apart are close calls.</p>
+  <dl class="factors">
+    <div><dt>25%</dt><dd><b>Demand.</b> How many people search for this each month in the US, and whether that is growing.</dd></div>
+    <div><dt>20%</dt><dd><b>Room to compete.</b> Higher means the sites on Google's first page are weaker or older, so a new site has a chance.</dd></div>
+    <div><dt>25%</dt><dd><b>Earning power.</b> What advertisers pay for these searches and how good the matching affiliate programs are.</dd></div>
+    <div><dt>20%</dt><dd><b>Unique value.</b> How much better SiteForge's tool could be than what exists.</dd></div>
+    <div><dt>10%</dt><dd><b>Low upkeep.</b> Higher means the maths never changes; lower means rules or prices need regular checking.</dd></div>
+  </dl>
+  <p class="muted small">Separately from the score, each card says how much the idea depends on visual polish. A parallel SiteForge experiment found the local models currently reach about 4 to 6 out of 10 on design, so ideas that win on usefulness are safer first bets.</p>
+</section>
+
+<section id="ideas" aria-labelledby="ideas-h">
+  <span class="eyebrow">The evidence</span>
+  <h2 id="ideas-h">Every idea, card by card</h2>
+  <p class="muted small">"Searches a month" are US Google figures from <a href="https://www.seodata.dev/keyword/lawn-fertilizer-calculator">seodata.dev</a> (Google Ads data, rounded, similar phrasings grouped). Totals add only distinct phrasings. "Google results" means the live US results we checked on 25 Oct 2026; your results may differ. Reddit threads are quoted from their titles and comment counts as Google lists them.</p>
+
+  <div class="ideas">
+
+  <!-- 1 LAWN -->
+  <article class="idea" id="lawn" aria-labelledby="lawn-h">
+    <div class="idea-head">
+      <span class="eyebrow"><span class="tag top">Top pick · launch first</span><span>Rank 1</span></span>
+      <h3 id="lawn-h">Lawn fertilizer &amp; grass seed calculator</h3>
+      <div class="score g-good"><b>7.0</b><small>score / 10</small></div>
+      <p class="pitch">Turns the three numbers on a fertilizer bag into pounds to spread, bags to buy and the season's nitrogen total. Same for grass seed: new lawn or overseeding.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Searches / month</span><b>~7,300</b></div>
+      <div class="stat"><span>Year 1 <span class="est">est.</span></span><b>$4–100</b></div>
+      <div class="stat"><span>Mature ceiling <span class="est">est.</span></span><b>$50–600 / yr</b></div>
+    </div>
+    <div class="bars" aria-label="Score breakdown">
+      <div><span>Demand</span><span class="track"><i style="--v:6"></i></span><span>6</span></div>
+      <div><span>Room to compete</span><span class="track"><i style="--v:7"></i></span><span>7</span></div>
+      <div><span>Earning power</span><span class="track"><i style="--v:7"></i></span><span>7</span></div>
+      <div><span>Unique value</span><span class="track"><i style="--v:8"></i></span><span>8</span></div>
+      <div><span>Low upkeep</span><span class="track"><i style="--v:7"></i></span><span>7</span></div>
+    </div>
+    <div class="part"><h4>Who it's for and the problem</h4>
+      <p>Homeowners who look after their own lawn. Advice says "apply about 1 lb of nitrogen per 1,000 sq ft"; the bag says something like 24-0-11 and gives a spreader setting. Turning one into the other trips people up every season. Design dependence: <b>low</b>.</p>
+    </div>
+    <div class="part"><h4>Demand evidence</h4>
+      <ul>
+        <li>"fertilizer calculator" 2,400 a month, "lawn fertilizer calculator" 880, "yard fertilizer calculator" 880, "lawn fertilization calculator" 720 (<a href="https://www.seodata.dev/keyword/lawn-fertilizer-calculator">seodata</a>); "grass seed calculator" 2,400 (<a href="https://www.seodata.dev/keyword/grass-seed-calculator">seodata</a>).</li>
+        <li>Advertisers pay about $9.79 a click for "lawn fertilizer calculator" and $4.59 for "grass seed calculator" (same sources). High bids mean visitors are commercially valuable.</li>
+        <li>Interest in "fertilizer calculator" rose about 13% from 2021–22 to 2025–26, peaking March to May (<a href="https://trends.google.com/trends/explore?date=2021-04-01%202026-03-15&amp;geo=US&amp;q=fertilizer%20calculator">Google Trends</a>).</li>
+        <li>The same question returns year after year on r/lawncare: "Fertilizer math for dummies – halp!", "How to calculate amount of granular fertilizer?", "Need help with the calculator", "My dad put down fertilizer at 2.5 lbs of N per 1000 sq ft" (50+ comments) (<a href="https://www.google.com/search?q=site%3Areddit.com+lawn+fertilizer+how+much+per+1000+sq+ft+calculate">Google results</a>).</li>
+      </ul>
+    </div>
+    <div class="part"><h4>Competitors</h4>
+      <p>First page for "lawn fertilizer calculator": University of Missouri, Purdue Turf, University of Georgia, Virginia's conservation department, the nonprofit Lawn to Lake, Omni Calculator, and small sites lawnphix.com, golfcourselawn.store and Ewing Outdoor Supply (<a href="https://www.google.com/search?q=lawn+fertilizer+calculator">Google results</a>). Their weakness: mostly old single-formula forms with no bag counts, no season total and no seed help. Their strength: university names are trusted.</p>
+    </div>
+    <div class="part"><h4>How it makes money</h4>
+      <ul>
+        <li>Display ads on the tool and its short guides.</li>
+        <li>Affiliate links to lawn products: DoMyOwn pays up to 6% with a 90-day cookie (<a href="https://domyown.com/pages/affiliates">official page</a>); Amazon pays 3% on Lawn &amp; Garden (<a href="https://affiliate-program.amazon.com/help/node/topic/GRXPHT8U84RAYDXZ">official rates</a>).</li>
+      </ul>
+      <p class="assume"><span class="est">Estimate</span> Year 1 $4–100. Assumes 2–8% of the 7,300 monthly searches become visits by month 12 (150–580 a month), about 730–2,900 visits in year one, earning $6–34 per 1,000 visits ($5–12 ads, $1–22 affiliate). Ceiling assumes top-3 Google positions. Adding sibling lawn tools adds little demand (for example "lime calculator" is only 210 a month, <a href="https://www.seodata.dev/keyword/lime-calculator">seodata</a>).</p>
+    </div>
+    <div class="part"><h4>Build fit for SiteForge</h4>
+      <p><span class="ok">Fits today:</span> pure arithmetic in the browser, like Rollwise; tested maths, accessible form, no backend.</p>
+      <p><span class="need">Needs adding:</span> a small reviewed data table (seed rates by grass type, a list of state fertilizer rules with a "last checked" date), unit choices, ad and affiliate components, analytics (see <a href="#gaps">what SiteForge needs</a>).</p>
+    </div>
+    <div class="part"><h4>Risks</h4>
+      <ul>
+        <li>Seasonal: most traffic comes in spring and early fall.</li>
+        <li>Fertilizer rules vary by state and county. Eleven states had restricted phosphorus on lawns by 2012 (<a href="https://www.cga.ct.gov/2012/rpt/2012-r-0076.htm">Connecticut legislative report</a>; <a href="https://www.mda.state.mn.us/phosphorus-lawn-fertilizer-law">Minnesota's law</a>), and Florida uses local no-fertilizer periods. The tool must tell people to follow the label and local rules, and must not give pesticide doses.</li>
+        <li>Small total market for one tool; trusted university tools.</li>
+      </ul>
+    </div>
+  </article>
+
+  <!-- 2 DRINKS -->
+  <article class="idea" id="drinks" aria-labelledby="drinks-h">
+    <div class="idea-head">
+      <span class="eyebrow"><span class="tag top">Top pick</span><span>Rank 2</span></span>
+      <h3 id="drinks-h">Party &amp; wedding drinks planner</h3>
+      <div class="score g-good"><b>6.6</b><small>score / 10</small></div>
+      <p class="pitch">Guests, hours and drink mix in; a shopping list in real store units out (750 ml bottles, 1.75 L bottles, 24-can cases, ice, mixers, non-alcoholic options) with a cost estimate.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Searches / month</span><b>~30,000</b></div>
+      <div class="stat"><span>Year 1 <span class="est">est.</span></span><b>$8–110</b></div>
+      <div class="stat"><span>Mature ceiling <span class="est">est.</span></span><b>$180–1,100 / yr</b></div>
+    </div>
+    <div class="bars" aria-label="Score breakdown">
+      <div><span>Demand</span><span class="track"><i style="--v:8"></i></span><span>8</span></div>
+      <div><span>Room to compete</span><span class="track"><i style="--v:5"></i></span><span>5</span></div>
+      <div><span>Earning power</span><span class="track"><i style="--v:5"></i></span><span>5</span></div>
+      <div><span>Unique value</span><span class="track"><i style="--v:7"></i></span><span>7</span></div>
+      <div><span>Low upkeep</span><span class="track"><i style="--v:9"></i></span><span>9</span></div>
+    </div>
+    <div class="part"><h4>Who it's for and the problem</h4>
+      <p>Couples running a DIY or bring-your-own bar, and anyone hosting a large party. Calculators online give very different answers; one Reddit poster said a calculator told them to plan "EIGHT drinks per person". People want to know what to actually put in the cart. Design dependence: <b>medium to high</b> (wedding planners expect a pretty page).</p>
+    </div>
+    <div class="part"><h4>Demand evidence</h4>
+      <ul>
+        <li>"wedding alcohol calculator" and its variants 18,100 a month, advertisers paying $2.82 a click (<a href="https://www.seodata.dev/keyword/wedding-alcohol-calculator">seodata</a>); "alcohol calculator party" and variants 12,100, $1.67 a click (<a href="https://www.seodata.dev/keyword/alcohol-calculator-for-party">seodata</a>).</li>
+        <li>Seasonal, March to September. Interest in "wedding alcohol calculator" fell about 35% from 2021–22 to 2025–26 (<a href="https://trends.google.com/trends/explore?date=2021-04-01%202026-03-15&amp;geo=US&amp;q=wedding%20alcohol%20calculator">Google Trends</a>). Still large, but shrinking.</li>
+        <li>Recurring r/weddingplanning threads over eight years: "Best Alcohol Calculator?" (20+ comments), "I just bought all the alcohol for our 150-person wedding" (50+ comments, 2026), "If you used online alcohol calculator to stock your own bar" (<a href="https://www.google.com/search?q=site%3Areddit.com+how+much+alcohol+for+party+calculator">Google results</a>).</li>
+      </ul>
+    </div>
+    <div class="part"><h4>Competitors</h4>
+      <p>First page for "wedding alcohol calculator": BevMo, The Forager Bar, The Knot, HubTap, a Reddit thread, Moonlight Bridal, Joy, Chesapeake Bartenders and weddingalcoholcal.com (<a href="https://www.google.com/search?q=wedding+alcohol+calculator">Google results</a>). That last site was registered on 25 April 2026 (<a href="https://rdap.verisign.com/com/v1/domain/weddingalcoholcal.com">registry record</a>), which shows a focused new site can reach page one within months. The Knot and Joy are large wedding brands.</p>
+    </div>
+    <div class="part"><h4>How it makes money</h4>
+      <ul>
+        <li>Mainly display ads. Wedding and party advertisers pay reasonably well.</li>
+        <li>Amazon pays 0% on alcohol (<a href="https://affiliate-program.amazon.com/help/node/topic/GRXPHT8U84RAYDXZ">official rates</a>), so affiliate income is limited to glassware, bar tools and party supplies (3–4.5%). Linking to online alcohol shops would reduce ad income: Google limits ads on pages that help sell alcohol (<a href="https://support.google.com/adsense/answer/10437795">Google publisher restrictions</a>).</li>
+        <li>Optional: a printable planning kit sold through a store. This needs a store account the owner approves.</li>
+      </ul>
+      <p class="assume"><span class="est">Estimate</span> Year 1 $8–110 without a paid kit. Assumes 1–5% of 30,200 monthly searches by month 12 (300–1,500 visits a month), about 1,500–7,600 visits in year one, at $5–15 per 1,000 visits. A $6 kit bought by 0.2–0.5% of visitors would add about $20–230.</p>
+    </div>
+    <div class="part"><h4>Build fit for SiteForge</h4>
+      <p><span class="ok">Fits today:</span> browser arithmetic, presets, a printable shopping list and a share link. No data upkeep.</p>
+      <p><span class="need">Needs adding:</span> print layout, link sharing that keeps inputs, and more design effort than the other picks. This is the pick most exposed to SiteForge's current design gap.</p>
+    </div>
+    <div class="part"><h4>Risks</h4>
+      <ul>
+        <li>Alcohol rules: no alcohol sale links, include responsible-serving and legal-age notes, include non-alcoholic drinks.</li>
+        <li>Falling search interest and strong seasonality; people increasingly ask AI chatbots this question.</li>
+        <li>Large wedding brands hold the top spots.</li>
+      </ul>
+    </div>
+  </article>
+
+  <!-- 3 LUMBER -->
+  <article class="idea" id="lumber" aria-labelledby="lumber-h">
+    <div class="idea-head">
+      <span class="eyebrow"><span class="tag top">Top pick</span><span>Rank 3</span></span>
+      <h3 id="lumber-h">Lumber &amp; cut-list planner</h3>
+      <div class="score g-good"><b>6.5</b><small>score / 10</small></div>
+      <p class="pitch">Board feet, a buy list and a cutting plan that wastes the least wood, with no daily usage limit.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Searches / month</span><b>~39,500</b></div>
+      <div class="stat"><span>Year 1 <span class="est">est.</span></span><b>$10–340</b></div>
+      <div class="stat"><span>Mature ceiling <span class="est">est.</span></span><b>$240–3,200 / yr</b></div>
+    </div>
+    <div class="bars" aria-label="Score breakdown">
+      <div><span>Demand</span><span class="track"><i style="--v:8"></i></span><span>8</span></div>
+      <div><span>Room to compete</span><span class="track"><i style="--v:5"></i></span><span>5</span></div>
+      <div><span>Earning power</span><span class="track"><i style="--v:5"></i></span><span>5</span></div>
+      <div><span>Unique value</span><span class="track"><i style="--v:7"></i></span><span>7</span></div>
+      <div><span>Low upkeep</span><span class="track"><i style="--v:8"></i></span><span>8</span></div>
+    </div>
+    <div class="part"><h4>Who it's for and the problem</h4>
+      <p>Hobby woodworkers and DIY builders. Hardwood is sold by the board foot, and plans list parts rather than boards. People need to know how many boards to buy and how to cut them. Design dependence: <b>low</b>.</p>
+    </div>
+    <div class="part"><h4>Demand evidence</h4>
+      <ul>
+        <li>"board foot calculator" 33,100 a month, grouped with "board feet calculator" (<a href="https://www.seodata.dev/keyword/board-foot-calculator">seodata</a>); "cutlist optimizer" 2,900 at $11 a click and "plywood cut calculator" 720 (<a href="https://www.seodata.dev/keyword/plywood-cut-calculator">seodata</a>); "lumber calculator" 1,900 (<a href="https://www.seodata.dev/keyword/lumber-calculator">seodata</a>); "cut list calculator" 1,600 (<a href="https://www.seodata.dev/keyword/cut-list-calculator">seodata</a>).</li>
+        <li>An r/woodworking thread, "What do folks use to plan builds, cut lists, buy lists?", has 60+ comments; the top answer is "a notepad and pencil". An older thread notes the popular free optimizer limits you to a few calculations a day (<a href="https://www.google.com/search?q=site%3Areddit.com+woodworking+cut+list+optimizer+free+lumber+board+feet+how+much+to+buy">Google results</a>).</li>
+        <li>Interest in "board foot calculator" is steady across the year but fell about 38% from 2021–22 to 2025–26 (Google Trends, US).</li>
+      </ul>
+    </div>
+    <div class="part"><h4>Competitors</h4>
+      <p>First page for "board foot calculator": lumberyards and sawmills (Hardwood Industries, Parkerville Wood Products, Stonewood, Woodworkers Source, Catale Sawmill, LS-USA, Curtis Lumber), Omni Calculator and a YouTube video (<a href="https://www.google.com/search?q=board+foot+calculator">Google results</a>). These are simple one-formula forms. For cutting plans: CutListOptimizer (free with limits, paid plans) and small tools launched in 2025–26 such as boardfoot.app.</p>
+    </div>
+    <div class="part"><h4>How it makes money</h4>
+      <ul>
+        <li>Display ads on the tools and project guides.</li>
+        <li>Tool and supply affiliates: Amazon Tools 3% (<a href="https://affiliate-program.amazon.com/help/node/topic/GRXPHT8U84RAYDXZ">official</a>), Rockler 2.4% (<a href="https://www.flexoffers.com/affiliate-programs/rockler-affiliate-program/">third-party listing</a>), Woodcraft 3% (<a href="https://getlasso.co/affiliate/woodcraft/">third-party listing</a>).</li>
+      </ul>
+      <p class="assume"><span class="est">Estimate</span> Year 1 $10–340. Assumes 1–5% of 39,500 monthly searches by month 12 (400–2,000 visits a month), about 2,000–9,900 visits in year one, at $5–34 per 1,000 visits. The biggest ceiling on this list, but the main "board foot" phrase has low ad value ($0.05 a click).</p>
+    </div>
+    <div class="part"><h4>Build fit for SiteForge</h4>
+      <p><span class="ok">Fits today:</span> board-foot maths is trivial. Fitting parts onto boards with saw-blade width allowed for is real algorithm work, but it has exact, testable answers, which suits SiteForge's coding strength (Gemma E4B passed 19 of 20 coding tasks at 32K context in SiteForge's benchmark).</p>
+      <p><span class="need">Needs adding:</span> cutting diagrams, a printable cut list, a CSV export. Plywood sheet layouts are harder; leave them for a second phase.</p>
+    </div>
+    <div class="part"><h4>Risks</h4>
+      <ul>
+        <li>A wrong cutting plan wastes real wood, so it needs heavy testing before launch.</li>
+        <li>Board-foot search interest is declining; established cut-list tools have loyal users.</li>
+      </ul>
+    </div>
+  </article>
+
+  <!-- 4 SHIFTS -->
+  <article class="idea" id="shifts" aria-labelledby="shifts-h">
+    <div class="idea-head">
+      <span class="eyebrow"><span class="tag">Strong alternate</span><span>Rank 4</span></span>
+      <h3 id="shifts-h">Shift-pattern calendar</h3>
+      <div class="score g-good"><b>6.5</b><small>score / 10</small></div>
+      <p class="pitch">Pick DuPont, Pitman, Panama, 2-2-3, 4-on-4-off or 24/48, enter your crew and start date, and get a year of workdays, hours per pay period and a calendar file for your phone.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Searches / month</span><b>~16,400</b></div>
+      <div class="stat"><span>Year 1 <span class="est">est.</span></span><b>$2–75</b></div>
+      <div class="stat"><span>Mature ceiling <span class="est">est.</span></span><b>$120–1,200 / yr</b></div>
+    </div>
+    <div class="bars" aria-label="Score breakdown">
+      <div><span>Demand</span><span class="track"><i style="--v:8"></i></span><span>8</span></div>
+      <div><span>Room to compete</span><span class="track"><i style="--v:3"></i></span><span>3</span></div>
+      <div><span>Earning power</span><span class="track"><i style="--v:7"></i></span><span>7</span></div>
+      <div><span>Unique value</span><span class="track"><i style="--v:6"></i></span><span>6</span></div>
+      <div><span>Low upkeep</span><span class="track"><i style="--v:9"></i></span><span>9</span></div>
+    </div>
+    <div class="part"><h4>Who it's for and the problem</h4>
+      <p>People on rotating 12- or 24-hour shifts (plants, police, nurses, dispatch, firefighters) and the supervisors who plan them. An r/jobs post titled "What the hell is this? What does this mean?" about a 2-2-3 schedule drew 150+ comments in October 2026; r/Grid_Ops has "Need help understanding a 5 week DuPont schedule" (<a href="https://www.google.com/search?q=site%3Areddit.com+dupont+OR+pitman+schedule+calendar+app+which+days+do+I+work">Google results</a>). Design dependence: <b>low</b>.</p>
+    </div>
+    <div class="part"><h4>Demand evidence</h4>
+      <ul>
+        <li>"dupont schedule" 8,100 (<a href="https://www.seodata.dev/keyword/dupont-schedule">seodata</a>), "panama schedule" 2,900 (<a href="https://www.seodata.dev/keyword/panama-schedule">seodata</a>), "pitman schedule" 1,900 at $7.70 a click (<a href="https://www.seodata.dev/keyword/pitman-schedule">seodata</a>), "what is rotating shift" 1,900, "shift calendar" 720 at $10.08 (<a href="https://www.seodata.dev/keyword/shift-calendar">seodata</a>), "4 on 4 off schedule" 480, "24 48 schedule" 390.</li>
+        <li>"employee schedule maker" draws $29.27 a click (<a href="https://www.seodata.dev/keyword/employee-schedule-maker">seodata</a>): scheduling-software companies pay heavily for this audience.</li>
+        <li>Interest in "shift schedule" more than doubled from 2021–22 to 2025–26 (Google Trends, US).</li>
+      </ul>
+    </div>
+    <div class="part"><h4>Competitors</h4>
+      <p>"dupont schedule" shows articles from software companies: Hubstaff, Indeed, Parim, Deltek, Zelos, HiveDesk, Sling, Snap Schedule (<a href="https://www.google.com/search?q=dupont+schedule">Google results</a>). "dupont schedule calendar 2027" shows eight tools and templates, several brand new: lumical.app, crewdays.app, shiftscheduleup.com (registered March 2026), minutemetrics.net, 101planners, shiftora.net, gridroster.com (registered 9 Sep 2026), apollostemplates.com (<a href="https://www.google.com/search?q=dupont+schedule+calendar+2027">Google results</a>; <a href="https://rdap.verisign.com/com/v1/domain/gridroster.com">registry record</a>). New shift apps were also posted on Reddit in the last two months.</p>
+    </div>
+    <div class="part"><h4>How it makes money</h4>
+      <ul>
+        <li>Display ads (business-software advertisers bid high).</li>
+        <li>Scheduling-software affiliates: Connecteam pays 25% of a referred customer's first-year revenue (<a href="https://au.connecteam.com/affiliates/">official page</a>); Homebase $80 per paid upgrade (<a href="https://www.flexoffers.com/affiliate-programs/homebase-affiliate-program/">third-party listing</a>).</li>
+      </ul>
+      <p class="assume"><span class="est">Estimate</span> Year 1 $2–75. Assumes 0.5–3% of 16,400 monthly searches by month 12 (80–490 visits a month), about 410–2,500 visits in year one, at $6–30 per 1,000 visits. Most visitors are workers, not buyers of software.</p>
+    </div>
+    <div class="part"><h4>Build fit for SiteForge</h4>
+      <p><span class="ok">Fits today:</span> date maths, a pattern library and a year calendar, all in the browser. Very low upkeep.</p>
+      <p><span class="need">Needs adding:</span> a calendar-file (.ics) download, a print layout and custom patterns.</p>
+    </div>
+    <div class="part"><h4>Risks and why it is not in the top three</h4>
+      <p>It ties with the lumber planner, but its results pages are filling with new tools built the same way every month, so a newcomer has less room to stand out. Employers' rotations vary, and pay or overtime rules are legal territory (stick to hour counts). Choose this instead of the lumber planner if you prefer the faster-growing, higher-paying niche.</p>
+    </div>
+  </article>
+
+  <!-- 5 QUILT -->
+  <article class="idea" id="quilt" aria-labelledby="quilt-h">
+    <div class="idea-head">
+      <span class="eyebrow"><span>Rank 5</span></span>
+      <h3 id="quilt-h">Quilt maths kit</h3>
+      <div class="score g-mid"><b>6.3</b><small>score / 10</small></div>
+      <p class="pitch">Backing, binding, batting and fabric yardage in one place, with a diagram of how to piece the back.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Searches / month</span><b>~7,200</b></div>
+      <div class="stat"><span>Year 1 <span class="est">est.</span></span><b>$2–90</b></div>
+      <div class="stat"><span>Mature ceiling <span class="est">est.</span></span><b>$50–880 / yr</b></div>
+    </div>
+    <div class="bars" aria-label="Score breakdown">
+      <div><span>Demand</span><span class="track"><i style="--v:6"></i></span><span>6</span></div>
+      <div><span>Room to compete</span><span class="track"><i style="--v:6"></i></span><span>6</span></div>
+      <div><span>Earning power</span><span class="track"><i style="--v:5"></i></span><span>5</span></div>
+      <div><span>Unique value</span><span class="track"><i style="--v:7"></i></span><span>7</span></div>
+      <div><span>Low upkeep</span><span class="track"><i style="--v:9"></i></span><span>9</span></div>
+    </div>
+    <div class="part"><h4>Audience, problem and demand</h4>
+      <p>Quilters planning a project need backing yardage (often pieced from 42–44" fabric or a 108" wide back), binding strips and batting. r/quilting repeatedly asks "Anyone have a good backing and binding calculator?" and "How do I figure out how many yards I need for binding" (<a href="https://www.google.com/search?q=site%3Areddit.com+quilt+how+much+fabric+backing+binding+calculator">Google results</a>). Searches: backing-calculator phrasings 1,900, "quilt calculator" 1,600, "fabric calculator for quilt" 880, "quilt material calculator" 880 (<a href="https://www.seodata.dev/keyword/quilt-calculator">seodata</a>); "quilt binding calculator" 1,900 (<a href="https://www.seodata.dev/keyword/quilt-binding-calculator">seodata</a>). "quilt calculator" interest rose about 40% since 2021–22 (Google Trends). Design dependence: <b>medium</b>.</p>
+    </div>
+    <div class="part"><h4>Competitors</h4>
+      <p>Quilt shops (DuckaDilly, Quilter's Paradise, Quality Sewing, My Girlfriend's Quilt Shoppe), Omni, the blogs Seasoned Homemaker and SewCanShe (both calculator pages dated October 2026) and Quiltler, a dedicated site (<a href="https://www.google.com/search?q=quilt+backing+calculator">Google results</a>). On Reddit, quilters mostly recommend phone apps.</p>
+    </div>
+    <div class="part"><h4>Money, fit and risks</h4>
+      <p>Ads plus fabric-shop affiliates: Fat Quarter Shop 6% (<a href="https://ui.awin.com/merchant-profile-terms/89535">Awin terms</a>), Craft of Quilting 8% (<a href="https://www.flexoffers.com/affiliate-programs/craftofquilting-com-affiliate-program">FlexOffers listing</a>). Quilters spend a lot on fabric, so value per visitor is the highest here, but ad bids are low.</p>
+      <p class="assume"><span class="est">Estimate</span> Year 1 $2–90: 1–5% of 7,200 searches by month 12, about 360–1,800 visits, $6–51 per 1,000 visits.</p>
+      <p><span class="ok">Fits today:</span> several small calculators. <span class="need">Needs:</span> drawn piecing diagrams. Risks: new competitors arrive monthly; quilters expect exact trade conventions (width of fabric, seam allowances), so a quilter should review it.</p>
+    </div>
+  </article>
+
+  <!-- 6 3D PRINT -->
+  <article class="idea" id="print3d" aria-labelledby="print3d-h">
+    <div class="idea-head">
+      <span class="eyebrow"><span>Rank 6</span></span>
+      <h3 id="print3d-h">3D-print cost &amp; quote calculator</h3>
+      <div class="score g-mid"><b>6.0</b><small>score / 10</small></div>
+      <p class="pitch">Filament, electricity, printer wear and failed prints in; a fair selling price and a quote to send out.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Searches / month</span><b>~5,800</b></div>
+      <div class="stat"><span>Year 1 <span class="est">est.</span></span><b>$1–45</b></div>
+      <div class="stat"><span>Mature ceiling <span class="est">est.</span></span><b>$35–450 / yr</b></div>
+    </div>
+    <div class="bars" aria-label="Score breakdown">
+      <div><span>Demand</span><span class="track"><i style="--v:5"></i></span><span>5</span></div>
+      <div><span>Room to compete</span><span class="track"><i style="--v:5"></i></span><span>5</span></div>
+      <div><span>Earning power</span><span class="track"><i style="--v:7"></i></span><span>7</span></div>
+      <div><span>Unique value</span><span class="track"><i style="--v:6"></i></span><span>6</span></div>
+      <div><span>Low upkeep</span><span class="track"><i style="--v:8"></i></span><span>8</span></div>
+    </div>
+    <div class="part"><h4>Audience, problem and demand</h4>
+      <p>Hobbyists who sell prints and small print farms underprice by forgetting power, wear and failures. Searches: "3d print cost calculator" 1,900, "3d print cost estimator" 1,600, price and pricing variants 720 each, "3d print calculator" 480, "filament price calculator" 390; bids $5.56–9.25 a click (<a href="https://www.seodata.dev/keyword/3d-print-cost-calculator">seodata</a>). Design dependence: <b>low</b>.</p>
+    </div>
+    <div class="part"><h4>Competitors</h4>
+      <p>printpal.io, 3dprintingcostcalculator.com (registered October 2024, now second; <a href="https://rdap.verisign.com/com/v1/domain/3dprintingcostcalculator.com">registry record</a>), 3dfils, Prusa's blog calculator, stlbuddy, a phone app, a Reddit thread, 3dprintforce (<a href="https://www.google.com/search?q=3d+print+cost+calculator">Google results</a>).</p>
+    </div>
+    <div class="part"><h4>Money, fit and risks</h4>
+      <p>Ads plus filament and printer affiliates: Amazon 2.5–3%; Bambu Lab runs a program on Awin but doesn't publish rates (<a href="https://ui.awin.com/merchant-profile/46345">Awin profile</a>).</p>
+      <p class="assume"><span class="est">Estimate</span> Year 1 $1–45: 1–5% of 5,800 searches, about 290–1,500 visits, $5–32 per 1,000.</p>
+      <p><span class="ok">Fits today:</span> maths and printer presets. Risks: many similar tools; printer power presets need occasional updates.</p>
+    </div>
+  </article>
+
+  <!-- 7 SOIL -->
+  <article class="idea" id="soil" aria-labelledby="soil-h">
+    <div class="idea-head">
+      <span class="eyebrow"><span>Rank 7</span></span>
+      <h3 id="soil-h">Raised-bed soil calculator</h3>
+      <div class="score g-mid"><b>5.9</b><small>score / 10</small></div>
+      <p class="pitch">Bed shape and size in; cubic feet, cubic yards, bags and a soil-mix recipe out.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Searches / month</span><b>~27,600</b></div>
+      <div class="stat"><span>Year 1 <span class="est">est.</span></span><b>$2–85</b></div>
+      <div class="stat"><span>Mature ceiling <span class="est">est.</span></span><b>$100–1,400 / yr</b></div>
+    </div>
+    <div class="bars" aria-label="Score breakdown">
+      <div><span>Demand</span><span class="track"><i style="--v:9"></i></span><span>9</span></div>
+      <div><span>Room to compete</span><span class="track"><i style="--v:2"></i></span><span>2</span></div>
+      <div><span>Earning power</span><span class="track"><i style="--v:6"></i></span><span>6</span></div>
+      <div><span>Unique value</span><span class="track"><i style="--v:4"></i></span><span>4</span></div>
+      <div><span>Low upkeep</span><span class="track"><i style="--v:9"></i></span><span>9</span></div>
+    </div>
+    <div class="part"><h4>Demand and competitors</h4>
+      <p>Large demand: "soil calculator" 22,200 and "raised bed soil calculator" 5,400 (<a href="https://www.seodata.dev/keyword/raised-bed-soil-calculator">seodata</a>); "mulch calculator" 49,500 (<a href="https://www.seodata.dev/keyword/mulch-calculator">seodata</a>). But the first page is all brands and retailers: Gardener's Supply, Almanac, Lowe's, Eartheasy, Pike Nursery, Vego Garden, Frame It All, Hawthorne, Omni (<a href="https://www.google.com/search?q=raised+bed+soil+calculator">Google results</a>).</p>
+    </div>
+    <div class="part"><h4>Money, fit and risks</h4>
+      <p>Ads (home and garden), Amazon 3%, garden brands. <span class="est">Estimate</span> Year 1 $2–85: only 0.2–1.5% of searches by month 12 because retailers hold the top spots; ceiling assumes 5–10%. Easy to build; the maths is easy to copy and Google often answers volume questions directly.</p>
+    </div>
+  </article>
+
+  <!-- 8 CANDLE -->
+  <article class="idea" id="candle" aria-labelledby="candle-h">
+    <div class="idea-head">
+      <span class="eyebrow"><span>Rank 8</span></span>
+      <h3 id="candle-h">Candle batch calculator</h3>
+      <div class="score g-mid"><b>5.6</b><small>score / 10</small></div>
+      <p class="pitch">Jar size and count in; wax and fragrance by weight, cost per candle and a batch sheet out.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Searches / month</span><b>~3,000</b></div>
+      <div class="stat"><span>Year 1 <span class="est">est.</span></span><b>$1–15</b></div>
+      <div class="stat"><span>Mature ceiling <span class="est">est.</span></span><b>$15–130 / yr</b></div>
+    </div>
+    <div class="bars" aria-label="Score breakdown">
+      <div><span>Demand</span><span class="track"><i style="--v:4"></i></span><span>4</span></div>
+      <div><span>Room to compete</span><span class="track"><i style="--v:5"></i></span><span>5</span></div>
+      <div><span>Earning power</span><span class="track"><i style="--v:5"></i></span><span>5</span></div>
+      <div><span>Unique value</span><span class="track"><i style="--v:7"></i></span><span>7</span></div>
+      <div><span>Low upkeep</span><span class="track"><i style="--v:9"></i></span><span>9</span></div>
+    </div>
+    <div class="part"><h4>Audience, problem and demand</h4>
+      <p>Home candle makers and small candle businesses (Rollwise's maker audience). r/candlemaking, about 104,000 followers, keeps asking "Candle Math 😢" and "How many ml of fragrance oil to put in an 8oz candle?"; one answer there works out 10% of 2 oz as 0.02 oz, a tenfold error (<a href="https://www.google.com/search?q=site%3Areddit.com+candlemaking+how+much+wax+fragrance+oil+calculate+per+jar">Google results</a>). Searches: "candle wax calculator" 880, "candle calculator" 720, "candle fragrance calculator" 720, "candle making calculator" 210; bids $3.57–8.22 (<a href="https://www.seodata.dev/keyword/candle-wax-calculator">seodata</a>, <a href="https://www.seodata.dev/keyword/candle-calculator">seodata</a>). Peaks November to December.</p>
+    </div>
+    <div class="part"><h4>Competitors, money and risks</h4>
+      <p>candlewaxcalculator.com is first (registered November 2024; <a href="https://rdap.verisign.com/com/v1/domain/candlewaxcalculator.com">registry record</a>), then supplier calculators (CandleScience, Norden, Makesy, Midwest Fragrance, American Soy Organics) and Craftybase (<a href="https://www.google.com/search?q=candle+wax+calculator">Google results</a>). We found no CandleScience affiliate program; Amazon pays 3–4%. <span class="est">Estimate</span> Year 1 $1–15. Small market; fragrance maximums vary by oil, so the tool must defer to supplier limits. Best as part of a maker site (see <a href="#maker">maker kit</a>).</p>
+    </div>
+  </article>
+
+  <!-- 9 GOLF -->
+  <article class="idea" id="golf" aria-labelledby="golf-h">
+    <div class="idea-head">
+      <span class="eyebrow"><span>Rank 9</span></span>
+      <h3 id="golf-h">Golf handicap calculator</h3>
+      <div class="score g-mid"><b>5.6</b><small>score / 10</small></div>
+      <p class="pitch">Enter scores, course rating and slope; see an unofficial handicap index and course handicap.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Searches / month</span><b>~45,000</b></div>
+      <div class="stat"><span>Year 1 <span class="est">est.</span></span><b>$3–110</b></div>
+      <div class="stat"><span>Mature ceiling <span class="est">est.</span></span><b>$160–1,700 / yr</b></div>
+    </div>
+    <div class="bars" aria-label="Score breakdown">
+      <div><span>Demand</span><span class="track"><i style="--v:9"></i></span><span>9</span></div>
+      <div><span>Room to compete</span><span class="track"><i style="--v:2"></i></span><span>2</span></div>
+      <div><span>Earning power</span><span class="track"><i style="--v:6"></i></span><span>6</span></div>
+      <div><span>Unique value</span><span class="track"><i style="--v:4"></i></span><span>4</span></div>
+      <div><span>Low upkeep</span><span class="track"><i style="--v:6"></i></span><span>6</span></div>
+    </div>
+    <div class="part"><h4>Demand, competitors, money and risks</h4>
+      <p>"golf handicap calculator" 22,200, "how to calculate golf handicap" 12,100, "handicap calculator" 8,100; $3.09 a click (<a href="https://www.seodata.dev/keyword/golf-handicap-calculator">seodata</a>). The first page belongs to the official bodies and big apps: USGA, GHIN, R&amp;A, 18Birdies, calculator.net, CDGA (<a href="https://www.google.com/search?q=golf+handicap+calculator">Google results</a>). Golfers are valuable to advertisers. <span class="est">Estimate</span> Year 1 $3–110 at 0.2–1.5% of searches. The World Handicap System has caps and adjustments that change; the tool must never look like an official index.</p>
+    </div>
+  </article>
+
+  <!-- 10 EPOXY -->
+  <article class="idea" id="epoxy" aria-labelledby="epoxy-h">
+    <div class="idea-head">
+      <span class="eyebrow"><span>Rank 10</span></span>
+      <h3 id="epoxy-h">Epoxy &amp; resin pour calculator</h3>
+      <div class="score g-weak"><b>5.3</b><small>score / 10</small></div>
+      <p class="pitch">River tables, bar tops and art pours: resin volume, kit count and how many pours the depth needs.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Searches / month</span><b>~7,500</b></div>
+      <div class="stat"><span>Year 1 <span class="est">est.</span></span><b>$1–30</b></div>
+      <div class="stat"><span>Mature ceiling <span class="est">est.</span></span><b>$45–500 / yr</b></div>
+    </div>
+    <div class="bars" aria-label="Score breakdown">
+      <div><span>Demand</span><span class="track"><i style="--v:6"></i></span><span>6</span></div>
+      <div><span>Room to compete</span><span class="track"><i style="--v:3"></i></span><span>3</span></div>
+      <div><span>Earning power</span><span class="track"><i style="--v:6"></i></span><span>6</span></div>
+      <div><span>Unique value</span><span class="track"><i style="--v:5"></i></span><span>5</span></div>
+      <div><span>Low upkeep</span><span class="track"><i style="--v:7"></i></span><span>7</span></div>
+    </div>
+    <div class="part"><h4>Demand, competitors, money and risks</h4>
+      <p>"epoxy calculator" 3,600, "resin calculator" 1,900, "epoxy resin calculator" 1,600 (<a href="https://www.seodata.dev/keyword/epoxy-calculator">seodata</a>); interest down about 9% since 2021–22. Every result on the first page is a resin brand's own calculator: TotalBoat, Super Epoxy, Epodex, Wisebond, Blacktail Studio, Best Bar Top Epoxy, Magic Resin, Craft Resin, MAS (<a href="https://www.google.com/search?q=epoxy+calculator">Google results</a>). A brand-neutral tool is the angle. <span class="est">Estimate</span> Year 1 $1–30. Maximum pour depth and cure data differ by product.</p>
+    </div>
+  </article>
+
+  <!-- 11 ROUND ROBIN -->
+  <article class="idea" id="roundrobin" aria-labelledby="roundrobin-h">
+    <div class="idea-head">
+      <span class="eyebrow"><span>Rank 11</span></span>
+      <h3 id="roundrobin-h">Round-robin &amp; league scheduler</h3>
+      <div class="score g-weak"><b>5.2</b><small>score / 10</small></div>
+      <p class="pitch">Fair rotating partners and courts for pickleball, tennis and cornhole socials, with printable score sheets.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Searches / month</span><b>~10,500</b></div>
+      <div class="stat"><span>Year 1 <span class="est">est.</span></span><b>$1–15</b></div>
+      <div class="stat"><span>Mature ceiling <span class="est">est.</span></span><b>$25–230 / yr</b></div>
+    </div>
+    <div class="bars" aria-label="Score breakdown">
+      <div><span>Demand</span><span class="track"><i style="--v:6"></i></span><span>6</span></div>
+      <div><span>Room to compete</span><span class="track"><i style="--v:4"></i></span><span>4</span></div>
+      <div><span>Earning power</span><span class="track"><i style="--v:3"></i></span><span>3</span></div>
+      <div><span>Unique value</span><span class="track"><i style="--v:6"></i></span><span>6</span></div>
+      <div><span>Low upkeep</span><span class="track"><i style="--v:9"></i></span><span>9</span></div>
+    </div>
+    <div class="part"><h4>Demand, competitors, money and risks</h4>
+      <p>"round robin generator" 2,900, "double round robin generator" 3,600, "round robin tournament generator" 2,900 (<a href="https://www.seodata.dev/keyword/round-robin-generator">seodata</a>); "pickleball round robin" only 260–320 (<a href="https://www.seodata.dev/keyword/pickleball-round-robin">seodata</a>). Interest in "round robin generator" rose about 90% since 2021–22. Crowded: LeagueLobster, PrintYourBrackets, elimly, livecup.app, bracketmaker.app, Playtime Scheduler; for pickleball, Pickleheads, Playrez, Plan2Play, MainCourt (<a href="https://www.google.com/search?q=pickleball+round+robin+generator">Google results</a>). Weak money: ads and paddle affiliates. <span class="est">Estimate</span> Year 1 $1–15.</p>
+    </div>
+  </article>
+
+  <!-- 12 MAKER -->
+  <article class="idea" id="maker" aria-labelledby="maker-h">
+    <div class="idea-head">
+      <span class="eyebrow"><span class="tag">Reuses Rollwise</span><span>Rank 12</span></span>
+      <h3 id="maker-h">Maker pricing kit (with Rollwise)</h3>
+      <div class="score g-weak"><b>5.2</b><small>score / 10</small></div>
+      <p class="pitch">Fold Rollwise into a small "maker business" site with a handmade pricing calculator (materials, labour and fees to retail and wholesale price) and the candle batch tool.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Searches / month</span><b>~2,100</b></div>
+      <div class="stat"><span>Year 1 <span class="est">est.</span></span><b>$0–10</b></div>
+      <div class="stat"><span>Mature ceiling <span class="est">est.</span></span><b>$10–90 / yr</b></div>
+    </div>
+    <div class="bars" aria-label="Score breakdown">
+      <div><span>Demand</span><span class="track"><i style="--v:3"></i></span><span>3</span></div>
+      <div><span>Room to compete</span><span class="track"><i style="--v:6"></i></span><span>6</span></div>
+      <div><span>Earning power</span><span class="track"><i style="--v:5"></i></span><span>5</span></div>
+      <div><span>Unique value</span><span class="track"><i style="--v:6"></i></span><span>6</span></div>
+      <div><span>Low upkeep</span><span class="track"><i style="--v:8"></i></span><span>8</span></div>
+    </div>
+    <div class="part"><h4>Why it is here</h4>
+      <p>Rollwise's own search ("label roll calculator") is not listed in the keyword database we used, which suggests very few searches on its own. Pricing is a bigger, constant maker question: "craft calculator" 1,300, "craft pricing calculator" 260, "pricing crafts calculator" 260 (<a href="https://www.seodata.dev/keyword/craft-pricing-calculator">seodata</a>). Competitors are blogs and apps (My Designs in the Chaos, Craftybase, craftstrack.app, Miss Carrie's Creations, YouTube) (<a href="https://www.google.com/search?q=craft+pricing+calculator">Google results</a>). <span class="est">Estimate</span> Year 1 $0–10. The cheapest build because the template exists, but the smallest demand. If Etsy fees are added, they need regular updates.</p>
+    </div>
+  </article>
+
+  <!-- 13 POOL -->
+  <article class="idea" id="pool" aria-labelledby="pool-h">
+    <div class="idea-head">
+      <span class="eyebrow"><span class="tag no">Not advised</span><span>Rank 13</span></span>
+      <h3 id="pool-h">Pool chemistry calculator</h3>
+      <div class="score g-weak"><b>5.2</b><small>score / 10</small></div>
+      <p class="pitch">Test readings in; how much chlorine, acid or salt to add.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Searches / month</span><b>~11,000</b></div>
+      <div class="stat"><span>Year 1 <span class="est">est.</span></span><b>$1–20</b></div>
+      <div class="stat"><span>Mature ceiling <span class="est">est.</span></span><b>$40–290 / yr</b></div>
+    </div>
+    <div class="bars" aria-label="Score breakdown">
+      <div><span>Demand</span><span class="track"><i style="--v:7"></i></span><span>7</span></div>
+      <div><span>Room to compete</span><span class="track"><i style="--v:2"></i></span><span>2</span></div>
+      <div><span>Earning power</span><span class="track"><i style="--v:6"></i></span><span>6</span></div>
+      <div><span>Unique value</span><span class="track"><i style="--v:4"></i></span><span>4</span></div>
+      <div><span>Low upkeep</span><span class="track"><i style="--v:7"></i></span><span>7</span></div>
+    </div>
+    <div class="part"><h4>Why not</h4>
+      <p>"pool calculator" 8,100 and "pool chemical calculator" 2,900 (<a href="https://www.seodata.dev/keyword/pool-chemical-calculator">seodata</a>), but Trouble Free Pool's free Pool Math is first, followed by Hayward, HASA and AquaChek (<a href="https://www.google.com/search?q=pool+chemical+calculator">Google results</a>). A dosing mistake can hurt people or damage equipment, so this is a safety topic. Skip it.</p>
+    </div>
+  </article>
+
+  <!-- 14 SOURDOUGH -->
+  <article class="idea" id="sourdough" aria-labelledby="sourdough-h">
+    <div class="idea-head">
+      <span class="eyebrow"><span>Rank 14</span></span>
+      <h3 id="sourdough-h">Sourdough baker's-percentage calculator</h3>
+      <div class="score g-weak"><b>5.1</b><small>score / 10</small></div>
+      <p class="pitch">Flour, water, starter and salt by baker's percentage, scaled to any loaf, with a feeding and bake timeline.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Searches / month</span><b>~3,600</b></div>
+      <div class="stat"><span>Year 1 <span class="est">est.</span></span><b>$1–12</b></div>
+      <div class="stat"><span>Mature ceiling <span class="est">est.</span></span><b>$15–110 / yr</b></div>
+    </div>
+    <div class="bars" aria-label="Score breakdown">
+      <div><span>Demand</span><span class="track"><i style="--v:5"></i></span><span>5</span></div>
+      <div><span>Room to compete</span><span class="track"><i style="--v:5"></i></span><span>5</span></div>
+      <div><span>Earning power</span><span class="track"><i style="--v:3"></i></span><span>3</span></div>
+      <div><span>Unique value</span><span class="track"><i style="--v:6"></i></span><span>6</span></div>
+      <div><span>Low upkeep</span><span class="track"><i style="--v:9"></i></span><span>9</span></div>
+    </div>
+    <div class="part"><h4>Demand, competitors, money and risks</h4>
+      <p>"sourdough calculator" 1,600 and "sourdough hydration calculator" 1,600, but advertisers bid nothing (<a href="https://www.seodata.dev/keyword/sourdough-calculator">seodata</a>). Small sites already rank: sourdoughcalculator.info is first, then sourdough.co.uk, breadcalc.com, That Sourdough Gal, flexsourdough.com (<a href="https://www.google.com/search?q=sourdough+hydration+calculator">Google results</a>). Amazon Kitchen pays 4.5%. <span class="est">Estimate</span> Year 1 $1–12. Easy build, weak money.</p>
+    </div>
+  </article>
+
+  <!-- 15 ETSY -->
+  <article class="idea" id="etsy" aria-labelledby="etsy-h">
+    <div class="idea-head">
+      <span class="eyebrow"><span class="tag no">Not advised</span><span>Rank 15</span></span>
+      <h3 id="etsy-h">Etsy fee &amp; profit calculator</h3>
+      <div class="score g-weak"><b>4.6</b><small>score / 10</small></div>
+      <p class="pitch">Price, shipping and costs in; Etsy's fees and your real profit out.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Searches / month</span><b>~5,700</b></div>
+      <div class="stat"><span>Year 1 <span class="est">est.</span></span><b>$0–10</b></div>
+      <div class="stat"><span>Mature ceiling <span class="est">est.</span></span><b>$15–170 / yr</b></div>
+    </div>
+    <div class="bars" aria-label="Score breakdown">
+      <div><span>Demand</span><span class="track"><i style="--v:6"></i></span><span>6</span></div>
+      <div><span>Room to compete</span><span class="track"><i style="--v:2"></i></span><span>2</span></div>
+      <div><span>Earning power</span><span class="track"><i style="--v:6"></i></span><span>6</span></div>
+      <div><span>Unique value</span><span class="track"><i style="--v:4"></i></span><span>4</span></div>
+      <div><span>Low upkeep</span><span class="track"><i style="--v:4"></i></span><span>4</span></div>
+    </div>
+    <div class="part"><h4>Why not</h4>
+      <p>Real demand ("etsy fee calculator" 1,900, "calculate etsy fees" 1,900, "etsy calculator" 1,600, "etsy profit calculator" 1,300; <a href="https://www.seodata.dev/keyword/etsy-fee-calculator">seodata</a>), but the first page is funded seller-software companies using the tool to win customers: EverBee, Alura, Craftybase, eufyMake, Checkout Page, RankHero, Printify, Yotpo (<a href="https://www.google.com/search?q=etsy+fee+calculator">Google results</a>). Fees change by country and year, so upkeep is constant.</p>
+    </div>
+  </article>
+
+  </div>
+
+  <div class="skipped">
+    <strong>Big searches we looked at and skipped</strong>
+    <p class="small">Some tools get huge search numbers, but established sites own them: "time card calculator" 201,000 a month (<a href="https://www.seodata.dev/keyword/time-card-calculator">seodata</a>), "tire size calculator" 165,000 (<a href="https://www.seodata.dev/keyword/tire-size-calculator">seodata</a>), "concrete calculator" 550,000. A new site has very little chance there in year one.</p>
+  </div>
+</section>
+
+<section id="money" aria-labelledby="money-h">
+  <span class="eyebrow">Show your working</span>
+  <h2 id="money-h">How the money estimates work</h2>
+  <p>None of these figures is real revenue. They are estimates built from the same simple formula, so the ideas can be compared fairly. We kept the assumptions cautious.</p>
+  <div class="formula">year-one visits = 5 × (monthly searches × share by month 12)<br>year-one money = year-one visits ÷ 1,000 × money per 1,000 visits</div>
+  <ul>
+    <li><b>Why "5 ×":</b> a new site earns almost nothing for 3 to 4 months, then climbs. Adding up a steady climb from month 4 to month 12 gives about five months' worth of the month-12 traffic.</li>
+    <li><b>Share by month 12:</b> 2–8% where competitors are weak, 1–5% where they are mixed, 0.5–3% where the page is crowded with similar tools, 0.2–1.5% where brands or official bodies hold it.</li>
+    <li><b>Why that is plausible:</b> Ahrefs found only 1.74% of new pages reached Google's top 10 within a year (<a href="https://ahrefs.com/blog/how-long-does-it-take-to-rank/">Ahrefs, 2025</a>). Yet focused tool sites can beat that: weddingalcoholcal.com (registered Apr 2026), gridroster.com (Sep 2026), shiftscheduleup.com (Mar 2026), candlewaxcalculator.com (Nov 2024) and 3dprintingcostcalculator.com (Oct 2024) all appear on page one today (dates from public registry records).</li>
+    <li><b>Ads:</b> $2–15 per 1,000 visits depending on niche. Tool pages get short visits, so we used figures well below the $14–39 per 1,000 visitors that one publisher reported earning on article sites through a premium ad network in 2022 (<a href="https://fatstacksblog.com/?p=20869">Fat Stacks</a>). With Google AdSense the site keeps about 68% of what advertisers pay in the common case (<a href="https://blog.google/products/adsense/evolving-how-publishers-monetize-with-adsense/">Google</a>).</li>
+    <li><b>Affiliate:</b> 1,000 visits × share who click a product link (3–8%) × share who then buy (2–5%) × typical order × commission. Commission rates come from the program pages linked on each card.</li>
+    <li><b>Mature ceiling:</b> what the tool might earn per year once it holds a top-3 position (10–20% of searches; 5–10% where brands dominate).</li>
+  </ul>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Idea</th><th class="n">Searches / mo</th><th class="n">Share by m12</th><th class="n">Year-1 visits</th><th class="n">$ per 1,000 visits</th><th class="n">Year-1 $</th><th class="n">Ceiling $ / yr</th></tr></thead>
+      <tbody>
+        <tr><td>Lawn fertilizer &amp; seed</td><td class="n">7,300</td><td class="n">2–8%</td><td class="n">730–2,900</td><td class="n">6–34</td><td class="n">4–100</td><td class="n">50–600</td></tr>
+        <tr><td>Party &amp; wedding drinks</td><td class="n">30,200</td><td class="n">1–5%</td><td class="n">1,500–7,600</td><td class="n">5–15</td><td class="n">8–110</td><td class="n">180–1,100</td></tr>
+        <tr><td>Lumber &amp; cut list</td><td class="n">39,500</td><td class="n">1–5%</td><td class="n">2,000–9,900</td><td class="n">5–34</td><td class="n">10–340</td><td class="n">240–3,200</td></tr>
+        <tr><td>Shift calendar</td><td class="n">16,400</td><td class="n">0.5–3%</td><td class="n">410–2,500</td><td class="n">6–30</td><td class="n">2–75</td><td class="n">120–1,200</td></tr>
+        <tr><td>Quilt maths</td><td class="n">7,200</td><td class="n">1–5%</td><td class="n">360–1,800</td><td class="n">6–51</td><td class="n">2–90</td><td class="n">50–880</td></tr>
+        <tr><td>3D-print cost</td><td class="n">5,800</td><td class="n">1–5%</td><td class="n">290–1,500</td><td class="n">5–32</td><td class="n">1–45</td><td class="n">35–450</td></tr>
+        <tr><td>Raised-bed soil</td><td class="n">27,600</td><td class="n">0.2–1.5%</td><td class="n">280–2,100</td><td class="n">6–42</td><td class="n">2–85</td><td class="n">100–1,400</td></tr>
+        <tr><td>Candle batch</td><td class="n">3,000</td><td class="n">1–5%</td><td class="n">150–750</td><td class="n">4–18</td><td class="n">1–15</td><td class="n">15–130</td></tr>
+        <tr><td>Golf handicap</td><td class="n">45,000</td><td class="n">0.2–1.5%</td><td class="n">450–3,400</td><td class="n">6–32</td><td class="n">3–110</td><td class="n">160–1,700</td></tr>
+        <tr><td>Epoxy &amp; resin</td><td class="n">7,500</td><td class="n">0.5–3%</td><td class="n">190–1,100</td><td class="n">5–28</td><td class="n">1–30</td><td class="n">45–500</td></tr>
+        <tr><td>Round robin</td><td class="n">10,500</td><td class="n">0.5–3%</td><td class="n">260–1,600</td><td class="n">2–9</td><td class="n">1–15</td><td class="n">25–230</td></tr>
+        <tr><td>Maker pricing kit</td><td class="n">2,100</td><td class="n">1–6%</td><td class="n">110–630</td><td class="n">4–18</td><td class="n">0–10</td><td class="n">10–90</td></tr>
+        <tr><td>Pool chemistry</td><td class="n">11,000</td><td class="n">0.2–1.5%</td><td class="n">110–830</td><td class="n">6–22</td><td class="n">1–20</td><td class="n">40–290</td></tr>
+        <tr><td>Sourdough</td><td class="n">3,600</td><td class="n">1–5%</td><td class="n">180–900</td><td class="n">4–13</td><td class="n">1–12</td><td class="n">15–110</td></tr>
+        <tr><td>Etsy fees</td><td class="n">5,700</td><td class="n">0.2–1.5%</td><td class="n">60–430</td><td class="n">5–25</td><td class="n">0–10</td><td class="n">15–170</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted small">Search counts are rounded US monthly averages; seasonal ideas earn most of their year in a few months. Bigger ad networks pay more but have entry bars: Journey by Mediavine needs 1,000 monthly sessions from the US, Canada, UK or Australia; Mediavine's main program needs $5,000 a year in ad revenue (<a href="https://www.mediavine.com/mediavine-requirements/">Mediavine</a>); Raptive needs 25,000 monthly pageviews since October 2025 (<a href="https://www.searchenginejournal.com/raptive-drops-traffic-requirement-by-75-to-25000-views/558780/">Search Engine Journal</a>).</p>
+</section>
+
+<section id="gaps" aria-labelledby="gaps-h">
+  <span class="eyebrow">Before any site can earn</span>
+  <h2 id="gaps-h">What SiteForge needs to add</h2>
+  <p>SiteForge can already build and test a private, accessible, browser-only tool like Rollwise. Turning a tool into a site that earns needs these pieces. Items marked "approval" involve an account, a contract or money and need your exact sign-off.</p>
+  <ul class="cards">
+    <li><strong>Ads, with a consent banner</strong><span>The Rollwise template deliberately loads no outside scripts. Ads change that: ad slots, a Google-certified consent banner for visitors in the EU, UK and Switzerland (required for personalised ads since 16 Jan 2024 and 31 Jul 2024; <a href="https://support.google.com/adsense/answer/13554116">Google</a>), and privacy-page updates. Google often rejects tool-only sites as "low value content", so each tool needs real explanatory content around it. <span class="need">Approval to join an ad network</span></span></li>
+    <li><strong>Affiliate links done properly</strong><span>A link component that shows "paid link" right beside each affiliate link. The FTC says the words "affiliate link" alone are not clear enough (<a href="https://www.ftc.gov/business-guidance/resources/ftcs-endorsement-guides-what-people-are-asking">FTC</a>). Amazon reportedly closes new accounts without 3 sales in 180 days (<a href="https://www.unilink.us/blog/amazon-associates-guide-2026">secondary source</a>). <span class="need">Approval for each program</span></span></li>
+    <li><strong>Visitor measurement</strong><span>Privacy-friendly analytics and Google Search Console, so the Growth agent sees real visits and rankings instead of estimates. <span class="need">Approval to connect accounts</span></span></li>
+    <li><strong>Multi-tool sites</strong><span>A home page, a short guide beside each tool, links between sibling tools and search-friendly page data. Today the template is one tool plus a privacy page.</span></li>
+    <li><strong>Downloads and sharing</strong><span>Printable lists and cut sheets, calendar files, CSV exports and links that remember the inputs. All of this runs in the visitor's browser, so no server is needed.</span></li>
+    <li><strong>Reviewed data with dates</strong><span>Small tables (seed rates, state fertilizer rules, bottle sizes, printer power use) with a "last checked" date and a yearly review job.</span></li>
+    <li><strong>Hosting and a domain</strong><span>Netlify needs you to sign in again before SiteForge can publish, and each site needs a domain. <span class="need">Approval to buy a domain and to publish</span></span></li>
+    <li><strong>Paid printables (optional)</strong><span>Selling a printable kit needs a store or payment account. <span class="need">Approval</span></span></li>
+  </ul>
+</section>
+
+<section id="costs" aria-labelledby="costs-h">
+  <span class="eyebrow">Cash out</span>
+  <h2 id="costs-h">What it costs to run a site</h2>
+  <ul class="cards">
+    <li><strong>Domain: about $11 a year</strong><span>A .com costs about $10.46 at Cloudflare or $11.08 at Porkbun as of October 2026; the wholesale price rises to $10.97 on 1 November 2026 (<a href="https://costgoat.com/compare/domains/com">CostGoat</a>, <a href="https://porkbun.com/about/domain-cost-calculator/com">Porkbun</a>).</span></li>
+    <li><strong>Hosting: free to start</strong><span>Netlify's free plan gives 300 credits a month; bandwidth costs 20 credits per GB and each live deploy costs 15 credits (<a href="https://www.netlify.com/pricing/">Netlify</a>; deploy cost from <a href="https://netli.fyi/blog/netlify-free-plan-limits-2026">a third-party guide</a>). A Rollwise page weighs about 60–80 KB on a first visit (measured from the built template), so roughly 15 GB covers around 200,000 first visits a month. Sites pause if credits run out, so move to the $9-a-month Personal plan once traffic grows.</span></li>
+    <li><strong>Design reviews: about $0.10–0.15 each</strong><span>Measured cost of SiteForge's owner-approved Opus reviews so far.</span></li>
+    <li><strong>Optional: $29 for one month of a keyword tool</strong><span>Exact search numbers would firm up these estimates before building (Ahrefs' Starter plan price as listed on its site).</span></li>
+  </ul>
+</section>
+
+<section id="rules" aria-labelledby="rules-h">
+  <span class="eyebrow">Ground rules</span>
+  <h2 id="rules-h">Rules every idea must follow</h2>
+  <ul class="cards">
+    <li><strong>One excellent tool per page, never hundreds of thin pages</strong><span>Google's spam policy targets "many pages" made "for the primary purpose of manipulating search rankings", whether written by people or AI (<a href="https://developers.google.com/search/docs/essentials/spam-policies">Google spam policies</a>, updated 28 Aug 2026).</span></li>
+    <li><strong>Expect fewer clicks where Google shows an AI summary</strong><span>Pew found people clicked a result 8% of the time when an AI summary appeared, against 15% without one (<a href="https://www.pewresearch.org/short-reads/2025/07/22/google-users-are-less-likely-to-click-on-links-when-an-ai-summary-appears-in-the-results/">Pew Research, July 2025</a>). Most searches above showed one on 25 Oct 2026. Ahrefs argues working tools hold up better than articles because a summary can't replace them (<a href="https://ahrefs.com/blog/the-free-tools-seo-strategy/">Ahrefs, July 2026</a>; a vendor view).</span></li>
+    <li><strong>Stay away from health, money and legal advice</strong><span>Google holds "Your Money or Your Life" topics to a stricter standard (<a href="https://searchengineland.com/google-updates-search-quality-raters-guidelines-adding-ai-overview-examples-ymyl-definitions-461908">Search Engine Land</a>). All three picks are hobby and household arithmetic. Keep pay, overtime, pesticide and chemical-dose advice out.</span></li>
+    <li><strong>Alcohol pages carry extra limits</strong><span>Google restricts ads on content that helps sell alcohol or promotes excessive drinking (<a href="https://support.google.com/adsense/answer/10437795">Google</a>).</span></li>
+    <li><strong>Judge the pilot on use, not money</strong><span>At 30, 60 and 90 days, look at pages indexed, search impressions, clicks and tool completions. SiteForge's blueprint already says not to close a site only because search traffic hasn't arrived in 90 days.</span></li>
+  </ul>
+</section>
+
+<section id="method" aria-labelledby="method-h">
+  <span class="eyebrow">Method and limits</span>
+  <h2 id="method-h">How this was researched</h2>
+  <ul>
+    <li>Read SiteForge's blueprint, contributor rules, README and status page, and the Rollwise template, to judge what SiteForge can build today.</li>
+    <li>Search volumes: <a href="https://www.seodata.dev/keyword/board-foot-calculator">seodata.dev</a> pages, which report US monthly averages from Google's advertising data. These are rounded, and similar phrasings are grouped, so overlapping phrases were not added together.</li>
+    <li>Direction and season: Google Trends, US, April 2021 to March 2026. Trends shows a sudden spike in every "calculator" search at once from late March to mid-May 2026; it looks like a data glitch, so we left that window out.</li>
+    <li>Competitors: live Google results (US, English) viewed in Claude's built-in browser on 25 Oct 2026, plus public registry records for domain ages.</li>
+    <li>Reddit itself was blocked to our tools, so Reddit evidence comes from thread titles and comment counts shown in Google results.</li>
+    <li>Paid keyword tools (Ahrefs, Semrush) asked for a login or a human check, which we did not get around; they were not used.</li>
+    <li>Affiliate terms come from official pages where we could reach them; third-party listings are marked and may be out of date.</li>
+    <li>No accounts were created, nothing was bought, nobody was contacted and nothing was published.</li>
+  </ul>
+</section>
+
+<section id="next" aria-labelledby="next-h">
+  <span class="eyebrow">Your call</span>
+  <h2 id="next-h">Decisions for you</h2>
+  <ol class="cards steps">
+    <li><strong>Pick the first site</strong><span>We recommend the lawn fertilizer and seed calculator. Building it and private previews need no approval.</span></li>
+    <li><strong>Optional: confirm the numbers ($29)</strong><span>One month of a keyword tool would replace these estimates with exact search counts before building.</span></li>
+    <li><strong>Approve a domain (about $11 a year)</strong><span>Needed before the site can go public.</span></li>
+    <li><strong>Reconnect Netlify and connect Search Console</strong><span>Netlify needs you to sign in again; Search Console lets SiteForge see real search data.</span></li>
+    <li><strong>Later: ads and affiliate programs</strong><span>Worth applying once the site has steady visitors. Each program needs your approval.</span></li>
+  </ol>
+</section>
+
+<footer>
+  <p>Prepared by Claude (Opus 5.5) for SiteForge, 25 October 2026. Every money figure here is an estimate with its assumptions shown; no idea on this page has earned anything yet.</p>
+  <p>Core data sources: <a href="https://www.seodata.dev/keyword/wedding-alcohol-calculator">seodata.dev</a> keyword pages, <a href="https://trends.google.com/trends/explore?date=2021-04-01%202026-03-15&amp;geo=US&amp;q=shift%20schedule">Google Trends</a>, live Google results, <a href="https://affiliate-program.amazon.com/help/node/topic/GRXPHT8U84RAYDXZ">Amazon Associates rates</a>, <a href="https://developers.google.com/search/docs/essentials/spam-policies">Google spam policies</a>, <a href="https://www.pewresearch.org/short-reads/2025/07/22/google-users-are-less-likely-to-click-on-links-when-an-ai-summary-appears-in-the-results/">Pew Research</a>, <a href="https://ahrefs.com/blog/how-long-does-it-take-to-rank/">Ahrefs</a>.</p>
+</footer>
+
+</div>
