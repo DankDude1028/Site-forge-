@@ -1,5 +1,6 @@
 ---
 import '@fontsource/bricolage-grotesque/latin-700.css';
+import '@fontsource/bricolage-grotesque/latin-800.css';
 import '@fontsource/source-sans-3/latin-400.css';
 import '@fontsource/source-sans-3/latin-600.css';
 import '../styles/site.css';
@@ -24,25 +25,72 @@ const canonical = new URL('/', Astro.site);
   <body>
     <a href="#main" class="skip">Skip to calculator</a>
     <SiteHeader mode={config.mode} />
-    <main id="main" class="shell home">
-      <div class="intro">
-        <h1>How many label rolls does this batch need?</h1>
-        <p class="lede">Enter your batch and your roll size. Rollwise rounds up to whole labels and whole rolls, adds a small allowance for setup and misprints, and takes off the rolls already on your shelf.</p>
-        <p class="trust">No inputs leave your browser. No account, no ads, no tracking.</p>
-      </div>
-      <Calculator />
-      <aside class="result-key" aria-labelledby="guide-title">
-        <h2 id="guide-title">Reading your result</h2>
-        <p><strong>Rolls to order:</strong> What you need to buy. <strong>Labels to print, with allowance:</strong> Your batch plus the extra %. <strong>Rolls this batch uses:</strong> Including the ones on your shelf. <strong>Spare labels on those rolls:</strong> What's left on the last roll.</p>
-      </aside>
-      <section class="explain" aria-labelledby="how">
-        <h2 id="how">The math, out in the open</h2>
-        <div>
-          <p>Multiply your items by labels per item, add the allowance percentage and round up to a whole label. Divide by the labels on each roll and round up to whole rolls. Then subtract the full rolls you already have.</p>
-          <p class="example">Example: 250 items × 2 labels = 500, plus 5% = 525 labels. At 500 labels per roll that is 2 rolls. With 1 on the shelf, order 1.</p>
-          <p class="fine">The allowance is extra stock, not a yield-loss rate. Results assume identical full rolls. Check your printer's setup needs and any partly used rolls separately.</p>
+    <main id="main" class="home">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="shell hero-inner">
+          <div class="intro">
+            <h1 id="hero-title">How many label rolls does this batch need?</h1>
+            <p class="lede">Enter your batch and your roll size. Rollwise rounds up to whole labels and whole rolls, adds a small allowance for setup and misprints, and takes off the rolls already on your shelf.</p>
+            <div class="hero-actions">
+              <a class="hero-cta" href="#planner-title">Plan your label run <span aria-hidden="true">↓</span></a>
+              <p class="trust">No inputs leave your browser. No account, no ads, no tracking.</p>
+            </div>
+          </div>
+          <svg class="hero-art" viewBox="0 0 600 520" aria-hidden="true" focusable="false">
+            <g class="hero-marks" fill="none" stroke="#ead9c4" stroke-width="1.5">
+              <circle cx="30" cy="30" r="9" /><path d="M30 12v36M12 30h36" />
+              <circle cx="570" cy="30" r="9" /><path d="M570 12v36M552 30h36" />
+              <circle cx="570" cy="500" r="9" /><path d="M570 482v36M552 500h36" />
+            </g>
+            <g stroke="#ead9c4" stroke-width="1.5">
+              <rect x="62" y="22" width="24" height="16" fill="#1b2a2f" />
+              <rect x="86" y="22" width="24" height="16" fill="#b98b5e" />
+              <rect x="110" y="22" width="24" height="16" fill="#c63b1f" />
+              <rect x="134" y="22" width="24" height="16" fill="#ead9c4" />
+              <rect x="158" y="22" width="24" height="16" fill="#fbf8f2" />
+            </g>
+            <g class="hero-labels">
+              <rect x="-160" y="390" width="580" height="104" fill="#ead9c4" />
+              <path d="M144 394v96M278 394v96" stroke="#1b2a2f" stroke-width="1.5" stroke-dasharray="4 5" />
+              <g transform="translate(18 402)"><rect width="118" height="80" rx="16" fill="#fbf8f2" stroke="#1b2a2f" stroke-width="2" /><text x="14" y="32" class="hero-label-text">Soap</text><rect x="14" y="44" width="72" height="5" fill="#b98b5e" /><rect x="14" y="56" width="48" height="5" fill="#b98b5e" /></g>
+              <g transform="translate(152 402)"><rect width="118" height="80" rx="16" fill="#fbf8f2" stroke="#1b2a2f" stroke-width="2" /><text x="14" y="32" class="hero-label-text">Candle</text><rect x="14" y="44" width="72" height="5" fill="#b98b5e" /><rect x="14" y="56" width="48" height="5" fill="#1b2a2f" /></g>
+              <g transform="translate(286 402)"><rect width="118" height="80" rx="16" fill="#fbf8f2" stroke="#1b2a2f" stroke-width="2" /><text x="14" y="32" class="hero-label-text">Jam</text><rect x="14" y="44" width="72" height="5" fill="#b98b5e" /><rect x="14" y="56" width="48" height="5" fill="#b98b5e" /></g>
+            </g>
+            <g class="hero-roll">
+              <circle cx="420" cy="218" r="172" fill="#fbf8f2" stroke="#ead9c4" stroke-width="3" />
+              <g class="hero-spin">
+                <circle cx="420" cy="218" r="160" fill="none" stroke="#1b2a2f" stroke-width="6" stroke-dasharray="2 18" />
+                <g class="hero-rings" fill="none" stroke="#b98b5e" stroke-width="1.5">
+                  <circle class="hero-ring" pathLength="100" cx="420" cy="218" r="146" /><circle class="hero-ring" pathLength="100" cx="420" cy="218" r="130" /><circle class="hero-ring" pathLength="100" cx="420" cy="218" r="114" /><circle class="hero-ring" pathLength="100" cx="420" cy="218" r="98" /><circle class="hero-ring" pathLength="100" cx="420" cy="218" r="82" />
+                </g>
+              </g>
+              <circle cx="420" cy="218" r="64" fill="#b98b5e" stroke="#1b2a2f" stroke-width="3" />
+              <circle cx="420" cy="218" r="40" fill="#1b2a2f" stroke="#ead9c4" stroke-width="2" />
+            </g>
+          </svg>
         </div>
       </section>
+      <div class="shell work">
+        <div class="frame">
+          <div class="press">
+            <Calculator />
+            <aside class="result-key" aria-labelledby="guide-title">
+              <h2 id="guide-title">Reading your result</h2>
+              <p><strong>Rolls to order:</strong> What you need to buy. <strong>Labels to print, with allowance:</strong> Your batch plus the extra %. <strong>Rolls this batch uses:</strong> Including the ones on your shelf. <strong>Spare labels on those rolls:</strong> What's left on the last roll.</p>
+            </aside>
+          </div>
+        </div>
+      </div>
+      <div class="shell notes">
+        <section class="explain" aria-labelledby="how">
+          <h2 id="how">The math, out in the open</h2>
+          <div>
+            <p>Multiply your items by labels per item, add the allowance percentage and round up to a whole label. Divide by the labels on each roll and round up to whole rolls. Then subtract the full rolls you already have.</p>
+            <p class="example">Example: 250 items × 2 labels = 500, plus 5% = 525 labels. At 500 labels per roll that is 2 rolls. With 1 on the shelf, order 1.</p>
+            <p class="fine">The allowance is extra stock, not a yield-loss rate. Results assume identical full rolls. Check your printer's setup needs and any partly used rolls separately.</p>
+          </div>
+        </section>
+      </div>
     </main>
     <SiteFooter mode={config.mode} />
   </body>

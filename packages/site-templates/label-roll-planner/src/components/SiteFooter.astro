@@ -2,6 +2,10 @@
 const { mode } = Astro.props;
 ---
 <footer class="site-footer shell">
+  <span class="slug-marks" aria-hidden="true">
+    <svg class="slug-reg" viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M12 0v24M0 12h24" stroke="currentColor" stroke-width="1.5" /></svg>
+    <span class="slug-bars"><i></i><i></i><i></i><i></i></span>
+  </span>
   <span>Rollwise · label roll calculator{mode === 'preview' ? ' (preview)' : ''}</span>
   <span>No ads. No affiliate links. No account needed.</span>
   <a href="/privacy/">Privacy &amp; assumptions</a>
