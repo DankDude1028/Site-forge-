@@ -45,6 +45,11 @@ test('both pages pass automated accessibility and their configured crawl control
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', config.robots);
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', config.origin + path);
     await expect(page.locator('body')).not.toContainText('synthetic research');
+    // Scan the settled page a reader sees: mid fade-in, axe measures half-transparent text and fails at random.
+    await page.evaluate(() => Promise.all(document.getAnimations()
+      .filter((animation) => animation.timeline === document.timeline
+        && animation.effect?.getComputedTiming().iterations !== Infinity)
+      .map((animation) => animation.finished)));
     const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
     expect(result.violations).toEqual([]);
   }
