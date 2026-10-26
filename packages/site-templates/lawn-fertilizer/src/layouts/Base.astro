@@ -1,0 +1,39 @@
+---
+import '@fontsource-variable/fraunces/full.css';
+import '@fontsource/barlow/latin-400.css';
+import '@fontsource/barlow/latin-500.css';
+import '@fontsource/barlow/latin-600.css';
+import '@fontsource/barlow-condensed/latin-600.css';
+import '@fontsource/barlow-condensed/latin-700.css';
+import '../styles/site.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import { getSiteConfig } from '../../site-config.mjs';
+
+interface Props { title: string; description: string; path: string; jsonLd?: object[] }
+const { title, description, path, jsonLd = [] } = Astro.props;
+const config = getSiteConfig();
+const canonical = new URL(path, Astro.site);
+// Structured data is our own JSON; escaping "<" keeps it from ever closing the script element.
+const structured = jsonLd.map((item) => JSON.stringify(item).replace(/</g, '\\u003c'));
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content={config.robots} />
+    <link rel="canonical" href={canonical} />
+    <meta name="theme-color" content="#112e1e" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {structured.map((json) => <script type="application/ld+json" set:html={json} />)}
+  </head>
+  <body>
+    <a href="#main" class="skip">Skip to content</a>
+    <SiteHeader mode={config.mode} />
+    <slot />
+    <SiteFooter mode={config.mode} />
+  </body>
+</html>

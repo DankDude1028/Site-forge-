@@ -54,6 +54,8 @@ jobs:
         working-directory: apps/dashboard
       - run: npm ci && npm test && npm run typecheck && npm run build && npm run e2e && npm audit --audit-level=high
         working-directory: packages/site-templates/label-roll-planner
+      - run: npm ci && npm test && npm run typecheck && npm run build && npm run e2e && npm audit --audit-level=high
+        working-directory: packages/site-templates/lawn-fertilizer
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: dashboard-preview, path: apps/dashboard/dist}

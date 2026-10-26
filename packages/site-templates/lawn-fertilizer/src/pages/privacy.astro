@@ -1,0 +1,35 @@
+---
+import Base from '../layouts/Base.astro';
+import { getSiteConfig } from '../../site-config.mjs';
+import { getLaunchDetails } from '../../launch-details.mjs';
+
+const config = getSiteConfig();
+const details = getLaunchDetails(config.mode);
+const updated = '26 October 2026';
+---
+<Base title="Privacy | Turfwise" description="How the Turfwise lawn fertilizer calculator handles your data and who hosts the site."
+  path="/privacy/">
+  <main id="main">
+    <section class="page-hero">
+      <div class="shell">
+        <p class="eyebrow on-dark">Privacy</p>
+        <h1>What happens to what you type</h1>
+        <p class="updated">Last updated {updated}</p>
+      </div>
+    </section>
+    <div class="shell prose">
+      <h2>The calculator stays in your browser</h2>
+      <p>Every number you enter is worked out on your own device. Nothing you type is sent to a server or stored. Turfwise sets no cookies, runs no analytics and shows no ads or affiliate links.</p>
+      <p>If that ever changes, this page will say exactly what is collected and why before it starts.</p>
+      <h2>Hosting</h2>
+      {details.host
+        ? <p>Turfwise is hosted by {details.host}. Like most web hosts, {details.host} may keep basic request logs, such as IP addresses and the pages requested, to keep the site secure and running. See <a href={details.hostPrivacyUrl}>{details.host}'s privacy policy</a>.</p>
+        : <p>This preview is not published yet. The hosting provider and a link to its privacy policy are added before launch.</p>}
+      <h2>Contact</h2>
+      {details.contactEmail
+        ? <p>Questions or corrections: <a href={`mailto:${details.contactEmail}`}>{details.contactEmail}</a></p>
+        : <p>A contact address is added before launch.</p>}
+      <p><a href="/">Back to the calculator</a></p>
+    </div>
+  </main>
+</Base>

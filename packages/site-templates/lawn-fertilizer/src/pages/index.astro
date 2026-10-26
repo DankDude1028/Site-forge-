@@ -1,0 +1,172 @@
+---
+import Base from '../layouts/Base.astro';
+import Planner from '../components/Planner.astro';
+import Calendar from '../components/Calendar.astro';
+import { planFertilizer } from '../lib/fertilizer.ts';
+import { DEFAULTS, amount, fixed, pounds } from '../lib/format.ts';
+
+const result = planFertilizer(DEFAULTS);
+if (!result.ok) throw new Error('Default calculator inputs must be valid');
+const plan = result.plan;
+const share = DEFAULTS.nitrogen / 100;
+
+// Seeded blade heights so the grass edge is the same on every build.
+let seed = 7;
+const random = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+const blades = Array.from({ length: 96 }, (_, index) => {
+  const x = index * 12.6 + random() * 6, height = 34 + random() * 46, lean = (random() - 0.5) * 16;
+  return { d: `M${x.toFixed(1)} 90 Q${(x + lean / 2).toFixed(1)} ${(90 - height / 2).toFixed(1)} ${(x + lean).toFixed(1)} ${(90 - height).toFixed(1)} Q${(x + 4).toFixed(1)} ${(90 - height / 2).toFixed(1)} ${(x + 7).toFixed(1)} 90Z`,
+    delay: (random() * -4).toFixed(2), tone: index % 3 };
+});
+
+const faqs = [
+  { q: 'How much fertilizer do I need for 5,000 sq ft?',
+    a: 'Divide the nitrogen rate by the first bag number as a decimal, then multiply by 5. For 1 lb of nitrogen per 1,000 sq ft from a 20-0-5 bag: 1 ÷ 0.20 = 5 lb per 1,000 sq ft, so 25 lb for 5,000 sq ft.' },
+  { q: 'What do the three numbers on the bag mean?',
+    a: 'They are percentages by weight: nitrogen (N), phosphate (P₂O₅) and potash (K₂O). A 50 lb bag of 29-0-4 holds 14.5 lb of nitrogen, no phosphate and 2 lb of potash. Lawns respond most to nitrogen, so this calculator works from the first number.' },
+  { q: 'How often should I fertilize my lawn?',
+    a: 'It depends on the grass. Cool-season lawns such as tall fescue and Kentucky bluegrass are fed mostly in fall. Warm-season lawns such as bermudagrass are fed from green-up through summer. Pick your grass in the feeding calendar above to see the months.' },
+  { q: 'Can I put down more to get a greener lawn faster?',
+    a: 'No. More than about 1 lb of quick-release nitrogen per 1,000 sq ft in one feeding can burn grass and wash into storm drains. Split a bigger dose into two feedings, or use a slow-release product labeled for the higher rate.' },
+  { q: 'My bag only says how many square feet it covers. Can I use that?',
+    a: 'Yes. Divide your lawn area by the coverage on the bag and round up to get the number of bags. Use this calculator when you want a different rate than the bag assumes, or to check what rate the bag delivers.' },
+  { q: 'Is it too late to fertilize this year?',
+    a: 'For cool-season grass, a late-fall feeding while the grass is still green is common. For warm-season grass, stop by early fall so new growth is not hit by frost. The feeding calendar above shows the usual months for each grass.' },
+];
+
+const jsonLd = [
+  { '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Turfwise lawn fertilizer calculator',
+    applicationCategory: 'UtilitiesApplication', operatingSystem: 'Any', isAccessibleForFree: true,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    description: 'Works out how many pounds of lawn fertilizer to spread and how many bags to buy, from your lawn size and the numbers on the bag.' },
+  { '@context': 'https://schema.org', '@type': 'FAQPage',
+    mainEntity: faqs.map((item) => ({ '@type': 'Question', name: item.q, acceptedAnswer: { '@type': 'Answer', text: item.a } })) },
+];
+---
+<Base title="Lawn Fertilizer Calculator: How Much to Spread and Buy | Turfwise"
+  description="Free lawn fertilizer calculator. Enter your lawn size and the numbers on the bag to get pounds to spread, bags to buy, your spreader target and when to feed your grass."
+  path="/" jsonLd={jsonLd}>
+  <main id="main">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-stripes" aria-hidden="true"></div>
+      <div class="shell hero-head">
+        <div class="hero-title-block">
+          <p class="eyebrow on-dark">Lawn fertilizer calculator</p>
+          <h1 id="hero-title">How much fertilizer does your lawn <em>really</em> need?</h1>
+        </div>
+        <div class="hero-side">
+          <p class="lede">Type your lawn size and the three numbers on the bag. Turfwise works out the pounds to spread, the bags to buy and the setting to aim for, then shows when your grass wants feeding.</p>
+          <ul class="trust">
+            <li>Formulas from university extension guides</li>
+            <li>What you type never leaves your browser</li>
+          </ul>
+        </div>
+      </div>
+      <div class="shell planner-shell" id="planner-anchor">
+        <Planner />
+      </div>
+      <svg class="grass-edge" viewBox="0 0 1220 90" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        {blades.map((blade) => <path d={blade.d} class={`blade tone-${blade.tone}`} style={`animation-delay:${blade.delay}s`} />)}
+      </svg>
+    </section>
+
+    <Calendar />
+
+    <section class="bag-guide" aria-labelledby="bag-title">
+      <div class="shell bag-grid">
+        <div class="sack-wrap reveal" aria-hidden="true">
+          <div class="sack">
+            <span class="sack-brand">Lawn food</span>
+            <span class="sack-npk"><span id="sack-n">{DEFAULTS.nitrogen}</span><i>-</i><span id="sack-p">{DEFAULTS.phosphorus}</span><i>-</i><span id="sack-k">{DEFAULTS.potassium}</span></span>
+            <span class="sack-keys"><span>N</span><span>P</span><span>K</span></span>
+            <span class="sack-weight"><span id="sack-weight">{amount(DEFAULTS.bagWeight)}</span> lb net</span>
+          </div>
+        </div>
+        <div class="bag-copy reveal">
+          <p class="eyebrow">Read your bag</p>
+          <h2 id="bag-title">Three numbers tell you almost everything</h2>
+          <ol class="npk-list">
+            <li><b class="key n">N</b><div><h3>Nitrogen</h3><p>The green-up nutrient and the one lawns use most. Every result on this page is worked out from it.</p></div></li>
+            <li><b class="key p">P</b><div><h3>Phosphate</h3><p>Helps new roots, so starter fertilizers are high in it. Several states limit it on established lawns unless a soil test calls for it.</p></div></li>
+            <li><b class="key k">K</b><div><h3>Potash</h3><p>Helps grass handle drought, heat and wear. A soil test tells you whether your lawn is short of it.</p></div></li>
+          </ol>
+          <p class="shortcut"><strong>Shortcut from NC State Extension:</strong> 100 ÷ the first number = pounds of product for 1 lb of nitrogen per 1,000 sq ft. For this bag that is
+            100 ÷ <span id="short-n">{DEFAULTS.nitrogen}</span> = <strong><span id="short-result">{fixed(100 / DEFAULTS.nitrogen, 1)}</span> lb</strong>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="math" id="math" aria-labelledby="math-title">
+      <div class="shell">
+        <p class="eyebrow on-dark">Show your working</p>
+        <h2 id="math-title">The math, out loud</h2>
+        <p class="math-intro">These lines use the numbers in the calculator above, so you can check every step by hand.</p>
+        <ol class="math-lines reveal">
+          <li>
+            <span class="step">Pounds of product per 1,000 sq ft</span>
+            <span class="eq"><span class="v" id="m-rate">{fixed(DEFAULTS.rate, 2)}</span> lb N ÷ <span class="v" id="m-share">{fixed(share, 2)}</span> nitrogen share = <span class="v hl" id="m-per">{fixed(plan.productPerThousand, 2)}</span> lb</span>
+          </li>
+          <li>
+            <span class="step">Scale to your lawn</span>
+            <span class="eq"><span class="v" id="m-per2">{fixed(plan.productPerThousand, 2)}</span> lb × <span class="v" id="m-thousands">{fixed(DEFAULTS.area / 1000, 1)}</span> thousand sq ft = <span class="v hl" id="m-total">{pounds(plan.productTotal)}</span> lb</span>
+          </li>
+          <li>
+            <span class="step">Round up to whole bags</span>
+            <span class="eq"><span class="v" id="m-total2">{pounds(plan.productTotal)}</span> lb ÷ <span class="v" id="m-bag">{amount(DEFAULTS.bagWeight)}</span> lb bags = <span class="v" id="m-ratio">{fixed(plan.productTotal / DEFAULTS.bagWeight, 2)}</span> → <span class="v hl" id="m-bags">{plan.bags}</span> bags</span>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="tips" aria-labelledby="tips-title">
+      <div class="shell">
+        <p class="eyebrow">Before you spread</p>
+        <h2 id="tips-title">Four habits that keep the lawn green and the water clean</h2>
+        <ul class="tip-grid">
+          <li class="tip reveal">
+            <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><rect x="12" y="6" width="24" height="36" rx="4" /><path d="M18 16h12M18 23h12M18 30h7" /></svg>
+            <h3>The label comes first</h3>
+            <p>If the product label gives a different rate or warning, follow the label. This calculator is a planning aid.</p>
+          </li>
+          <li class="tip reveal">
+            <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M8 14h32M8 24h32M8 34h32" /><path d="M14 8v32M24 8v32M34 8v32" class="soft" /></svg>
+            <h3>Half rate, two directions</h3>
+            <p>Set the spreader for half the target and cover the lawn twice at right angles. It hides gaps and stripes.</p>
+          </li>
+          <li class="tip reveal">
+            <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M10 38l14-14M24 24l8-16 6 6-16 8" /><circle cx="14" cy="40" r="2" /><circle cx="20" cy="42" r="2" /></svg>
+            <h3>Sweep it back</h3>
+            <p>Granules on the drive or sidewalk wash into storm drains. Sweep them back onto the grass before it rains.</p>
+          </li>
+          <li class="tip reveal">
+            <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M24 6l14 6v10c0 9-6 16-14 20-8-4-14-11-14-20V12z" /><path d="M18 24l4 4 8-9" /></svg>
+            <h3>Check your state</h3>
+            <p>Some states limit phosphorus or set dates when lawn fertilizer cannot go down. Your extension office knows the local rules.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="faq" aria-labelledby="faq-title">
+      <div class="shell faq-grid">
+        <div>
+          <p class="eyebrow">Questions</p>
+          <h2 id="faq-title">Lawn fertilizer, answered</h2>
+          <p class="faq-side">Still unsure? The <a href="/method/">method page</a> lists every formula and source behind these numbers.</p>
+        </div>
+        <div class="faq-list">
+          {faqs.map((item) => (
+            <details class="faq-item">
+              <summary><h3>{item.q}</h3></summary>
+              <p>{item.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  </main>
+</Base>
+
+<script>
+  import '../scripts/planner.ts';
+</script>

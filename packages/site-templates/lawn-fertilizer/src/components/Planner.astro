@@ -1,0 +1,141 @@
+---
+import { planFertilizer } from '../lib/fertilizer.ts';
+import { DEFAULTS, amount, fixed, gaugeAngle, pounds, tileColumns, tileLayout, whole } from '../lib/format.ts';
+
+const result = planFertilizer(DEFAULTS);
+if (!result.ok) throw new Error('Default calculator inputs must be valid');
+const plan = result.plan;
+const tiles = tileLayout(DEFAULTS.area);
+const label = `${DEFAULTS.nitrogen}-${DEFAULTS.phosphorus}-${DEFAULTS.potassium}`;
+
+// Gauge geometry: a 0–2 lb dial drawn as a top half circle.
+const point = (value: number, radius = 96) => {
+  const angle = Math.PI - (value / 2) * Math.PI;
+  return `${(120 + radius * Math.cos(angle)).toFixed(2)} ${(120 - radius * Math.sin(angle)).toFixed(2)}`;
+};
+const arc = (from: number, to: number) => `M ${point(from)} A 96 96 0 0 1 ${point(to)}`;
+const bandText = {
+  light: 'A light feeding. Good for a quick green-up or an extra summer feeding.',
+  standard: 'A standard feeding, inside the usual 0.5–1 lb per 1,000 sq ft.',
+  heavy: 'Too much quick-release nitrogen for one feeding. Split it in two, or use a slow-release product labeled for this rate.',
+};
+---
+<form id="planner" class="instrument" novalidate aria-label="Fertilizer calculator">
+  <div class="zone inputs">
+    <div class="field">
+      <div class="field-head">
+        <label for="area">Lawn size</label><span class="unit">sq ft</span>
+      </div>
+      <input id="area" name="area" class="big-input" inputmode="decimal" autocomplete="off" value={whole(DEFAULTS.area)}
+        aria-describedby="area-error" />
+      <input id="area-range" type="range" min="500" max="30000" step="100" value={DEFAULTS.area}
+        aria-label="Lawn size slider, square feet" />
+      <p class="error" id="area-error"></p>
+      <details class="measure">
+        <summary>Measure it: length × width</summary>
+        <div class="measure-row">
+          <label for="len">Length <span class="unit">ft</span></label>
+          <input id="len" inputmode="decimal" autocomplete="off" />
+          <span class="times" aria-hidden="true">×</span>
+          <label for="wid">Width <span class="unit">ft</span></label>
+          <input id="wid" inputmode="decimal" autocomplete="off" />
+          <button type="button" id="use-dims" class="btn-small">Use area</button>
+        </div>
+        <p class="hint">Measure each rectangle of grass and add them up. Leave out the house, drive and beds.</p>
+      </details>
+    </div>
+
+    <fieldset class="field npk">
+      <legend>Numbers on the bag</legend>
+      <div class="npk-row">
+        <div class="npk-cell">
+          <input id="nitrogen" inputmode="decimal" autocomplete="off" value={DEFAULTS.nitrogen} aria-describedby="npk-error" />
+          <label for="nitrogen"><b>N</b> Nitrogen %</label>
+        </div>
+        <span class="dash" aria-hidden="true">–</span>
+        <div class="npk-cell">
+          <input id="phosphorus" inputmode="decimal" autocomplete="off" value={DEFAULTS.phosphorus} aria-describedby="npk-error" />
+          <label for="phosphorus"><b>P</b> Phosphate %</label>
+        </div>
+        <span class="dash" aria-hidden="true">–</span>
+        <div class="npk-cell">
+          <input id="potassium" inputmode="decimal" autocomplete="off" value={DEFAULTS.potassium} aria-describedby="npk-error" />
+          <label for="potassium"><b>K</b> Potash %</label>
+        </div>
+      </div>
+      <p class="error" id="npk-error"></p>
+    </fieldset>
+
+    <div class="field bag-field">
+      <div class="field-head"><label for="bag">Bag weight</label><span class="unit">lb</span></div>
+      <input id="bag" inputmode="decimal" autocomplete="off" value={DEFAULTS.bagWeight} aria-describedby="bag-error" />
+      <p class="error" id="bag-error"></p>
+    </div>
+
+    <fieldset class="field rate">
+      <legend>Nitrogen this feeding</legend>
+      <div class="presets" role="group" aria-label="Rate presets">
+        <button type="button" class="chip" data-rate="0.5" aria-pressed="false">Light <span>0.5</span></button>
+        <button type="button" class="chip" data-rate="0.75" aria-pressed="true">Standard <span>0.75</span></button>
+        <button type="button" class="chip" data-rate="1" aria-pressed="false">Full <span>1.0</span></button>
+      </div>
+      <div class="rate-row">
+        <input id="rate" type="range" min="0.1" max="2" step="0.05" value={DEFAULTS.rate}
+          aria-label="Nitrogen this feeding, lb per 1,000 sq ft" aria-valuetext={`${fixed(DEFAULTS.rate, 2)} lb per 1,000 sq ft`}
+          aria-describedby="rate-error" />
+        <output id="rate-out" for="rate"><span id="rate-value">{fixed(DEFAULTS.rate, 2)}</span> lb / 1,000 sq ft</output>
+      </div>
+      <p class="error" id="rate-error"></p>
+    </fieldset>
+  </div>
+
+  <div class="zone viz" aria-hidden="true">
+    <div class="viz-head">
+      <span>Your lawn</span>
+      <span id="tile-scale">1 tile = {whole(tiles.scale)} sq ft</span>
+    </div>
+    <div class="tiles" id="tiles" data-band={plan.rateBand}
+      style={`--cols:${tileColumns(tiles.full + (tiles.partial > 0 ? 1 : 0))}`}>
+      {Array.from({ length: tiles.full }, (_, index) => <span class="tile" style={`--i:${index}`}></span>)}
+      {tiles.partial > 0 && <span class="tile partial" style={`--i:${tiles.full};--fill:${tiles.partial.toFixed(3)}`}></span>}
+    </div>
+    <div class="viz-head bags-head">
+      <span>Bags to buy</span>
+      <span id="bag-tag">{label}</span>
+    </div>
+    <div class="bags" id="bags">
+      {Array.from({ length: plan.bags }, (_, index) => {
+        const fill = index === plan.bags - 1 ? (DEFAULTS.bagWeight - plan.leftover) / DEFAULTS.bagWeight : 1;
+        return <span class="bag" style={`--i:${index};--fill:${fill.toFixed(3)}`}><span class="bag-label">{label}</span></span>;
+      })}
+    </div>
+  </div>
+
+  <div class="zone results" id="results" aria-labelledby="results-title">
+    <h2 id="results-title" class="zone-title">Spread this much</h2>
+    <p class="total"><span id="total">{pounds(plan.productTotal)}</span><span class="total-unit">lb</span></p>
+    <p class="buy" id="buy">Buy <strong id="bags-count">{plan.bags} {plan.bags === 1 ? 'bag' : 'bags'}</strong>{' of '}<span id="bag-size">{amount(DEFAULTS.bagWeight)} lb</span>{', with '}<span id="leftover">{pounds(plan.leftover)} lb</span>{' left over.'}</p>
+    <dl class="stats">
+      <div><dt>Spreader target</dt><dd><span id="per1000">{fixed(plan.productPerThousand, 2)}</span> lb per 1,000 sq ft</dd></div>
+      <div><dt>Nitrogen applied</dt><dd><span id="n-total">{pounds(plan.nitrogenTotal)}</span> lb in total</dd></div>
+    </dl>
+    <div class="gauge" aria-hidden="true">
+      <svg viewBox="0 0 240 140" focusable="false">
+        <path class="arc arc-light" d={arc(0, 0.5)} />
+        <path class="arc arc-standard" d={arc(0.5, 1)} />
+        <path class="arc arc-heavy" d={arc(1, 2)} />
+        <text x="24" y="140" text-anchor="middle">0</text><text x="36" y="40" text-anchor="end">0.5</text>
+        <text x="120" y="9" text-anchor="middle">1</text><text x="216" y="140" text-anchor="middle">2</text>
+        <g class="needle" id="needle" style={`--angle:${gaugeAngle(DEFAULTS.rate)}deg`}>
+          <line x1="120" y1="120" x2="120" y2="34" />
+          <circle cx="120" cy="120" r="9" />
+        </g>
+      </svg>
+      <p class="gauge-caption">lb of nitrogen per 1,000 sq ft</p>
+    </div>
+    <p class="band" id="band" data-band={plan.rateBand}>{bandText[plan.rateBand]}</p>
+    <p class="note p-note" id="p-note" hidden>This bag has phosphate. Several states limit phosphorus on established lawns unless a soil test shows a need.</p>
+    <p class="invalid-note" id="invalid-note" hidden>Fix the highlighted field to see your numbers.</p>
+    <p class="sr-only" id="announce" aria-live="polite"></p>
+  </div>
+</form>
