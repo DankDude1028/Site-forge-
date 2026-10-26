@@ -8,9 +8,9 @@ from uuid import uuid4
 import pytest
 from sqlalchemy import select
 
-from siteforge.advisor import (ADVISOR_MODEL, FALLBACK_BETA, FALLBACK_MODEL, build_request, ensure_budgets,
-                               load_request, max_cost, measured_cost, request_approval, run_review,
-                               save_request)
+from siteforge.advisor import (ADVISOR_MODEL, FALLBACK_BETA, FALLBACK_MODEL, HAIKU_MODEL, LONG_TIMEOUT_SECONDS,
+                               approval_payload, build_request, ensure_budgets, load_request, max_cost,
+                               measured_cost, request_approval, run_review, save_request)
 from siteforge.db import Budget, Database, Receipt, Site
 from siteforge.policy import PolicyService
 from siteforge.queue import DomainError, QueueService
@@ -224,6 +224,52 @@ def test_refusal_is_recorded_and_billed_without_findings(advisor_system):
                         results_root=root / "advisor")
     assert result["status"] == "refused" and result["review"] is None
     assert budget_totals(db, org)["2026-10"] == (Decimal("0.003200"), Decimal("0"))
+
+
+def test_design_lead_on_haiku_asks_for_whole_files_without_a_fallback():
+    document = build_request("design_lead", uuid4(), "Redesign the page.", documents=[("site.css", "body{}")],
+                             screenshots=[("home.png", png())], max_tokens=32_000, model=HAIKU_MODEL)
+    params = document["params"]
+    assert params["model"] == HAIKU_MODEL and document["fallbacks"] == []
+    assert set(params["output_config"]["format"]["schema"]["properties"]) == {"concept", "files", "summary"}
+    assert "complete new content of every file you change" in params["system"]
+    assert Decimal(document["max_cost"]) == max_cost(document["input_token_bound"], 32_000, [HAIKU_MODEL])
+    assert approval_payload(document)["fallback_model"] is None
+    # An Opus design lead runs alone too, so its worst case is one model's full output.
+    opus = build_request("design_lead", uuid4(), "Redesign the page.", max_tokens=32_000)
+    assert opus["fallbacks"] == [] and Decimal(opus["max_cost"]) == max_cost(opus["input_token_bound"], 32_000,
+                                                                             [ADVISOR_MODEL])
+
+
+def test_haiku_long_context_prompts_and_unknown_models_are_refused():
+    with pytest.raises(DomainError, match="long-context"):
+        build_request("design_lead", uuid4(), "x" * 199_000, model=HAIKU_MODEL)
+    with pytest.raises(DomainError, match="unsupported advisor model"):
+        build_request("design_lead", uuid4(), "brief", model="claude-sonnet-5-5")
+
+
+def test_haiku_usage_without_iterations_is_priced_at_haiku_rates():
+    # 1,000 x $0.10 + 500 x $0.50 per million, not the Opus price.
+    assert measured_cost(usage(1000, 500), HAIKU_MODEL)[0] == Decimal("0.000350")
+
+
+def test_design_lead_run_sends_once_without_fallback_and_returns_files(advisor_system):
+    db, org, site, policy, root = advisor_system
+    document = build_request("design_lead", site, "Redesign the page.", max_tokens=32_000, model=HAIKU_MODEL)
+    path = save_request(document, root / "advisor")
+    approval = request_approval(policy, org, document, "design-loop")
+    policy.decide(org, approval["id"], "owner", True)
+    ensure_budgets(policy, org, monthly="15", daily="3")
+    design = {"concept": "Press check", "summary": "New palette.", "files": [{"path": "site.css", "content": "a{}"}]}
+    served = SimpleNamespace(id="msg_lead", model=HAIKU_MODEL, stop_reason="end_turn",
+                             content=[SimpleNamespace(type="text", text=json.dumps(design))], usage=usage(20_000, 9_000))
+    client = FakeClient(result=served)
+    result = run_review(policy, org, approval["id"], path, client, results_root=root / "advisor")
+    assert result["status"] == "complete" and result["review"]["files"] == design["files"]
+    assert result["measured_cost"] == "0.006500"  # 20,000 x $0.10 + 9,000 x $0.50 per million
+    assert client.options == [{"max_retries": 0, "timeout": LONG_TIMEOUT_SECONDS}]
+    assert "betas" not in client.calls[0] and "fallbacks" not in client.calls[0]
+    assert budget_totals(db, org)["2026-10-22"] == (Decimal("0.006500"), Decimal("0"))
 
 
 def test_ensure_budgets_never_raises_an_existing_limit(advisor_system):
