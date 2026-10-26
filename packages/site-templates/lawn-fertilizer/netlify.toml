@@ -7,12 +7,13 @@
 [build.environment]
   NODE_VERSION = "24"
 
-# Public launch details. The production build fails closed while any of them is missing.
+# Public launch details shown on the privacy page. The production build fails closed while any is missing.
 [context.production.environment]
   SITEFORGE_BUILD_MODE = "production"
   SITEFORGE_SITE_URL = "https://lawnnumbers.com"
   SITEFORGE_HOST_NAME = "Netlify"
   SITEFORGE_HOST_PRIVACY_URL = "https://www.netlify.com/privacy/"
+  SITEFORGE_CONTACT_EMAIL = "debrisdash.app@gmail.com"
 
 [[headers]]
   for = "/*"
