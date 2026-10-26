@@ -1,0 +1,28 @@
+# Netlify settings for lawnnumbers.com. Netlify reads this file from the site's base directory
+# (packages/site-templates/lawn-fertilizer) and builds only the branch the owner approved for publishing.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+# Public launch details. The production build fails closed while any of them is missing.
+[context.production.environment]
+  SITEFORGE_BUILD_MODE = "production"
+  SITEFORGE_SITE_URL = "https://lawnnumbers.com"
+  SITEFORGE_HOST_NAME = "Netlify"
+  SITEFORGE_HOST_PRIVACY_URL = "https://www.netlify.com/privacy/"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "DENY"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+
+[[headers]]
+  for = "/_astro/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
