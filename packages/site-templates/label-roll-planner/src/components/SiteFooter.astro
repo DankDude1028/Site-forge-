@@ -1,8 +1,24 @@
 ---
 const { mode } = Astro.props;
 ---
-<footer class="site-footer shell">
-  <span>Rollwise · label roll calculator{mode === 'preview' ? ' (preview)' : ''}</span>
-  <span>No ads. No affiliate links. No account needed.</span>
-  <a href="/privacy/">Privacy &amp; assumptions</a>
+<footer class="site-footer">
+  <div class="shell footer-inner">
+    <div class="footer-brand">
+      <span class="slug-marks" aria-hidden="true">
+        <svg class="slug-reg" viewBox="0 0 24 24" focusable="false">
+          <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="1.6" />
+          <circle cx="12" cy="12" r="2.5" fill="currentColor" />
+          <path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="1.4" />
+        </svg>
+        <span class="slug-bars"><i></i><i></i><i></i><i></i></span>
+      </span>
+      <span>Rollwise · label roll calculator{mode === 'preview' ? ' (preview)' : ''}</span>
+    </div>
+    <span class="footer-trust">No ads. No affiliate links. No account needed.</span>
+    <div class="footer-links">
+      <a href="/#planner-title">Calculator</a>
+      <a href="/#how">Math &amp; formula</a>
+      <a href="/privacy/">Privacy &amp; assumptions</a>
+    </div>
+  </div>
 </footer>

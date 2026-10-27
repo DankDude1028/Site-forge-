@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { planLabels } from '../src/lib/planner.ts';
+import { BATCH_PRESETS, compareRollSizes, computeRollTelemetry, planLabels } from '../src/lib/planner.ts';
 
 test('a real batch rounds the allowance and whole rolls independently', () => {
   assert.deepEqual(planLabels({ quantity: 250, labelsPerItem: 2, wastePercent: 5,
@@ -35,4 +35,22 @@ test('larger batches cannot need fewer rolls and coverage always includes allowa
     assert.ok(current.rollsRequired * inputs.labelsPerRoll >= current.labelsNeeded);
     assert.ok(current.labelsLeft >= 0 && current.labelsLeft < inputs.labelsPerRoll);
   }
+});
+test('roll telemetry and roll-size comparison stay consistent with planLabels', () => {
+  const sample = BATCH_PRESETS[0].inputs;
+  const telemetry = computeRollTelemetry(sample);
+  assert.equal(telemetry.allowanceLabels, 25);
+  assert.equal(telemetry.totalCapacity, 1000);
+  assert.equal(telemetry.lastRollUsed, 25);
+  assert.equal(telemetry.lastRollUsedPercent, 5);
+  assert.equal(Math.round(telemetry.baseSharePercent + telemetry.allowanceSharePercent + telemetry.spareSharePercent), 100);
+
+  const comparison = compareRollSizes(sample);
+  assert.equal(comparison.length, 4);
+  assert.ok(comparison.some(row => row.isCurrent && row.labelsPerRoll === 500));
+  assert.equal(comparison.filter(row => row.isLowestSpare).length, 1);
+  const row250 = comparison.find(row => row.labelsPerRoll === 250);
+  assert.ok(row250);
+  assert.equal(row250.rollsRequired, 3);
+  assert.equal(row250.labelsLeft, 225);
 });

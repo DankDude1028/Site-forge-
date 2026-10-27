@@ -4,6 +4,21 @@ import { getSiteConfig } from '../site-config.mjs';
 
 const config = getSiteConfig();
 
+/** Wait for finite entry animations so checks see the settled page a visitor sees. */
+const settle = page =>
+  page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter(
+          animation =>
+            animation.timeline === document.timeline &&
+            animation.effect?.getComputedTiming().iterations !== Infinity,
+        )
+        .map(animation => animation.finished),
+    ),
+  );
+
 test('calculator updates live, flags the exact invalid field, and sends no inputs', async ({ page }, testInfo) => {
   const outside = [];
   page.on('request', request => { if (new URL(request.url()).hostname !== '127.0.0.1') outside.push(request.url()); });
@@ -13,11 +28,23 @@ test('calculator updates live, flags the exact invalid field, and sends no input
   await expect(page.locator('#order')).toHaveText('1');
   await expect(page.locator('#result-kind')).toHaveText(/Sample batch/);
   await expect(page.locator('#strip .roll')).toHaveCount(2);
+  await settle(page);
   await page.screenshot({ path: testInfo.outputPath('planner.png'), fullPage: true });
+
   await page.getByLabel('Items in this batch').fill('1000');
   await expect(page.locator('#order')).toHaveText('4');
   await expect(page.locator('#needed')).toHaveText('2,100');
+  await expect(page.locator('#m-needed')).toHaveText('2,100');
+  await expect(page.locator('#spool-pct')).toHaveText('20%');
   await expect(page.locator('#result-kind')).toHaveText('Your batch');
+
+  // Interactive roll-size comparison loads a new roll capacity into the calculator.
+  await page.locator('[data-use-roll="1000"]').click();
+  await expect(page.locator('#perRoll')).toHaveValue('1000');
+  await expect(page.locator('#order')).toHaveText('2');
+  await page.locator('[data-use-roll="500"]').click();
+  await expect(page.locator('#perRoll')).toHaveValue('500');
+
   await page.getByLabel('Items in this batch').fill('');
   await expect(page.locator('#result')).toBeHidden();
   await expect(page.locator('#quantity')).toHaveAttribute('aria-invalid', 'true');
@@ -45,8 +72,10 @@ test('both pages pass automated accessibility and their configured crawl control
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', config.robots);
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', config.origin + path);
     await expect(page.locator('body')).not.toContainText('synthetic research');
+    await settle(page);
     const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
     expect(result.violations).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
   const robots = await request.get('/robots.txt');
   expect(await robots.text()).toContain(config.mode === 'production' ? 'Allow: /' : 'Disallow: /');
@@ -54,4 +83,19 @@ test('both pages pass automated accessibility and their configured crawl control
   const sitemap = await request.get('/sitemap.xml');
   expect(sitemap.ok()).toBe(true);
   expect(await sitemap.text()).toContain(`<loc>${config.origin}/</loc>`);
+});
+
+test('reduced motion still shows a complete, correct page with zero running animations', async ({ browser }) => {
+  const context = await browser.newContext({ reducedMotion: 'reduce' });
+  const page = await context.newPage();
+  await page.goto('/');
+  await page.locator('[data-preset="candle-run"]').click();
+  await expect(page.locator('#order')).toHaveText('3');
+  await expect(page.locator('#needed')).toHaveText('1,890');
+  expect(
+    await page.evaluate(
+      () => document.getAnimations().filter(animation => animation.playState === 'running').length,
+    ),
+  ).toBe(0);
+  await context.close();
 });
