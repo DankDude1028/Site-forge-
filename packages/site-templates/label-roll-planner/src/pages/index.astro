@@ -8,7 +8,7 @@ import '@fontsource/source-sans-3/latin-700.css';
 import '../styles/site.css';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
-import { BATCH_PRESETS, compareRollSizes, computeRollTelemetry, planLabels } from '../lib/planner.ts';
+import { BATCH_PRESETS, compareRollSizes, computeRollTelemetry, placementCards, planLabels } from '../lib/planner.ts';
 import { getSiteConfig } from '../../site-config.mjs';
 
 const config = getSiteConfig();
@@ -26,7 +26,7 @@ const faqs = [
   },
   {
     q: 'How much extra allowance should I add for setup and misprints?',
-    a: 'There is no single percentage for every shop. Hand-applied runs mainly lose occasional crooked or wrinkled labels, while printers and applicators also use a fixed length of label web each time you thread the rollers and align registration. On a short batch, that fixed setup strip is a larger share of the run than on a long batch—check how many labels your setup typically uses and set the allowance % to cover it.',
+    a: 'There is no single percentage for every shop. Hand-applied runs mainly lose occasional crooked or wrinkled labels, while printers and applicators also use up a strip of labels each time you load the printer and line up the first label. On a short batch, that fixed setup strip is a larger share of the run than on a long batch—check how many labels your setup typically uses and set the allowance % to cover it.',
   },
   {
     q: 'What if I have a partly used roll on the shelf?',
@@ -34,7 +34,7 @@ const faqs = [
   },
   {
     q: 'Does changing roll size affect how many spare labels are left over?',
-    a: 'Yes. When your batch total is not an exact multiple of the roll capacity, rounding up to a whole roll leaves spare labels on the final roll. Use the Roll-Size Optimizer above to compare how different roll capacities change your order count and leftover labels—just confirm your printer or dispenser accepts the physical roll diameter.',
+    a: 'Yes. When your batch total is not an exact multiple of the roll capacity, rounding up to a whole roll leaves spare labels on the final roll. Use the roll-size comparison above to compare how different roll capacities change your order count and leftover labels—just confirm your printer or dispenser accepts the physical roll diameter.',
   },
 ];
 
@@ -81,7 +81,7 @@ const jsonLd = [
         <div class="hero-grid-bg" aria-hidden="true"></div>
         <div class="shell hero-bar">
           <div class="intro">
-            <p class="eyebrow on-dark">Small-batch label press instrument</p>
+            <p class="eyebrow on-dark">Label roll calculator</p>
             <h1 id="hero-title">How many label rolls does this batch <em>really</em> need?</h1>
             <p class="lede">Enter your batch and your roll size. Rollwise rounds up to whole labels and whole rolls, adds a small allowance for setup and misprints, and takes off the rolls already on your shelf.</p>
           </div>
@@ -116,7 +116,7 @@ const jsonLd = [
             <div class="planner press-instrument">
               <div class="press-zone zone-controls">
                 <div class="zone-header">
-                  <span class="zone-step">01 · Press Controls</span>
+                  <span class="zone-step">1 · Your batch</span>
                   <h2 id="planner-title">Plan your label run</h2>
                   <p class="planner-intro">Results update as you type.</p>
                 </div>
@@ -125,7 +125,7 @@ const jsonLd = [
                     <div class="field-card span-2">
                       <div class="label-row">
                         <label for="quantity">Items in this batch</label>
-                        <span class="unit-tag">units</span>
+                        <span class="unit-tag">items</span>
                       </div>
                       <input id="quantity" name="quantity" type="number" min="1" max="1000000" step="1" value="250" required inputmode="numeric" aria-describedby="quantity-error" />
                       <input id="quantity-range" class="batch-slider" type="range" min="10" max="5000" step="10" value="250" aria-label="Batch size slider" />
@@ -135,13 +135,13 @@ const jsonLd = [
                     <div class="field-card">
                       <div class="label-row">
                         <label for="labels">Labels per item</label>
-                        <span class="unit-tag">per unit</span>
+                        <span class="unit-tag">per item</span>
                       </div>
                       <input id="labels" name="labels" type="number" min="1" max="100" step="1" value="2" required inputmode="numeric" aria-describedby="labels-error" />
                       <div class="mini-chips" role="group" aria-label="Placement count presets">
                         {[1, 2, 3, 4].map(val => (
                           <button type="button" class="mini-chip" data-target="labels" data-value={val} aria-pressed={val === 2 ? 'true' : 'false'}>
-                            {val === 1 ? '1 · Front' : val === 2 ? '2 · F+B' : val === 3 ? '3 · +Seal' : '4 · Set'}
+                            {val === 1 ? '1 · Front' : val === 2 ? '2 · Front + back' : val === 3 ? '3 · With seal' : '4 · Full set'}
                           </button>
                         ))}
                       </div>
@@ -151,7 +151,7 @@ const jsonLd = [
                     <div class="field-card">
                       <div class="label-row">
                         <label for="perRoll">Labels on each roll</label>
-                        <span class="unit-tag">roll cap</span>
+                        <span class="unit-tag">per roll</span>
                       </div>
                       <input id="perRoll" name="perRoll" type="number" min="1" max="1000000" step="1" value="500" required inputmode="numeric" aria-describedby="perRoll-error" />
                       <div class="mini-chips" role="group" aria-label="Roll capacity presets">
@@ -167,7 +167,7 @@ const jsonLd = [
                     <div class="field-card span-2">
                       <div class="label-row">
                         <label for="onHand">Full rolls you already have</label>
-                        <span class="unit-tag">on shelf</span>
+                        <span class="unit-tag">full rolls</span>
                       </div>
                       <div class="inline-control-row">
                         <input id="onHand" name="onHand" type="number" min="0" max="1000000" step="1" value="1" required inputmode="numeric" aria-describedby="onHand-error" />
@@ -207,8 +207,8 @@ const jsonLd = [
 
               <div class="press-zone zone-visualizer" aria-hidden="true">
                 <div class="viz-top-bar">
-                  <span class="zone-step">02 · Live Press Telemetry</span>
-                  <span class="viz-badge" id="viz-allowance">+{defaultTelemetry.allowanceLabels} allowance labels</span>
+                  <span class="zone-step">2 · Your rolls at a glance</span>
+                  <span class="viz-badge" id="viz-allowance">+{defaultTelemetry.allowanceLabels} extra labels</span>
                 </div>
 
                 <div class="spool-stage" id="spool-stage">
@@ -271,16 +271,16 @@ const jsonLd = [
 
                 <div class="web-conveyor" id="web-conveyor">
                   <div class="conveyor-head">
-                    <span>Die-cut label web feed</span>
+                    <span>Labels on each item</span>
                     <span id="viz-per-item">{defaultInput.labelsPerItem} labels / item</span>
                   </div>
                   <div class="web-viewport">
                     <div class="web-track" id="web-track">
-                      {[1, 2, 3, 4, 1, 2, 3, 4].map((num, idx) => (
-                        <span class="die-label">
+                      {placementCards(defaultInput.labelsPerItem).map((card, index) => (
+                        <span class="die-label" style={`--i:${index}`}>
                           <i class="die-hole"></i>
-                          <b class="die-title">{idx % 2 === 0 ? 'FRONT' : 'BACK'} · #{num}</b>
-                          <small class="die-meta">{defaultInput.labelsPerRoll}/ROLL · +{defaultInput.wastePercent}%</small>
+                          <b class="die-title">{card.title}</b>
+                          <small class="die-meta">{card.meta}</small>
                         </span>
                       ))}
                     </div>
@@ -289,7 +289,7 @@ const jsonLd = [
 
                 <div class="shelf-rack">
                   <div class="conveyor-head">
-                    <span>Roll shelf &amp; order strip</span>
+                    <span>Rolls you have and need</span>
                     <span id="viz-roll-count">{defaultPlan.rollsRequired} rolls total</span>
                   </div>
                   <div class="strip" id="strip" aria-hidden="true">
@@ -307,7 +307,7 @@ const jsonLd = [
                   <ul class="roll-feed-list" id="roll-feed-list" aria-hidden="true">
                     <li class="feed-item is-have">
                       <div class="feed-item-head">
-                        <strong>Roll 1 · On shelf</strong>
+                        <strong>Roll 1 · Already have</strong>
                         <span>500 / 500 labels (100%)</span>
                       </div>
                       <div class="feed-bar"><span style="width:100%"></span></div>
@@ -326,7 +326,7 @@ const jsonLd = [
               <div class="press-zone zone-ticket">
                 <output id="result" for="quantity labels perRoll onHand waste">
                   <div class="ticket-top">
-                    <span class="zone-step">03 · Press Proof Ticket</span>
+                    <span class="zone-step">3 · What to order</span>
                     <p class="result-kind" id="result-kind">Sample batch. Change any number to plan yours.</p>
                   </div>
 
@@ -338,7 +338,7 @@ const jsonLd = [
 
                   <div class="capacity-meter" aria-hidden="true">
                     <div class="capacity-head">
-                      <span>Total roll capacity breakdown</span>
+                      <span>How the rolls get used</span>
                       <span id="capacity-total">{defaultTelemetry.totalCapacity.toLocaleString('en-US')} labels on {defaultPlan.rollsRequired} rolls</span>
                     </div>
                     <div class="capacity-bar">
@@ -383,7 +383,7 @@ const jsonLd = [
         <div class="shell">
           <div class="section-head reveal">
             <div>
-              <p class="eyebrow">Roll-size optimizer</p>
+              <p class="eyebrow">Compare roll sizes</p>
               <h2 id="compare-title">Compare standard roll sizes for this exact batch</h2>
             </div>
             <p class="section-sub">See how switching between 250, 500, 1,000 and 2,500 labels per roll changes your order count and leftover stock. Click any card to load that roll size into the press.</p>
@@ -416,7 +416,7 @@ const jsonLd = [
       <section class="explain-band" aria-labelledby="how">
         <div class="shell explain">
           <div class="explain-copy reveal">
-            <p class="eyebrow on-dark">Transparent press math</p>
+            <p class="eyebrow on-dark">The math</p>
             <h2 id="how">The math, out in the open</h2>
             <p>Multiply your items by labels per item, add the allowance percentage and round up to a whole label. Divide by the labels on each roll and round up to whole rolls. Then subtract the full rolls you already have.</p>
             <p class="example">Example: 250 items × 2 labels = 500, plus 5% = 525 labels. At 500 labels per roll that is 2 rolls. With 1 on the shelf, order 1.</p>
@@ -447,7 +447,7 @@ const jsonLd = [
 
       <section class="press-guide" aria-labelledby="tips-title">
         <div class="shell">
-          <p class="eyebrow">Pressroom checklist</p>
+          <p class="eyebrow">Before you order</p>
           <h2 id="tips-title">Four checks before you send a label order to press</h2>
           <ul class="guide-grid">
             <li class="guide-card reveal">
@@ -455,8 +455,8 @@ const jsonLd = [
                 <circle cx="16" cy="24" r="10" /><circle cx="16" cy="24" r="3" />
                 <path d="M16 14h24M28 24h12M28 34h12" />
               </svg>
-              <h3>Account for web threading</h3>
-              <p>Printers, dispensers and applicators consume extra labels whenever you thread the rollers, calibrate the gap sensor or check registration. How many labels that takes depends on your machine's web path and label height—check your manual and set an allowance that covers setup.</p>
+              <h3>Allow for loading the printer</h3>
+              <p>Printers, dispensers and applicators use up extra labels each time you load a roll, line up the first label or run a test print. How many depends on your machine and your label size—check your manual and set an allowance that covers setup.</p>
             </li>
             <li class="guide-card reveal">
               <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
@@ -471,7 +471,7 @@ const jsonLd = [
                 <circle cx="24" cy="24" r="16" /><circle cx="24" cy="24" r="7" />
                 <path d="M24 4v6M24 38v6M4 24h6M38 24h6" />
               </svg>
-              <h3>Verify core &amp; outer diameter</h3>
+              <h3>Check the roll fits your printer</h3>
               <p>Suppliers wind the same label count onto different core sizes and roll diameters depending on label length. Check your printer or applicator spec sheet for its core inner diameter and maximum roll outer diameter before ordering larger rolls.</p>
             </li>
             <li class="guide-card reveal">
@@ -479,8 +479,8 @@ const jsonLd = [
                 <path d="M12 36V14l12-6 12 6v22l-12 6z" />
                 <path d="M12 14l12 6 12-6M24 20v22" />
               </svg>
-              <h3>Rotate shelf stock first</h3>
-              <p>Pressure-sensitive adhesives have a finite shelf life that depends on the material datasheet, temperature and humidity. Count only sealed, full rolls in your on-hand stock, store spares wrapped away from heat and moisture, and use older rolls first.</p>
+              <h3>Use older rolls first</h3>
+              <p>Pressure-sensitive adhesives have a finite shelf life that depends on the label material, temperature and humidity. Count only sealed, full rolls in your on-hand stock, store spares wrapped away from heat and moisture, and use older rolls first.</p>
             </li>
           </ul>
         </div>

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { BATCH_PRESETS, compareRollSizes, computeRollTelemetry, planLabels } from '../src/lib/planner.ts';
+import { BATCH_PRESETS, compareRollSizes, computeRollTelemetry, placementCards, planLabels } from '../src/lib/planner.ts';
 
 test('a real batch rounds the allowance and whole rolls independently', () => {
   assert.deepEqual(planLabels({ quantity: 250, labelsPerItem: 2, wastePercent: 5,
@@ -53,4 +53,13 @@ test('roll telemetry and roll-size comparison stay consistent with planLabels', 
   assert.ok(row250);
   assert.equal(row250.rollsRequired, 3);
   assert.equal(row250.labelsLeft, 225);
+});
+
+test('the label strip shows whole cards for every placement count', () => {
+  assert.deepEqual(placementCards(2).map(card => card.title), ['Front', 'Back']);
+  assert.deepEqual(placementCards(4).map(card => card.title), ['Front', 'Back', 'Neck', 'Lid']);
+  assert.equal(placementCards(1)[0].meta, 'Label 1 of 1');
+  const many = placementCards(7);
+  assert.equal(many.length, 4);
+  assert.deepEqual(many.at(-1), { title: '+4 more', meta: 'Labels 4–7' });
 });

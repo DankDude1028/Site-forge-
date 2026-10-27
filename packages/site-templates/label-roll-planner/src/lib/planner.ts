@@ -71,6 +71,18 @@ export const BATCH_PRESETS: readonly BatchPreset[] = [
   },
 ];
 
+const PLACEMENTS: Record<number, readonly string[]> = {
+  1: ['Front'], 2: ['Front', 'Back'], 3: ['Front', 'Back', 'Seal'], 4: ['Front', 'Back', 'Neck', 'Lid'],
+};
+
+/** The labels on one item, for the label strip: whole cards only, with a summary card past four. */
+export function placementCards(count: number): { title: string; meta: string }[] {
+  const of = (index: number) => `Label ${index + 1} of ${count}`;
+  if (count <= 4) return (PLACEMENTS[count] ?? []).map((title, index) => ({ title, meta: of(index) }));
+  return [...PLACEMENTS[3].map((title, index) => ({ title, meta: of(index) })),
+    { title: `+${count - 3} more`, meta: `Labels 4–${count}` }];
+}
+
 export function planLabels(input: LabelInputs): LabelPlan {
   const { quantity, labelsPerItem, wastePercent, labelsPerRoll, rollsOnHand } = input;
   for (const value of [quantity, labelsPerItem, labelsPerRoll, rollsOnHand]) {

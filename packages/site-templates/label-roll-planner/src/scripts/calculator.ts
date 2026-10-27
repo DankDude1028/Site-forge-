@@ -1,4 +1,4 @@
-import { BATCH_PRESETS, compareRollSizes, computeRollTelemetry, planLabels, type LabelInputs } from '../lib/planner.ts';
+import { BATCH_PRESETS, compareRollSizes, computeRollTelemetry, placementCards, planLabels, type LabelInputs } from '../lib/planner.ts';
 
 const form = document.querySelector<HTMLFormElement>('#planner');
 const output = document.querySelector<HTMLOutputElement>('#result');
@@ -97,7 +97,7 @@ function drawStrip(required: number, onHand: number, perRoll: number, spare: num
     const head = document.createElement('div');
     head.className = 'feed-item-head';
     const strong = document.createElement('strong');
-    strong.textContent = `Roll ${index + 1} · ${isOwned ? 'On shelf' : 'To order'}`;
+    strong.textContent = `Roll ${index + 1} · ${isOwned ? 'Already have' : 'To order'}`;
     const span = document.createElement('span');
     span.textContent = `${numbers.format(usedLabels)} / ${numbers.format(perRoll)} labels (${usedPct}%)`;
     head.append(strong, span);
@@ -124,22 +124,27 @@ function drawStrip(required: number, onHand: number, perRoll: number, spare: num
 function updateWebTrack(inputs: LabelInputs): void {
   const track = document.getElementById('web-track');
   if (!track) return;
-  const placementNames =
-    inputs.labelsPerItem === 1
-      ? ['FRONT']
-      : inputs.labelsPerItem === 2
-        ? ['FRONT', 'BACK']
-        : inputs.labelsPerItem === 3
-          ? ['FRONT', 'BACK', 'SEAL']
-          : ['FRONT', 'BACK', 'NECK', 'LID'];
-  const cards = track.querySelectorAll<HTMLElement>('.die-label');
-  cards.forEach((card, index) => {
-    const title = card.querySelector<HTMLElement>('.die-title');
-    const meta = card.querySelector<HTMLElement>('.die-meta');
-    const tag = placementNames[index % placementNames.length];
-    if (title) title.textContent = `${tag} · #${index + 1}`;
-    if (meta) meta.textContent = `${numbers.format(inputs.labelsPerRoll)}/ROLL · +${inputs.wastePercent}%`;
-  });
+  // Whole label cards only, so nothing is ever cut off at the strip's edge; they print in when the count changes.
+  const cards = placementCards(inputs.labelsPerItem);
+  const key = String(inputs.labelsPerItem);
+  if (track.dataset.key === key) return;
+  const first = track.dataset.key === undefined;
+  track.dataset.key = key;
+  track.replaceChildren(...cards.map((card, index) => {
+    const label = document.createElement('span');
+    label.className = first ? 'die-label' : 'die-label printed';
+    label.style.setProperty('--i', String(index));
+    const hole = document.createElement('i');
+    hole.className = 'die-hole';
+    const title = document.createElement('b');
+    title.className = 'die-title';
+    title.textContent = card.title;
+    const meta = document.createElement('small');
+    meta.className = 'die-meta';
+    meta.textContent = card.meta;
+    label.append(hole, title, meta);
+    return label;
+  }));
 }
 
 function updateComparisonGrid(inputs: LabelInputs): void {
@@ -292,7 +297,7 @@ function calculate(when: Announce): boolean {
       'spool-used-detail',
       `Last roll uses ${numbers.format(telemetry.lastRollUsed)} of ${numbers.format(inputs.labelsPerRoll)} labels (${numbers.format(result.labelsLeft)} spare)`,
     );
-    setText('viz-allowance', `+${numbers.format(telemetry.allowanceLabels)} allowance labels`);
+    setText('viz-allowance', `+${numbers.format(telemetry.allowanceLabels)} extra labels`);
     setText('viz-per-item', `${numbers.format(inputs.labelsPerItem)} ${inputs.labelsPerItem === 1 ? 'label' : 'labels'} / item`);
     setText('viz-roll-count', `${rolls(result.rollsRequired)} total`);
 

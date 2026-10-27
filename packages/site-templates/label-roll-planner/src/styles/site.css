@@ -808,12 +808,13 @@ input[type="number"][aria-invalid="true"] {
 .web-track {
   display: flex;
   gap: 8px;
-  width: max-content;
+  width: 100%;
 }
 
 .die-label {
-  flex: none;
-  width: 108px;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 150px;
   background: var(--white);
   border: 1.5px solid var(--ink);
   border-radius: 8px;
@@ -835,13 +836,13 @@ input[type="number"][aria-invalid="true"] {
 }
 
 .die-title {
-  font: 800 0.72rem/1.1 var(--display);
+  font: 800 0.86rem/1.1 var(--display);
   color: var(--ink);
   letter-spacing: 0.03em;
 }
 
 .die-meta {
-  font: 600 0.68rem/1.1 var(--body);
+  font: 600 0.74rem/1.2 var(--body);
   color: var(--ink-soft);
 }
 
@@ -1754,8 +1755,9 @@ output.is-covered .answer strong {
     animation: ribbon-flow 1.8s linear infinite;
   }
 
-  .web-track {
-    animation: conveyor-belt 18s linear infinite;
+  .die-label.printed {
+    animation: label-print 0.45s var(--spring) both;
+    animation-delay: calc(var(--i) * 60ms);
   }
 
   .spool-stage.spin-burst .main-spool {
@@ -1812,8 +1814,8 @@ output.is-covered .answer strong {
   to { stroke-dashoffset: -44; }
 }
 
-@keyframes conveyor-belt {
-  to { transform: translateX(-464px); }
+@keyframes label-print {
+  from { transform: translateY(-12px) scale(0.9); opacity: 0; }
 }
 
 @keyframes spool-kick {
