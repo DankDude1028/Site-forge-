@@ -6,7 +6,9 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const pages = [['index.html', '/'], ['method/index.html', '/method/'], ['privacy/index.html', '/privacy/'], ['terms/index.html', '/terms/']];
+import { ROUTES } from '../src/lib/site.ts';
+
+const pages = ROUTES.map((route) => [route === '/' ? 'index.html' : `${route.slice(1)}index.html`, route]);
 
 test('actual Astro preview and production outputs have separate complete SEO contracts', async () => {
   // Astro renames prerendered assets, so output must share the template filesystem.
@@ -43,6 +45,9 @@ test('actual Astro preview and production outputs have separate complete SEO con
       const home = await readFile(join(out, 'index.html'), 'utf8');
       assert.ok(home.includes('"@type":"WebApplication"') && home.includes('"@type":"FAQPage"'), 'home carries structured data');
       assert.ok(home.includes('id="total">25.9<'), 'the default result is in the server-rendered HTML');
+      assert.equal(pages.length, 14, 'home, hub, three tools, six grasses, method, privacy and terms');
+      const bermuda = await readFile(join(out, 'grass/bermudagrass/index.html'), 'utf8');
+      assert.ok(bermuda.includes('id="total">17.2<') && bermuda.includes('data-grass="bermudagrass"'), 'grass pages start the calculator and calendar on their own grass');
       const robots = await readFile(join(out, 'robots.txt'), 'utf8');
       assert.equal(robots, mode === 'production'
         ? `User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\n` : 'User-agent: *\nDisallow: /\n');

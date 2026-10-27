@@ -12,6 +12,8 @@ export interface Grass {
   annual: readonly [number, number];
   months: Partial<Record<number, Feeding>>; // 0 = January
   note: string;
+  rate: number; // where the calculator starts on this grass's page, inside the 0.5–1 lb band
+  intro: string;
 }
 
 export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
@@ -26,17 +28,23 @@ const WARM_NOTE = 'Start after the lawn has fully greened up in spring, feed thr
 
 export const GRASSES: readonly Grass[] = [
   { id: 'kentucky-bluegrass', name: 'Kentucky bluegrass', season: 'cool', annual: [1, 4], months: COOL_MONTHS,
-    note: `${COOL_NOTE} Low-care lawns need 1–2 lb a year, most lawns 2–3, and high-care lawns 3–4.` },
+    note: `${COOL_NOTE} Low-care lawns need 1–2 lb a year, most lawns 2–3, and high-care lawns 3–4.`,
+    rate: 1, intro: 'A cool-season grass that does most of its growing in spring and fall. Its fall feedings matter most.' },
   { id: 'tall-fescue', name: 'Tall fescue', season: 'cool', annual: [1, 4], months: COOL_MONTHS,
-    note: `${COOL_NOTE} NC State's calendar adds up to 3 lb a year for tall fescue.` },
+    note: `${COOL_NOTE} NC State's calendar adds up to 3 lb a year for tall fescue.`,
+    rate: 1, intro: 'A deep-rooted cool-season grass, common across the transition zone. Feed it mainly in fall.' },
   { id: 'bermudagrass', name: 'Bermudagrass', season: 'warm', annual: [3, 5], months: WARM_MONTHS,
-    note: `${WARM_NOTE} Bermudagrass is the heaviest feeder; Florida's guide goes up to 7 lb a year in the south of the state.` },
+    note: `${WARM_NOTE} Bermudagrass is the heaviest feeder; Florida's guide goes up to 7 lb a year in the south of the state.`,
+    rate: 1, intro: 'A sun-loving warm-season grass that grows hard in summer and uses the most nitrogen of the common lawn grasses.' },
   { id: 'st-augustinegrass', name: 'St. Augustinegrass', season: 'warm', annual: [2, 4], months: WARM_MONTHS,
-    note: `${WARM_NOTE} Florida's guide allows up to 6 lb a year in South Florida.` },
+    note: `${WARM_NOTE} Florida's guide allows up to 6 lb a year in South Florida.`,
+    rate: 0.75, intro: 'A coarse, wide-bladed warm-season grass, common along the Gulf Coast and in Florida, that tolerates more shade than most.' },
   { id: 'zoysiagrass', name: 'Zoysiagrass', season: 'warm', annual: [2, 3], months: WARM_MONTHS,
-    note: `${WARM_NOTE} Zoysia needs less than bermudagrass; Florida's guide goes up to 4.5 lb in the far south.` },
+    note: `${WARM_NOTE} Zoysia needs less than bermudagrass; Florida's guide goes up to 4.5 lb in the far south.`,
+    rate: 0.75, intro: 'A dense, slow-growing warm-season grass that needs less nitrogen than bermudagrass.' },
   { id: 'centipedegrass', name: 'Centipedegrass', season: 'warm', annual: [0.4, 2], months: { 4: 'light', 5: 'main', 6: 'light' },
-    note: 'Centipede does best on very little fertilizer: one or two light feedings in late spring to early summer, after green-up.' },
+    note: 'Centipede does best on very little fertilizer: one or two light feedings in late spring to early summer, after green-up.',
+    rate: 0.5, intro: 'A low-maintenance warm-season grass of the Southeast that does best on very little fertilizer.' },
 ];
 
 /** How many feedings at this rate fit the grass's yearly range, rounded to whole feedings. */

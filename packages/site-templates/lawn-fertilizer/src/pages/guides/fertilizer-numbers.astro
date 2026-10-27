@@ -1,0 +1,127 @@
+---
+import Base from '../../layouts/Base.astro';
+import GuideHero from '../../components/GuideHero.astro';
+import RelatedGuides from '../../components/RelatedGuides.astro';
+import SourceList from '../../components/SourceList.astro';
+import { bagContents } from '../../lib/tools.ts';
+import { fixed, pounds, whole } from '../../lib/format.ts';
+
+const START = { weight: 50, n: 29, p: 0, k: 4, rate: 1 };
+const bag = bagContents(START.weight, START.n, START.p, START.k)!;
+const share = (value: number) => (value / START.weight).toFixed(4);
+const path = '/guides/fertilizer-numbers/';
+const faqs = [
+  { q: 'What do the three numbers on a fertilizer bag mean?',
+    a: 'They are percentages by weight of nitrogen (N), phosphate (P₂O₅) and potash (K₂O), always in that order. A 50 lb bag of 29-0-4 holds 14.5 lb of nitrogen, no phosphate and 2 lb of potash.' },
+  { q: 'How much of a bag do I need for 1 lb of nitrogen per 1,000 sq ft?',
+    a: 'Divide 100 by the first number. For 29-0-4 that is about 3.4 lb of product per 1,000 sq ft; for 10-10-10 it is 10 lb.' },
+  { q: 'Why does the bag weigh more than the three nutrients add up to?',
+    a: 'The rest is the material that carries the nutrients, plus coatings, fillers and any other nutrients such as sulfur or iron.' },
+];
+const jsonLd = [
+  { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Calculator', item: new URL('/', Astro.site).href },
+    { '@type': 'ListItem', position: 2, name: 'Guides', item: new URL('/guides/', Astro.site).href },
+    { '@type': 'ListItem', position: 3, name: 'Read a fertilizer bag', item: new URL(path, Astro.site).href },
+  ] },
+  { '@context': 'https://schema.org', '@type': 'FAQPage',
+    mainEntity: faqs.map((item) => ({ '@type': 'Question', name: item.q, acceptedAnswer: { '@type': 'Answer', text: item.a } })) },
+];
+---
+<Base title="Fertilizer Numbers Explained: What N-P-K Means and What's in the Bag | Lawn Numbers"
+  description="What the three numbers on a lawn fertilizer bag mean, how many pounds of nitrogen, phosphate and potash are inside, and how many square feet one bag covers."
+  path={path} jsonLd={jsonLd}>
+  <main id="main">
+    <GuideHero eyebrow="Tool" title="Read a fertilizer bag"
+      lede="The three big numbers are percentages by weight. Here is what they mean, what is really in the bag, and how far one bag goes."
+      crumbs={[{ name: 'Calculator', path: '/' }, { name: 'Guides', path: '/guides/' }, { name: 'Read a fertilizer bag' }]}>
+      <div slot="art" class="mini-sacks">
+        {[['29-0-4', 'Lawn food'], ['16-4-8', 'Complete'], ['10-10-10', 'All purpose']].map(([npk, kind], index) => (
+          <span class="mini-sack" style={`--i:${index}`}><small>{kind}</small><b>{npk}</b></span>
+        ))}
+      </div>
+    </GuideHero>
+
+    <section class="bag-tool" aria-labelledby="bag-tool-title">
+      <div class="shell">
+        <p class="eyebrow">Inside your bag</p>
+        <h2 id="bag-tool-title">Type your bag's numbers</h2>
+        <div class="bag-tool-grid">
+          <form id="bagform" class="tool-card-big" novalidate aria-label="Fertilizer bag">
+            <div class="field">
+              <div class="field-head"><label for="b-weight">Bag weight</label><span class="unit">lb</span></div>
+              <input id="b-weight" inputmode="decimal" autocomplete="off" value={START.weight} class="big-input" />
+            </div>
+            <fieldset class="field npk">
+              <legend>Numbers on the bag</legend>
+              <div class="npk-row">
+                <div class="npk-cell"><input id="b-n" inputmode="decimal" autocomplete="off" value={START.n} aria-describedby="b-error" /><label for="b-n"><b>N</b> Nitrogen %</label></div>
+                <span class="dash" aria-hidden="true">–</span>
+                <div class="npk-cell"><input id="b-p" inputmode="decimal" autocomplete="off" value={START.p} aria-describedby="b-error" /><label for="b-p"><b>P</b> Phosphate %</label></div>
+                <span class="dash" aria-hidden="true">–</span>
+                <div class="npk-cell"><input id="b-k" inputmode="decimal" autocomplete="off" value={START.k} aria-describedby="b-error" /><label for="b-k"><b>K</b> Potash %</label></div>
+              </div>
+              <p class="error" id="b-error"></p>
+            </fieldset>
+            <fieldset class="field">
+              <legend>Feeding rate for coverage</legend>
+              <div class="presets" role="group" aria-label="Coverage rate">
+                <button type="button" class="chip" data-cover="0.5" aria-pressed="false">Light <span>0.5</span></button>
+                <button type="button" class="chip" data-cover="0.75" aria-pressed="false">Standard <span>0.75</span></button>
+                <button type="button" class="chip" data-cover="1" aria-pressed="true">Full <span>1.0</span></button>
+              </div>
+            </fieldset>
+          </form>
+
+          <div class="bag-readout" id="bag-readout">
+            <div class="fill-bar" aria-hidden="true">
+              <span class="seg seg-n" id="seg-n" style={`--w:${share(bag.nitrogen)}`}></span>
+              <span class="seg seg-p" id="seg-p" style={`--w:${share(bag.phosphate)}`}></span>
+              <span class="seg seg-k" id="seg-k" style={`--w:${share(bag.potash)}`}></span>
+              <span class="seg seg-o" id="seg-o" style={`--w:${share(bag.other)}`}></span>
+            </div>
+            <dl class="nutrients">
+              <div class="nut n"><dt>Nitrogen</dt><dd><span id="o-n">{pounds(bag.nitrogen)}</span> lb</dd></div>
+              <div class="nut p"><dt>Phosphate (P₂O₅)</dt><dd><span id="o-p">{pounds(bag.phosphate)}</span> lb <small>= <span id="o-pe">{pounds(bag.phosphorus)}</span> lb phosphorus</small></dd></div>
+              <div class="nut k"><dt>Potash (K₂O)</dt><dd><span id="o-k">{pounds(bag.potash)}</span> lb <small>= <span id="o-ke">{pounds(bag.potassium)}</span> lb potassium</small></dd></div>
+              <div class="nut o"><dt>Everything else</dt><dd><span id="o-o">{pounds(bag.other)}</span> lb</dd></div>
+            </dl>
+            <div class="coverage">
+              <p class="zone-title">One bag feeds</p>
+              <p class="total"><span id="o-cover">{whole(bag.nitrogen / START.rate * 1000)}</span><span class="total-unit">sq ft</span></p>
+              <p>at <span id="o-rate">{fixed(START.rate, 2)}</span> lb of nitrogen per 1,000 sq ft. You need <strong><span id="o-per">{fixed(bag.perPoundOfNitrogen * START.rate, 2)}</span> lb</strong> of this product per 1,000 sq ft.</p>
+            </div>
+            <a class="btn-big" id="bag-use" href={`/#n=${START.n}&p=${START.p}&k=${START.k}&bag=${START.weight}`}>Use this bag in the calculator <span aria-hidden="true">→</span></a>
+            <p class="sr-only" id="bag-announce" aria-live="polite"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-body" aria-labelledby="numbers-title">
+      <div class="shell prose-wide">
+        <h2 id="numbers-title">N, P and K</h2>
+        <p>Every fertilizer label lists three numbers in the same order: nitrogen, phosphate and potash, as percentages of the bag's weight. Phosphate and potash are given as the oxides P₂O₅ and K₂O, which is why the tool shows the smaller weight of actual phosphorus (about 44% of the phosphate) and potassium (about 83% of the potash).</p>
+        <ul class="key-cards">
+          <li><b class="key n">N</b><div><h3>Nitrogen</h3><p>The nutrient lawns use most and the one that drives green-up. Lawn feeding rates are set in pounds of nitrogen per 1,000 sq ft.</p></div></li>
+          <li><b class="key p">P</b><div><h3>Phosphate</h3><p>Helps new roots, so starter fertilizers for seeding are high in it. Several states limit it on established lawns unless a soil test shows a need.</p></div></li>
+          <li><b class="key k">K</b><div><h3>Potash</h3><p>Helps grass cope with drought, heat and wear. A soil test tells you whether your soil is short of it.</p></div></li>
+        </ul>
+        <h2>Quick-release or slow-release</h2>
+        <p>Labels often say how much of the nitrogen is slow-release, sometimes called water-insoluble or slowly available nitrogen. Quick-release nitrogen greens grass fast but should stay at about 1 lb per 1,000 sq ft per feeding or less. Slow-release products may be labeled for higher rates. Florida, for example, allows up to 2 lb in spring or summer only when at least 65% of the nitrogen is controlled-release.</p>
+        <h2>Do you need phosphorus or potassium?</h2>
+        <p>Only a soil test can tell you. NC State Extension suggests getting one first; without it, they suggest a complete turf fertilizer with a 3-1-2 or 4-1-2 ratio, such as 12-4-8 or 16-4-8.</p>
+        <div class="faq-list inline-faq">
+          {faqs.map((item) => <details class="faq-item"><summary><h3>{item.q}</h3></summary><p>{item.a}</p></details>)}
+        </div>
+        <SourceList keys={['ncstate', 'iowa', 'rutgers', 'ufRule']} />
+      </div>
+    </section>
+
+    <RelatedGuides current={path} />
+  </main>
+</Base>
+
+<script>
+  import '../../scripts/bag.ts';
+</script>

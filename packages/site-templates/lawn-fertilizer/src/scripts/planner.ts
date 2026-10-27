@@ -1,6 +1,7 @@
 import { areaFromDimensions, parseNumber, planFertilizer, type Field, type Plan, type RateBand } from '../lib/fertilizer.ts';
 import { GRASSES, feedingsPerYear, type Grass } from '../lib/grasses.ts';
 import { amount, fixed, gaugeAngle, pounds, tileColumns, tileLayout, whole } from '../lib/format.ts';
+import { inline } from '../lib/site.ts';
 
 const $ = <T extends Element = HTMLElement>(id: string) => document.getElementById(id) as unknown as T;
 const calm = matchMedia('(prefers-reduced-motion: reduce)');
@@ -191,8 +192,9 @@ function update() {
     + `Spreader target ${fixed(plan.productPerThousand, 2)} pounds per 1,000 square feet.`);
 }
 
-// Feeding calendar
-let grass: Grass = GRASSES.find((item) => item.id === 'tall-fescue')!;
+// Feeding calendar: optional on a page; its section names the grass it starts with.
+const calendar = document.getElementById('calendar');
+let grass: Grass = GRASSES.find((item) => item.id === (calendar?.dataset.grass ?? 'tall-fescue')) ?? GRASSES[0];
 let currentRate = Number(inputs.rate.value);
 
 function list(months: number[]): string {
@@ -208,6 +210,7 @@ function updateCalendarRate(rate: number) {
 }
 
 function updateCalendar() {
+  if (!calendar) return;
   const monthsOf = (kind: string) => Object.entries(grass.months).filter(([, feed]) => feed === kind).map(([m]) => Number(m));
   document.querySelectorAll<SVGPathElement>('.ring .seg').forEach((segment) => {
     segment.dataset.feed = grass.months[Number(segment.dataset.month)] ?? 'off';
@@ -228,13 +231,14 @@ function updateCalendar() {
   const nextText = $('next');
   if (next !== undefined) {
     nextText.textContent = next === now
-      ? `It's ${FULL_MONTHS[now]}: a main feeding month for ${grass.name.toLowerCase()}.`
-      : `It's ${FULL_MONTHS[now]}. The next main feeding for ${grass.name.toLowerCase()} is ${FULL_MONTHS[next]}.`;
+      ? `It's ${FULL_MONTHS[now]}: a main feeding month for ${inline(grass)}.`
+      : `It's ${FULL_MONTHS[now]}. The next main feeding for ${inline(grass)} is ${FULL_MONTHS[next]}.`;
     nextText.hidden = false;
   }
 }
 
 function placeNowMarker() {
+  if (!calendar) return;
   const now = new Date().getMonth();
   const radians = ((now * 30 + 15) - 90) * Math.PI / 180;
   for (const id of ['now-dot', 'now-pulse']) {
@@ -272,6 +276,14 @@ document.querySelectorAll<HTMLInputElement>('input[name="grass"]').forEach((radi
   grass = GRASSES.find((item) => item.id === radio.value) ?? grass;
   updateCalendar();
 }));
+
+// The guides hand values over in the fragment (#area=1234 or #n=29&p=0&k=4&bag=50). A fragment never leaves the browser.
+const handoff = new URLSearchParams(location.hash.slice(1));
+for (const [key, input] of [['area', inputs.area], ['n', inputs.nitrogen], ['p', inputs.phosphorus], ['k', inputs.potassium],
+  ['bag', inputs.bagWeight]] as const) {
+  const value = parseNumber(handoff.get(key) ?? '');
+  if (Number.isFinite(value)) input.value = key === 'area' ? whole(value) : String(value);
+}
 
 // Seed the tween values from the server-rendered numbers, then sync everything.
 for (const id of ['total', 'per1000', 'n-total']) {
