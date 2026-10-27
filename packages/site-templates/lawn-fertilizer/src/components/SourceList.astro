@@ -1,0 +1,11 @@
+---
+import { CHECKED, SOURCES, type SourceKey } from '../lib/sources.ts';
+
+interface Props { keys: SourceKey[] }
+const { keys } = Astro.props;
+---
+<aside class="source-list" aria-labelledby="sources-title">
+  <h2 id="sources-title">Sources</h2>
+  <p>Checked {CHECKED}. Your state or county extension office has the final word for your area.</p>
+  <ol>{keys.map((key) => <li><a href={SOURCES[key].url}>{SOURCES[key].name}</a></li>)}</ol>
+</aside>

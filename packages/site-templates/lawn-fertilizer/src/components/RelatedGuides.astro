@@ -1,0 +1,29 @@
+---
+import { BAG_GUIDES, GRASS_GUIDES, RANGE_GUIDES, SEASON_GUIDES, STATE_GUIDES, TOOL_GUIDES, type PageLink } from '../lib/site.ts';
+
+interface Props { current: string }
+const { current } = Astro.props;
+const pool = [...GRASS_GUIDES, ...TOOL_GUIDES, ...RANGE_GUIDES, ...SEASON_GUIDES, ...BAG_GUIDES, ...STATE_GUIDES]
+  .filter((page) => page.path !== current);
+const start = [...current].reduce((sum, character) => sum + character.charCodeAt(0), 0) % pool.length;
+const links = [...pool.slice(start), ...pool.slice(0, start)].slice(0, 6);
+const kicker = (page: PageLink) => page.path.startsWith('/grass/') ? 'Grass guide'
+  : page.path.startsWith('/states/') ? 'State'
+  : page.path.startsWith('/seasons/') ? 'Season'
+  : page.path.startsWith('/bags/') ? 'Bag size'
+  : page.path.startsWith('/lawn-size/') ? 'Lawn size' : 'Guide';
+---
+<section class="related" aria-labelledby="related-title">
+  <div class="shell">
+    <p class="eyebrow">Keep going</p>
+    <h2 id="related-title">More from Lawn Numbers</h2>
+    <ul class="related-grid">
+      <li class="related-card calc-card">
+        <a href="/#planner"><span class="related-kicker">Calculator</span><strong>Work out your fertilizer</strong><span>Pounds to spread, bags to buy and the spreader target, from your lawn and your bag.</span></a>
+      </li>
+      {links.map((page) => (
+        <li class="related-card"><a href={page.path}><span class="related-kicker">{kicker(page)}</span><strong>{page.title}</strong><span>{page.blurb}</span></a></li>
+      ))}
+    </ul>
+  </div>
+</section>

@@ -1,0 +1,73 @@
+---
+import Base from '../layouts/Base.astro';
+import { CONTACT_EMAIL } from '../../contact.mjs';
+import { getSiteConfig } from '../../site-config.mjs';
+import { getLaunchDetails } from '../../launch-details.mjs';
+
+const config = getSiteConfig();
+const details = getLaunchDetails(config.mode);
+const updated = '27 October 2026';
+---
+<Base title="Privacy | Lawn Numbers"
+  description="What Lawn Numbers collects today, what stays in your browser, and what this page will say before cookies, analytics, or ads are added."
+  path="/privacy/">
+  <main id="main">
+    <section class="page-hero">
+      <div class="shell">
+        <p class="eyebrow on-dark">Privacy</p>
+        <h1>What this site does with information</h1>
+        <p>This page describes the site as it is on the date below. It also says what would have to be disclosed before cookies, analytics, or advertising are added.</p>
+        <p class="updated">Last updated {updated}</p>
+      </div>
+    </section>
+    <div class="shell prose">
+      <h2>The calculator stays in your browser</h2>
+      <p>The fertilizer, seed, measuring, bag, and spreader tools run on your device. The lawn size, bag numbers, rates, and other figures you type are not sent to Lawn Numbers and are not stored by this site. Closing the tab drops them.</p>
+      <p>A link from a guide can put a lawn size or a rate into the address of the calculator page. That address stays in your browser. It is not a form submission.</p>
+
+      <h2>What the site collects today</h2>
+      <p>There is no account, no newsletter, and no form that saves what you type. As of {updated}, Lawn Numbers does not run an analytics product, does not place its own cookies, and does not show advertisements or affiliate links. That sentence describes the site on this date. It is not a promise that those things will never be added. If they are added, the sections further down have to be filled in first, and this date has to change.</p>
+      <p>Pages you open are ordinary web requests. The contact address on this site is a mailbox link (<a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>). If you email it, that message is email, not something the calculator sends.</p>
+
+      <h2>Hosting</h2>
+      {details.host
+        ? <p>Lawn Numbers is hosted by {details.host}. Like most web hosts, {details.host} may keep basic request logs, such as IP addresses, the browser type, and the pages requested, to keep the site secure and running. Those logs are the host’s records. See <a href={details.hostPrivacyUrl}>{details.host}’s privacy policy</a>.</p>
+        : <p>This preview is not published yet. The hosting provider and a link to its privacy policy are added before launch.</p>}
+
+      <h2>Cookies, analytics, and advertising later</h2>
+      <p>None of the following is on the site today. They are listed so a later change cannot sneak in under the old wording.</p>
+      <ul>
+        <li><strong>Cookies.</strong> A later version might use a cookie to remember a consent choice, to count visits, or to let an advertising partner measure an ad. Any cookie the site sets itself would be named on this page, with what it is for and how long it lasts.</li>
+        <li><strong>Analytics.</strong> A later version might use a service that counts page views, rough location, and the type of device. The provider’s name and a link to its policy would be added here before it starts. Calculator inputs would still stay in the browser unless this page says they are sent.</li>
+        <li><strong>Advertising.</strong> A later version might show ads, including ads chosen by an outside network. The network’s name and policy link would be added here before the first ad appears. Income from ads, if any, would not change the calculator formula or the cited rates.</li>
+      </ul>
+
+      <h2>Third-party ad partners</h2>
+      <p>There are no advertising partners on the site today. If one is added, this page will name it. An ad partner can set its own cookies and can use the pages you visit to choose and measure ads. That is the partner’s collection, under the partner’s policy, which this page would link. Lawn Numbers does not sell a list of names or email addresses, and it has no such list from the calculator.</p>
+
+      <h2>Consent</h2>
+      <p>No consent banner is shown today, because the site does not set analytics or advertising cookies. If those cookies are added for visitors in places that require a choice first, the site will ask before those cookies are set, and this page will say how to change the choice. A host’s own connection logs are not something a banner on this site can switch off.</p>
+
+      <h2>Your choices</h2>
+      <ul>
+        <li>You can email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> to ask what this site holds about you. Today the answer is that the calculators do not send your inputs and the site has no accounts.</li>
+        <li>You can email a correction to a number, a date, or a source on a public page. Include the page address and the source you are relying on.</li>
+        <li>You can block or delete cookies in your browser. That will matter if analytics or ad cookies are added later.</li>
+        <li>Request logs kept by the host, if any, are covered by the host’s policy, not by a file this site stores.</li>
+      </ul>
+      <p>This page does not promise a reply by a particular day.</p>
+
+      <h2>Children</h2>
+      <p>The site is written for adults planning a lawn. It does not ask for a child’s name, age, or any other information about a child.</p>
+
+      <h2>Changes to this page</h2>
+      <p>When this page changes, the date at the top changes with it. A change that adds cookies, analytics, or ads has to be written here before that feature is turned on.</p>
+
+      <h2>Contact</h2>
+      {details.contactEmail
+        ? <p>Privacy questions and corrections: <a href={`mailto:${details.contactEmail}`}>{details.contactEmail}</a></p>
+        : <p>A contact address is added before launch.</p>}
+      <p><a href="/">Back to the calculator</a> · <a href="/terms/">Terms</a> · <a href="/about/">About</a></p>
+    </div>
+  </main>
+</Base>

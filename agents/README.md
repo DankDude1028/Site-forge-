@@ -1,0 +1,7 @@
+# Agent contracts
+
+The authoritative, executable registry is `siteforge.agents.AGENTS`, with tools imported from the default-deny `siteforge.policy.AGENT_TOOLS` registry. There are seven roles: Portfolio Director, Research, Developer, Content, Quality, Growth, and Revenue. `AgentContext` and `AgentResult` in `siteforge/contracts.py` define their typed boundaries. Every fixture role costs $0, has a maximum three supervisor-managed attempts, checks its deadline and tools, emits checksummed artifacts, and records a per-task audit result.
+
+Use `AgentRunner(artifact_root).run(role, context, fixture_payload(site_slug))` for authored synthetic input. Research creates an evidence packet; Developer requires it and copies trusted Astro source into the artifact root; Quality verifies hashes, preview metadata, accessibility hooks and reference math. Executable Node/Astro tests and browser checks remain separate evidence. Content drafts, growth experiments, and revenue reconciliation never claim real traffic or revenue from synthetic fixtures. Missing prerequisites block the role.
+
+`mode=local_model` requests a bounded, schema-validated proposal through the loopback-only LM Studio adapter. Proposals are always blocked for review and never executed. Models cannot add tools, install dependencies, send outreach, deploy production, spend money, or read arbitrary host paths. This implementation intentionally has no generic host-command executor. Public production remains approval-gated.

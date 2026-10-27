@@ -1,0 +1,18 @@
+---
+import ExactSize from '../../components/ExactSize.astro';
+import RangeSize from '../../components/RangeSize.astro';
+import { RANGES, type SizeRange } from '../../content/ranges.ts';
+import { SIZES, type LawnSize } from '../../lib/sizes.ts';
+
+export function getStaticPaths() {
+  return [
+    ...SIZES.map((size) => ({ params: { size: size.slug }, props: { size, range: undefined } })),
+    ...RANGES.map((range) => ({ params: { size: range.slug }, props: { size: undefined, range } })),
+  ];
+}
+
+interface Props { size?: LawnSize; range?: SizeRange }
+const { size, range } = Astro.props;
+---
+{size && <ExactSize size={size} />}
+{range && <RangeSize range={range} />}

@@ -1,0 +1,82 @@
+---
+import { GRASSES, MONTHS, feedingsPerYear } from '../lib/grasses.ts';
+import { DEFAULTS, fixed } from '../lib/format.ts';
+
+interface Props { grass?: string; locked?: boolean; rate?: number; heading?: string; eyebrow?: string }
+const { grass = 'tall-fescue', locked = false, rate = DEFAULTS.rate, heading = 'When to feed, by grass type',
+  eyebrow = 'Feeding calendar' } = Astro.props;
+const initial = GRASSES.find((item) => item.id === grass)!;
+const FULL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
+  'November', 'December'];
+const list = (months: number[]) => months.map((month) => FULL_MONTHS[month])
+  .reduce((text, name, index, all) => index === 0 ? name : `${text}${index === all.length - 1 ? ' and ' : ', '}${name}`, '');
+const monthsOf = (kind: string) => Object.entries(initial.months).filter(([, feed]) => feed === kind).map(([m]) => Number(m));
+const [fewest, most] = feedingsPerYear(initial, rate);
+const range = (pair: readonly [number, number]) => `${pair[0]}–${pair[1]}`;
+
+// A 12-segment year ring, January at the top, clockwise.
+const C = 220, R = 182, r = 120;
+const polar = (radius: number, degrees: number) => {
+  const radians = (degrees - 90) * Math.PI / 180;
+  return `${(C + radius * Math.cos(radians)).toFixed(2)} ${(C + radius * Math.sin(radians)).toFixed(2)}`;
+};
+const segment = (month: number) => {
+  const start = month * 30 + 1.6, end = (month + 1) * 30 - 1.6;
+  return `M ${polar(R, start)} A ${R} ${R} 0 0 1 ${polar(R, end)} L ${polar(r, end)} A ${r} ${r} 0 0 0 ${polar(r, start)} Z`;
+};
+const labelAt = (month: number) => polar(204, month * 30 + 15).split(' ');
+---
+<section class="calendar" id="calendar" aria-labelledby="calendar-title" data-grass={initial.id}>
+  <div class="shell calendar-grid">
+    <div class="calendar-copy reveal">
+      <p class="eyebrow">{eyebrow}</p>
+      <h2 id="calendar-title">{heading}</h2>
+      <fieldset class="grass-picker" hidden={locked}>
+        <legend class="sr-only">Grass type</legend>
+        {GRASSES.map((grass) => (
+          <label class="grass-chip">
+            <input type="radio" name="grass" value={grass.id} checked={grass.id === initial.id} />
+            <span>{grass.name}</span>
+          </label>
+        ))}
+      </fieldset>
+      <div class="annual-card">
+        <p class="annual-kicker" id="season">{initial.season === 'cool' ? 'Cool-season grass' : 'Warm-season grass'}</p>
+        <p class="annual"><span id="annual">{range(initial.annual)}</span> lb <span class="annual-unit">of nitrogen per 1,000 sq ft a year</span></p>
+        <p id="feedings">At <span id="feed-rate">{fixed(rate, 2)}</span> lb a feeding, that is about <strong id="feed-count">{fewest === most ? fewest : `${fewest}–${most}`} feedings</strong> a year.</p>
+      </div>
+      <p class="next" id="next" hidden></p>
+      <p id="feed-months">Main feedings: <span id="main-months">{list(monthsOf('main'))}</span>. Light or regional feedings: <span id="light-months">{list(monthsOf('light'))}</span>.</p>
+      <p class="grass-note" id="grass-note">{initial.note}</p>
+      <p class="fine">Typical ranges from university extension guides. Your state or county guide wins. <a href="/method/#grasses">See the sources</a>.</p>
+    </div>
+    <div class="ring-wrap reveal" aria-hidden="true">
+      <svg class="ring" viewBox="0 0 440 440" focusable="false">
+        <defs>
+          <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="8" height="8" class="hatch-bg" /><rect width="3.2" height="8" class="hatch-line" />
+          </pattern>
+        </defs>
+        {MONTHS.map((month, index) => {
+          const [x, y] = labelAt(index);
+          return (
+            <g>
+              <path class="seg" d={segment(index)} data-month={index} data-feed={initial.months[index] ?? 'off'} style={`--i:${index}`} />
+              <text class="month" x={x} y={y}>{month}</text>
+            </g>
+          );
+        })}
+        <circle class="now-pulse" id="now-pulse" r="9" cx="220" cy="38" hidden />
+        <circle class="now-dot" id="now-dot" r="6" cx="220" cy="38" hidden />
+        <text class="ring-kicker" x="220" y="196">Feeding year</text>
+        <text class="ring-name" id="ring-name" x="220" y="232">{initial.name}</text>
+        <text class="ring-range" id="ring-range" x="220" y="262">{range(initial.annual)} lb N / yr</text>
+      </svg>
+      <ul class="legend">
+        <li><span class="swatch main"></span>Main feeding</li>
+        <li><span class="swatch light"></span>Light or regional</li>
+        <li><span class="swatch off"></span>Skip</li>
+      </ul>
+    </div>
+  </div>
+</section>

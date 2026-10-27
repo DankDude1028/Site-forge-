@@ -1,0 +1,67 @@
+---
+import Base from '../../layouts/Base.astro';
+import GuideHero from '../../components/GuideHero.astro';
+import Planner from '../../components/Planner.astro';
+import RelatedGuides from '../../components/RelatedGuides.astro';
+import SourceList from '../../components/SourceList.astro';
+import { BAGS, type BagGuide } from '../../content/bags.ts';
+import { bagsFor, productPounds } from '../../lib/sizes.ts';
+import { fixed, pounds } from '../../lib/format.ts';
+
+export function getStaticPaths() {
+  return BAGS.map((bag) => ({ params: { bag: bag.slug }, props: { bag } }));
+}
+
+interface Props { bag: BagGuide }
+const { bag } = Astro.props;
+const path = `/bags/${bag.slug}/`;
+const product = productPounds(bag.area, bag.nitrogen, bag.rate);
+const bags = bagsFor(product, bag.weight);
+const leftover = bags * bag.weight - product;
+const perThousand = bag.rate / (bag.nitrogen / 100);
+const jsonLd = [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+  { '@type': 'ListItem', position: 1, name: 'Calculator', item: new URL('/', Astro.site).href },
+  { '@type': 'ListItem', position: 2, name: 'Bag sizes', item: new URL('/bags/', Astro.site).href },
+  { '@type': 'ListItem', position: 3, name: bag.label, item: new URL(path, Astro.site).href },
+] }];
+---
+<Base title={`How Far a ${bag.label} of Fertilizer Goes | Lawn Numbers`}
+  description={`A worked example for a ${bag.label}: ${bag.area.toLocaleString('en-US')} sq ft of ${bag.analysis} at ${bag.rate} lb of nitrogen per 1,000 sq ft, with bags rounded up.`}
+  path={path} jsonLd={jsonLd}>
+  <main id="main">
+    <GuideHero eyebrow="Bag size" title={`A ${bag.label}`} lede={bag.blurb}
+      crumbs={[{ name: 'Calculator', path: '/' }, { name: 'Bag sizes', path: '/bags/' }, { name: bag.label }]}>
+      <p slot="art" class="state-mark" aria-hidden="true">{bag.weight}</p>
+    </GuideHero>
+    <section class="guide-body">
+      <div class="shell prose-wide">
+        <h2>The example, checked</h2>
+        <p>{bag.area.toLocaleString('en-US')} sq ft, {bag.analysis}, {fixed(bag.rate, bag.rate === 0.75 || bag.rate === 0.5 ? 2 : 1)} lb of nitrogen per 1,000 sq ft.</p>
+        <ul class="glance-grid">
+          <li class="glance-card"><span class="glance-label">Product per 1,000</span><strong>{pounds(perThousand)} lb</strong><span>{bag.rate} ÷ {bag.nitrogen / 100}</span></li>
+          <li class="glance-card"><span class="glance-label">For this lawn</span><strong>{pounds(product)} lb</strong><span>of {bag.analysis}</span></li>
+          <li class="glance-card"><span class="glance-label">{bag.label}s to buy</span><strong>{bags}</strong><span>{pounds(leftover)} lb left in the last bag</span></li>
+          <li class="glance-card"><span class="glance-label">Nitrogen applied</span><strong>{pounds(bag.rate * bag.area / 1000)} lb</strong><span>not pounds of product</span></li>
+        </ul>
+        {bag.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+        <p>Other weights on this site: {BAGS.filter((other) => other.slug !== bag.slug).map((other, index, all) => <>
+          <a href={`/bags/${other.slug}/`}>{other.label}</a>{index < all.length - 1 ? ', ' : ''}
+        </>)}. Lawn area, separate from the bag, is on the <a href="/lawn-size/">size guide</a>.</p>
+      </div>
+    </section>
+    <section class="planner-section" aria-labelledby="calc-title">
+      <div class="shell">
+        <p class="eyebrow">Calculator</p>
+        <h2 id="calc-title">The calculator opens on this example</h2>
+        <p class="section-intro">Area, rate, bag weight, and {bag.analysis} are filled in. Change any of them. Nothing you type is sent anywhere.</p>
+        <Planner area={bag.area} rate={bag.rate} nitrogen={bag.nitrogen} phosphorus={bag.phosphorus}
+          potassium={bag.potassium} bagWeight={bag.weight} />
+      </div>
+    </section>
+    <div class="shell"><SourceList keys={['iowa', 'rutgers', 'ufRule']} /></div>
+    <RelatedGuides current={path} />
+  </main>
+</Base>
+<script>
+  import '../../scripts/planner.ts';
+</script>

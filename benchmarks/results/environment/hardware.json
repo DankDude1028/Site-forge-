@@ -1,0 +1,14 @@
+{
+  "measured_at": "2026-10-21T12:54:14.9539311-05:00",
+  "os": {
+    "Caption": "Microsoft Windows 11 Home",
+    "Version": "10.0.26200",
+    "BuildNumber": "26200"
+  },
+  "cpu": {
+    "Name": "12th Gen Intel(R) Core(TM) i5-12600KF",
+    "NumberOfCores": 10,
+    "NumberOfLogicalProcessors": 16
+  },
+  "physical_ram_bytes": 16984162304
+}

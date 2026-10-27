@@ -1,0 +1,38 @@
+---
+import Base from '../../layouts/Base.astro';
+import GuideHero from '../../components/GuideHero.astro';
+import { STATES } from '../../content/states.ts';
+
+const jsonLd = [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+  { '@type': 'ListItem', position: 1, name: 'Calculator', item: new URL('/', Astro.site).href },
+  { '@type': 'ListItem', position: 2, name: 'States', item: new URL('/states/', Astro.site).href },
+] }];
+---
+<Base title="Lawn Fertilizer Rules by State | Lawn Numbers"
+  description="What Gulf Coast and Southeast states say about lawn nitrogen, phosphorus, and local rules, with links to extension and agriculture departments. Unverified items are labeled."
+  path="/states/" jsonLd={jsonLd}>
+  <main id="main">
+    <GuideHero eyebrow="States" title="Fertilizer rules, state by state"
+      lede="Twelve states. Only rules that were checked against a statute or an extension page. If a blackout or a rate was not verified, the page says so and sends you to the county."
+      crumbs={[{ name: 'Calculator', path: '/' }, { name: 'States' }]}>
+      <p slot="art" class="state-mark" aria-hidden="true">SE</p>
+    </GuideHero>
+    <section class="hub" aria-labelledby="state-list-title">
+      <div class="shell">
+        <h2 id="state-list-title">Gulf Coast and Southeast</h2>
+        <ul class="hub-grid">
+          {STATES.map((state) => (
+            <li class="hub-card reveal">
+              <a href={`/states/${state.slug}/`}>
+                <span class="hub-kicker">{state.abbr}</span>
+                <strong>{state.name}</strong>
+                <span class="hub-blurb">{state.summary}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+        <p class="section-intro">Timing still depends on the grass. <a href="/seasons/fall/">Fall</a> is the season for tall fescue and Kentucky bluegrass. <a href="/seasons/summer/">Summer</a> is the season for bermudagrass. The <a href="/guides/">grass guides</a> hold the pounds.</p>
+      </div>
+    </section>
+  </main>
+</Base>

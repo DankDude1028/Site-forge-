@@ -1,0 +1,9 @@
+---
+import { MONTHS, type Grass } from '../lib/grasses.ts';
+
+interface Props { grass: Grass }
+const { grass } = Astro.props;
+---
+<ol class="year-strip" aria-hidden="true">
+  {MONTHS.map((month, index) => <li data-feed={grass.months[index] ?? 'off'} style={`--i:${index}`}><span>{month[0]}</span></li>)}
+</ol>

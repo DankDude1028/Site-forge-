@@ -1,0 +1,138 @@
+---
+import Base from '../../layouts/Base.astro';
+import GuideHero from '../../components/GuideHero.astro';
+import RelatedGuides from '../../components/RelatedGuides.astro';
+import { lawnArea, shapeArea, type Shape, type ShapeKind } from '../../lib/tools.ts';
+import { whole } from '../../lib/format.ts';
+
+const START: (Shape & { label: string })[] = [
+  { kind: 'rectangle', a: 80, b: 120, subtract: false, label: 'Whole yard' },
+  { kind: 'rectangle', a: 40, b: 50, subtract: true, label: 'House' },
+  { kind: 'circle', a: 12, b: 0, subtract: true, label: 'Flower bed' },
+];
+const total = lawnArea(START);
+const FIELDS: Record<ShapeKind, [string, string | null]> = {
+  rectangle: ['Length', 'Width'], circle: ['Across', null], triangle: ['Base', 'Height'],
+};
+const ICONS: Record<ShapeKind, string> = {
+  rectangle: '<rect x="5" y="9" width="30" height="22" rx="2" />',
+  circle: '<circle cx="20" cy="20" r="13" />',
+  triangle: '<path d="M6 32 L20 8 L34 32 Z" />',
+};
+const path = '/guides/measure-your-lawn/';
+const jsonLd = [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+  { '@type': 'ListItem', position: 1, name: 'Calculator', item: new URL('/', Astro.site).href },
+  { '@type': 'ListItem', position: 2, name: 'Guides', item: new URL('/guides/', Astro.site).href },
+  { '@type': 'ListItem', position: 3, name: 'Measure your lawn', item: new URL(path, Astro.site).href },
+] }];
+---
+<Base title="How to Measure Your Lawn's Square Footage (Free Tool) | Lawn Numbers"
+  description="Measure your lawn in square feet: add rectangles, circles and triangles, subtract the house, drive and beds, and send the total to the fertilizer calculator."
+  path={path} jsonLd={jsonLd}>
+  <main id="main">
+    <GuideHero eyebrow="Tool" title="Measure your lawn"
+      lede="Most lawns are a few simple shapes. Add each one, take out the house, the drive and the beds, and get the square footage for the calculator."
+      crumbs={[{ name: 'Calculator', path: '/' }, { name: 'Guides', path: '/guides/' }, { name: 'Measure your lawn' }]}>
+      <svg slot="art" class="plan-art" viewBox="0 0 360 280" focusable="false">
+        <defs>
+          <pattern id="plan-stripes" width="24" height="24" patternUnits="userSpaceOnUse"><rect width="12" height="24" class="ps-a" /><rect x="12" width="12" height="24" class="ps-b" /></pattern>
+          <pattern id="plan-hatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" class="ph-a" /><rect width="4" height="10" class="ph-b" /></pattern>
+        </defs>
+        <rect class="plan-lot" x="20" y="20" width="320" height="240" rx="14" />
+        <rect class="plan-house" x="120" y="60" width="130" height="100" rx="6" />
+        <circle class="plan-bed" cx="270" cy="210" r="30" />
+        <path class="plan-dim" d="M20 10 H340 M20 4 V16 M340 4 V16" /><text class="plan-label" x="180" y="8">120 ft</text>
+        <path class="plan-dim" d="M350 20 V260 M344 20 H356 M344 260 H356" /><text class="plan-label" x="352" y="146" transform="rotate(90 352 146)">80 ft</text>
+        <text class="plan-tag" x="185" y="116">House</text>
+      </svg>
+    </GuideHero>
+
+    <section class="measure-tool" aria-labelledby="measure-title">
+      <div class="shell">
+        <h2 id="measure-title" class="sr-only">Lawn area calculator</h2>
+        <div class="measure-grid">
+          <form id="measure" class="measure-card" novalidate aria-label="Lawn shapes">
+            <ol class="shape-list" id="shapes">
+              {START.map((shape, index) => {
+                const [first, second] = FIELDS[shape.kind];
+                const area = shapeArea(shape);
+                return (
+                  <li class="shape-row" data-kind={shape.kind}>
+                    <svg class="shape-icon" viewBox="0 0 40 40" aria-hidden="true" focusable="false" set:html={ICONS[shape.kind]} />
+                    <fieldset class="shape-fields">
+                      <legend class="shape-legend">{shape.label}</legend>
+                      <label class="dim"><span class="dim-name">{first} <span class="unit">ft</span></span><input name="a" inputmode="decimal" autocomplete="off" value={shape.a} /></label>
+                      {second && <label class="dim"><span class="dim-name">{second} <span class="unit">ft</span></span><input name="b" inputmode="decimal" autocomplete="off" value={shape.b} /></label>}
+                      <label class="cut"><input type="checkbox" name="subtract" checked={shape.subtract} /> Cut out</label>
+                    </fieldset>
+                    <span class="shape-area">{whole(area)} sq ft</span>
+                    <button type="button" class="remove" aria-label={`Remove ${shape.label}`}>×</button>
+                  </li>
+                );
+              })}
+            </ol>
+            <div class="add-row" role="group" aria-label="Add a shape">
+              <button type="button" class="chip" data-add="rectangle">+ Rectangle</button>
+              <button type="button" class="chip" data-add="circle">+ Circle</button>
+              <button type="button" class="chip" data-add="triangle">+ Triangle</button>
+            </div>
+            {(['rectangle', 'circle', 'triangle'] as ShapeKind[]).map((kind) => {
+              const [first, second] = FIELDS[kind];
+              return (
+                <template id={`tpl-${kind}`}>
+                  <li class="shape-row added" data-kind={kind}>
+                    <svg class="shape-icon" viewBox="0 0 40 40" aria-hidden="true" focusable="false" set:html={ICONS[kind]} />
+                    <fieldset class="shape-fields">
+                      <legend class="shape-legend"></legend>
+                      <label class="dim"><span class="dim-name">{first} <span class="unit">ft</span></span><input name="a" inputmode="decimal" autocomplete="off" /></label>
+                      {second && <label class="dim"><span class="dim-name">{second} <span class="unit">ft</span></span><input name="b" inputmode="decimal" autocomplete="off" /></label>}
+                      <label class="cut"><input type="checkbox" name="subtract" /> Cut out</label>
+                    </fieldset>
+                    <span class="shape-area">–</span>
+                    <button type="button" class="remove">×</button>
+                  </li>
+                </template>
+              );
+            })}
+          </form>
+
+          <div class="measure-result" aria-labelledby="area-title">
+            <p class="zone-title" id="area-title">Your lawn</p>
+            <p class="total"><span id="area-total">{whole(total.area)}</span><span class="total-unit">sq ft</span></p>
+            <p class="area-break" id="area-break">{whole(total.grass)} sq ft of shapes, minus {whole(total.removed)} sq ft cut out.</p>
+            <div class="area-bar" aria-hidden="true">
+              <span class="area-keep" id="area-keep" style={`--keep:${(total.area / total.grass).toFixed(4)}`}></span>
+            </div>
+            <ul class="area-legend" aria-hidden="true"><li><span class="swatch main"></span>Lawn</li><li><span class="swatch cut"></span>Cut out</li></ul>
+            <a class="btn-big" id="area-use" href={`/#area=${Math.round(total.area)}`}>Use <span id="area-use-value">{whole(total.area)}</span> sq ft in the calculator <span aria-hidden="true">→</span></a>
+            <p class="sr-only" id="area-announce" aria-live="polite"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-body" aria-labelledby="how-title">
+      <div class="shell prose-wide">
+        <h2 id="how-title">How to measure a lawn</h2>
+        <ol class="step-list">
+          <li><strong>Sketch the yard.</strong> Break the grass into simple shapes: rectangles for most of it, circles for round areas, triangles for odd corners.</li>
+          <li><strong>Measure in feet.</strong> A long tape or a measuring wheel works for most lawns. For a big lot, the distance tool in an online map gets you close.</li>
+          <li><strong>Take out what is not grass.</strong> Mark the house, drive, patio, pool and planting beds as cut-outs. Fertilizer on them is wasted, and on pavement it washes into storm drains.</li>
+          <li><strong>Send the total to the calculator.</strong> The button above carries your square footage across, so you can go straight to pounds and bags.</li>
+        </ol>
+        <h2>The formulas</h2>
+        <div class="formula-grid">
+          <div class="formula-card"><span>Rectangle</span><p class="formula">length × width</p><p>50 ft × 100 ft = 5,000 sq ft</p></div>
+          <div class="formula-card"><span>Circle</span><p class="formula">3.1416 × (across ÷ 2)²</p><p>20 ft across = 314 sq ft</p></div>
+          <div class="formula-card"><span>Triangle</span><p class="formula">base × height ÷ 2</p><p>30 ft × 40 ft ÷ 2 = 600 sq ft</p></div>
+        </div>
+      </div>
+    </section>
+
+    <RelatedGuides current={path} />
+  </main>
+</Base>
+
+<script>
+  import '../../scripts/measure.ts';
+</script>

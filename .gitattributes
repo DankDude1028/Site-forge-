@@ -1,0 +1,7 @@
+* text=auto eol=lf
+*.png -text
+*.jpg -text
+*.woff2 -text
+benchmarks/datasets/*.jsonl -text
+# Published benchmark manifests attest exact bytes, including CSV newlines.
+benchmarks/results/** -text whitespace=cr-at-eol

@@ -1,0 +1,40 @@
+---
+import Base from '../layouts/Base.astro';
+import { CONTACT_EMAIL } from '../../contact.mjs';
+
+const jsonLd = [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+  { '@type': 'ListItem', position: 1, name: 'Calculator', item: new URL('/', Astro.site).href },
+  { '@type': 'ListItem', position: 2, name: 'About', item: new URL('/about/', Astro.site).href },
+] }];
+---
+<Base title="About Lawn Numbers | Lawn Numbers"
+  description="Lawn Numbers is a lawn fertilizer calculator run by its owner. The numbers are checked against cited university extension sources. Corrections are welcome."
+  path="/about/" jsonLd={jsonLd}>
+  <main id="main">
+    <section class="page-hero">
+      <div class="shell">
+        <p class="eyebrow on-dark">About</p>
+        <h1>A calculator with the sources written down</h1>
+        <p>Lawn Numbers turns a lawn size and the three numbers on a fertilizer bag into pounds to spread and bags to buy, then shows the feeding months extension guides use for common lawn grasses.</p>
+      </div>
+    </section>
+    <div class="shell prose">
+      <h2>Who runs it</h2>
+      <p>The site is operated by its owner. It was built with AI assistance. Pages are checked against the university extension publications and official texts they cite. This page does not list a staff, a degree, an award, or a count of users, because none of those are claims the site is making.</p>
+      <p>It is not a university, a fertilizer company, or a government office. The extension pages it links to are theirs, not reprints.</p>
+
+      <h2>Where the numbers come from</h2>
+      <p>The calculator formula is the one Iowa State, Rutgers, and NC State publish: pounds of product per 1,000 square feet equals the nitrogen rate divided by the first bag number as a decimal. Bags are rounded up. The <a href="/method/">method page</a> writes that out and links the sources.</p>
+      <p>Yearly nitrogen and feeding months come from the grass pages, which cite Nebraska, NC State, and the University of Florida IFAS urban turf rule, among others. State pages cite the statute or the extension page that was actually read. If two sources disagree, the page says so and does not pick a silent average. If a statewide blackout or a pound cap was not verified, the page says to check your county.</p>
+      <p>The label on the product you buy still comes first. A soil test is the way to know whether a lawn needs phosphorus or potassium. This site does not pretend to do either.</p>
+
+      <h2>Independence</h2>
+      <p>No fertilizer brand pays for a placement on these pages. There are no affiliate links today. The <a href="/privacy/">privacy page</a> says what the site collects now, and what it would have to disclose before analytics or advertising were added. Adding either one would not change a cited rate.</p>
+
+      <h2>Corrections</h2>
+      <p>If a number, a date, a law, or a photo credit is wrong, write to <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> with the page address, the sentence you think is wrong, and the source that supports the correction. A cited extension or official page is what gets a number changed. A forum post is not. The <a href="/contact/">contact page</a> says what a reply does and does not promise.</p>
+      <p>Photographs of the six grasses are credited on the <a href="/credits/">photo credits</a> page, with the license each file was published under.</p>
+      <p><a href="/guides/">Guides</a> · <a href="/states/">States</a> · <a href="/">Calculator</a></p>
+    </div>
+  </main>
+</Base>

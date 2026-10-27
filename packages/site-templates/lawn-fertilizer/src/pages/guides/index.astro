@@ -1,0 +1,105 @@
+---
+import Base from '../../layouts/Base.astro';
+import GuideHero from '../../components/GuideHero.astro';
+import YearStrip from '../../components/YearStrip.astro';
+import { GRASSES } from '../../lib/grasses.ts';
+import { GRASS_PHOTOS } from '../../lib/photos.ts';
+import { BAG_GUIDES, RANGE_GUIDES, SEASON_GUIDES, STATE_GUIDES, TOOL_GUIDES } from '../../lib/site.ts';
+import { SIZES, productPounds } from '../../lib/sizes.ts';
+import { pounds } from '../../lib/format.ts';
+
+const icons: Record<string, string> = {
+  '/guides/measure-your-lawn/': 'M8 38V10h32v28zM8 24h16v14M24 10v14h16',
+  '/guides/fertilizer-numbers/': 'M14 8h20l4 8v26H10V16zM10 16h28M18 27h12M18 33h8',
+  '/guides/spreader-calibration/': 'M10 30h28l-4 10H14zM24 30V12M16 18l8-6 8 6M6 44h36',
+  '/guides/grass-seed/': 'M24 40V22M24 22c0-8 6-12 12-12 0 8-6 12-12 12zM24 28c0-6-5-9-10-9 0 6 5 9 10 9M12 42h24',
+};
+const jsonLd = [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+  { '@type': 'ListItem', position: 1, name: 'Calculator', item: new URL('/', Astro.site).href },
+  { '@type': 'ListItem', position: 2, name: 'Guides', item: new URL('/guides/', Astro.site).href },
+] }];
+---
+<Base title="Lawn Fertilizer Guides: Grass Types, Bags and Spreaders | Lawn Numbers"
+  description="Fertilizer guides for six lawn grasses, lawn sizes, bag weights, seasons, and twelve Southeast states, plus tools to measure, read a bag, calibrate a spreader, and work out seed."
+  path="/guides/" jsonLd={jsonLd}>
+  <main id="main">
+    <GuideHero eyebrow="Guides" title="Everything behind a well-fed lawn"
+      lede="Pick your grass for a feeding plan built around it, or use a tool to measure the lawn, read the bag and set the spreader."
+      crumbs={[{ name: 'Calculator', path: '/' }, { name: 'Guides' }]}>
+      <div slot="art" class="hub-art">
+        {GRASSES.slice(0, 4).map((grass, index) => <span class="hub-swatch" style={`--i:${index}`}><YearStrip grass={grass} /></span>)}
+      </div>
+    </GuideHero>
+
+    <section class="hub" aria-labelledby="grass-title">
+      <div class="shell">
+        <p class="eyebrow">By grass type</p>
+        <h2 id="grass-title">Feeding plans for six lawn grasses</h2>
+        <ul class="hub-grid">
+          {GRASSES.map((grass) => (
+            <li class={`hub-card reveal ${grass.season}`}>
+              <a href={`/grass/${grass.id}/`}>
+                <img class="hub-photo" src={`/images/grass/${grass.id}-800.webp`} alt={GRASS_PHOTOS[grass.id].alt}
+                  width={GRASS_PHOTOS[grass.id].width} height={GRASS_PHOTOS[grass.id].height} loading="lazy" decoding="async" />
+                <span class="hub-kicker">{grass.season === 'cool' ? 'Cool season' : 'Warm season'}</span>
+                <strong>{grass.name}</strong>
+                <span class="hub-range">{grass.annual[0]}–{grass.annual[1]} lb N a year</span>
+                <YearStrip grass={grass} />
+                <span class="hub-blurb">{grass.intro}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    <section class="hub" aria-labelledby="size-title">
+      <div class="shell">
+        <p class="eyebrow">By lawn size</p>
+        <h2 id="size-title">How much fertilizer for your lawn's size</h2>
+        <p class="section-intro">Bands for a rough area, then an exact size. Bag weights are on the <a href="/bags/">bag-size guide</a>.</p>
+        <ul class="size-chips hub-sizes">
+          {RANGE_GUIDES.map((page) => (
+            <li class="reveal"><a class="size-chip big" href={page.path}><strong>{page.title.replace('Fertilizer for lawns ', '')}</strong>
+              <span>Worked example</span></a></li>
+          ))}
+          {SIZES.map((size) => (
+            <li class="reveal"><a class="size-chip big" href={`/lawn-size/${size.slug}/`}><strong>{size.label}</strong>
+              <span>{pounds(productPounds(size.area, 29, 1))} lb of 29-0-4</span></a></li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    <section class="hub tools-hub" aria-labelledby="tools-title">
+      <div class="shell">
+        <p class="eyebrow">Tools</p>
+        <h2 id="tools-title">Measure, read, calibrate</h2>
+        <ul class="tool-grid">
+          {TOOL_GUIDES.map((page) => (
+            <li class="tool-card reveal">
+              <a href={page.path}>
+                <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d={icons[page.path]} /></svg>
+                <strong>{page.title}</strong>
+                <span>{page.blurb}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+        <h2 id="more-title">Seasons, bags, and states</h2>
+        <ul class="hub-grid">
+          {SEASON_GUIDES.map((page) => (
+            <li class="hub-card reveal"><a href={page.path}><span class="hub-kicker">Season</span><strong>{page.title}</strong><span class="hub-blurb">{page.blurb}</span></a></li>
+          ))}
+          {BAG_GUIDES.map((page) => (
+            <li class="hub-card reveal"><a href={page.path}><span class="hub-kicker">Bag</span><strong>{page.title}</strong><span class="hub-blurb">{page.blurb}</span></a></li>
+          ))}
+          <li class="hub-card reveal"><a href="/states/"><span class="hub-kicker">Rules</span><strong>Fertilizer rules by state</strong><span class="hub-blurb">Twelve Gulf and Southeast states. Unverified rules say to check the county.</span></a></li>
+          {STATE_GUIDES.slice(0, 3).map((page) => (
+            <li class="hub-card reveal"><a href={page.path}><span class="hub-kicker">State</span><strong>{page.title.replace(' lawn fertilizer rules', '')}</strong><span class="hub-blurb">{page.blurb}</span></a></li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  </main>
+</Base>

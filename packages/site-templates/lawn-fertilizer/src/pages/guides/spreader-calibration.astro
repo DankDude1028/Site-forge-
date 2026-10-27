@@ -1,0 +1,148 @@
+---
+import Base from '../../layouts/Base.astro';
+import GuideHero from '../../components/GuideHero.astro';
+import RelatedGuides from '../../components/RelatedGuides.astro';
+import SourceList from '../../components/SourceList.astro';
+import { calibrate } from '../../lib/tools.ts';
+import { fixed, pounds } from '../../lib/format.ts';
+
+// The UF/IFAS example: 20-0-10 at 1 lb of nitrogen needs 5 lb per 1,000 sq ft.
+const START = { area: 1000, before: 20, after: 15, n: 20, rate: 1 };
+const result = calibrate(START.area, START.before, START.after, START.n, START.rate)!;
+const markerAt = (actual: number, target: number) => Math.min(1, Math.max(0, actual / (target * 2))).toFixed(4);
+const path = '/guides/spreader-calibration/';
+const jsonLd = [
+  { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Calculator', item: new URL('/', Astro.site).href },
+    { '@type': 'ListItem', position: 2, name: 'Guides', item: new URL('/guides/', Astro.site).href },
+    { '@type': 'ListItem', position: 3, name: 'Calibrate your spreader', item: new URL(path, Astro.site).href },
+  ] },
+  { '@context': 'https://schema.org', '@type': 'HowTo', name: 'Calibrate a lawn fertilizer spreader',
+    step: [
+      { '@type': 'HowToStep', text: 'Mark a test area: 1,000 sq ft for a rotary spreader, or 100 sq ft on a solid floor for a drop spreader.' },
+      { '@type': 'HowToStep', text: 'Weigh the product you load, or plan to sweep up and weigh what a drop spreader puts down.' },
+      { '@type': 'HowToStep', text: 'Make one pass over the test area at your normal walking speed, starting from the setting on the bag.' },
+      { '@type': 'HowToStep', text: 'Weigh what is left, or what you swept up, to find how much was spread.' },
+      { '@type': 'HowToStep', text: 'Compare with your target, adjust the setting, and repeat until you are within about 10%.' },
+    ] },
+];
+---
+<Base title="How to Calibrate a Lawn Fertilizer Spreader (Free Checker) | Lawn Numbers"
+  description="Calibrate a rotary or drop spreader with the weigh-before-and-after method from UF/IFAS, then check your setting against your target rate."
+  path={path} jsonLd={jsonLd}>
+  <main id="main">
+    <GuideHero eyebrow="Tool" title="Calibrate your spreader"
+      lede="The setting on the bag is only a starting point. Weigh, spread, weigh again, and you will know exactly what your spreader puts down."
+      crumbs={[{ name: 'Calculator', path: '/' }, { name: 'Guides', path: '/guides/' }, { name: 'Calibrate your spreader' }]}>
+      <svg slot="art" class="spreader-art" viewBox="0 0 320 260" focusable="false">
+        <path class="sp-hopper" d="M90 60 H230 L205 140 H115 Z" />
+        <rect class="sp-band" x="104" y="88" width="112" height="26" rx="4" />
+        <text class="sp-text" x="160" y="106">5 lb / 1,000</text>
+        <path class="sp-handle" d="M220 140 L290 40" />
+        <circle class="sp-wheel" cx="120" cy="170" r="22" /><circle class="sp-wheel" cx="200" cy="170" r="22" />
+        <path class="sp-axle" d="M120 170 H200" />
+        <g class="sp-granules">
+          {Array.from({ length: 22 }, (_, index) => {
+            const angle = (index / 21) * Math.PI;
+            return <circle class="granule" cx={(160 + Math.cos(angle) * (70 + (index % 3) * 18)).toFixed(1)}
+              cy={(215 + Math.sin(angle) * 22).toFixed(1)} r={index % 2 ? 3 : 4} style={`--i:${index}`} />;
+          })}
+        </g>
+      </svg>
+    </GuideHero>
+
+    <section class="guide-body" aria-labelledby="steps-title">
+      <div class="shell prose-wide">
+        <p class="eyebrow">The method</p>
+        <h2 id="steps-title">Weigh, spread, weigh again</h2>
+        <ol class="step-cards">
+          <li class="reveal"><h3>Mark a test area</h3><p>For a rotary (broadcast) spreader, mark 1,000 sq ft: 10 by 100 ft or 20 by 50 ft. For a drop spreader, use 100 sq ft (5 by 20 ft) on a garage floor or driveway, so you can sweep the product up.</p></li>
+          <li class="reveal"><h3>Weigh the product</h3><p>Load a weighed amount into a rotary spreader; UF/IFAS uses 20 lb. With a drop spreader you will weigh what you sweep up instead.</p></li>
+          <li class="reveal"><h3>Make one pass</h3><p>Start at the setting printed on the bag and walk at your normal pace. The bag's setting is only a first guess for your spreader.</p></li>
+          <li class="reveal"><h3>Weigh again</h3><p>Weigh what is left in the hopper and subtract it from what you loaded, or weigh what you swept up. That is what one pass put down.</p></li>
+          <li class="reveal"><h3>Adjust and repeat</h3><p>Open or close the setting a step and test again until you land within about 10% of your target.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="cal-tool" aria-labelledby="cal-title">
+      <div class="shell">
+        <p class="eyebrow">Checker</p>
+        <h2 id="cal-title">Check your setting</h2>
+        <div class="cal-grid">
+          <form id="calform" class="tool-card-big" novalidate aria-label="Spreader calibration">
+            <fieldset class="field">
+              <legend>I weighed</legend>
+              <div class="seg-toggle">
+                <label><input type="radio" name="mode" value="left" checked /> <span>What was left (rotary)</span></label>
+                <label><input type="radio" name="mode" value="swept" /> <span>What I swept up (drop)</span></label>
+              </div>
+            </fieldset>
+            <div class="field">
+              <div class="field-head"><label for="c-area">Test area</label><span class="unit">sq ft</span></div>
+              <input id="c-area" inputmode="decimal" autocomplete="off" value={START.area} />
+              <div class="presets" role="group" aria-label="Test area presets">
+                <button type="button" class="chip" data-area="100">100</button>
+                <button type="button" class="chip" data-area="1000">1,000</button>
+              </div>
+            </div>
+            <div class="two-up">
+              <div class="field" id="before-field">
+                <div class="field-head"><label for="c-before">Loaded</label><span class="unit">lb</span></div>
+                <input id="c-before" inputmode="decimal" autocomplete="off" value={START.before} />
+              </div>
+              <div class="field">
+                <div class="field-head"><label for="c-after" id="c-after-label">Left after</label><span class="unit">lb</span></div>
+                <input id="c-after" inputmode="decimal" autocomplete="off" value={START.after} aria-describedby="c-error" />
+              </div>
+            </div>
+            <div class="two-up">
+              <div class="field">
+                <div class="field-head"><label for="c-n">Nitrogen % on bag</label></div>
+                <input id="c-n" inputmode="decimal" autocomplete="off" value={START.n} />
+              </div>
+              <div class="field">
+                <div class="field-head"><label for="c-rate">Target N rate</label><span class="unit">lb / 1,000</span></div>
+                <input id="c-rate" inputmode="decimal" autocomplete="off" value={START.rate} />
+              </div>
+            </div>
+            <p class="error" id="c-error"></p>
+          </form>
+
+          <div class="cal-readout" id="cal-readout" data-verdict={result.verdict}>
+            <p class="zone-title">You spread</p>
+            <p class="total"><span id="c-actual">{fixed(result.perThousand, 1)}</span><span class="total-unit">lb / 1,000 sq ft</span></p>
+            <p>Target: <strong><span id="c-target">{fixed(result.target, 1)}</span> lb</strong> per 1,000 sq ft. This pass put down <span id="c-applied">{pounds(result.applied)}</span> lb.</p>
+            <div class="meter" aria-hidden="true">
+              <span class="meter-zone"></span>
+              <span class="meter-target"></span>
+              <span class="meter-mark" id="c-mark" style={`--at:${markerAt(result.perThousand, result.target)}`}></span>
+              <span class="meter-label lo">Too light</span><span class="meter-label hi">Too heavy</span>
+            </div>
+            <p class="verdict" id="c-verdict">On target. Keep this setting for this product.</p>
+            <p class="sr-only" id="c-announce" aria-live="polite"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-body" aria-labelledby="tips-cal-title">
+      <div class="shell prose-wide">
+        <h2 id="tips-cal-title">Good to know</h2>
+        <ul class="tip-list">
+          <li><strong>Calibrate for each product and each person.</strong> UF/IFAS advises calibrating for every material and every operator, even when two products have the same numbers, because granules and walking speeds differ.</li>
+          <li><strong>Check a rotary spreader's pattern.</strong> Lay a row of shallow pans across your path, make a few passes, and compare what lands on each side. Adjust until both sides match.</li>
+          <li><strong>Drop spreaders and coated products.</strong> A drop spreader's agitator can damage coated slow-release granules; UF/IFAS suggests using drop spreaders mainly for soluble products.</li>
+          <li><strong>Once it is set, any lawn size works.</strong> A calibrated spreader puts down the same amount per 1,000 sq ft everywhere, so the calculator's spreader target is all you need.</li>
+        </ul>
+        <SourceList keys={['ufSpreader', 'iowa']} />
+      </div>
+    </section>
+
+    <RelatedGuides current={path} />
+  </main>
+</Base>
+
+<script>
+  import '../../scripts/calibrate.ts';
+</script>

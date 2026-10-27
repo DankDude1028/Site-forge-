@@ -1,0 +1,43 @@
+---
+import Base from '../layouts/Base.astro';
+import { CONTACT_EMAIL } from '../../contact.mjs';
+
+const jsonLd = [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+  { '@type': 'ListItem', position: 1, name: 'Calculator', item: new URL('/', Astro.site).href },
+  { '@type': 'ListItem', position: 2, name: 'Contact', item: new URL('/contact/', Astro.site).href },
+] }];
+---
+<Base title="Contact Lawn Numbers | Lawn Numbers"
+  description="Email Lawn Numbers about a wrong number, a broken link, or a missing source. There is no promised reply time."
+  path="/contact/" jsonLd={jsonLd}>
+  <main id="main">
+    <section class="page-hero">
+      <div class="shell">
+        <p class="eyebrow on-dark">Contact</p>
+        <h1>Write if a page is wrong</h1>
+        <p>One address for corrections and questions. The calculators do not send what you type. Email does.</p>
+      </div>
+    </section>
+    <div class="shell prose">
+      <h2>Email</h2>
+      <p><a class="btn-big" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a></p>
+      <p>That is the only contact address for this site. Use it for a correction, a broken link, a photo-credit problem, or a short question about how a page should be read.</p>
+
+      <h2>What helps</h2>
+      <ul>
+        <li>The address of the page.</li>
+        <li>The sentence or the number you think is wrong.</li>
+        <li>The extension publication, statute, or label you are looking at.</li>
+      </ul>
+      <p>Corrections are welcome. A number changes when the cited source supports the change. The grass, state, and method pages are the ones this matters most for.</p>
+
+      <h2>What this address is not for</h2>
+      <p>It will not interpret a soil test, diagnose a disease from a photo, or tell you to ignore the bag. For the pounds on your lawn, use the <a href="/#planner">calculator</a> and then read the label. For a local blackout the <a href="/states/">state page</a> does not verify, call the county extension office or the city.</p>
+      <p>Sales pitches and guest-post offers are not answered.</p>
+
+      <h2>Replies</h2>
+      <p>There is no promised reply time, and some messages will not get a reply. A correction that includes a source is the kind of message the site is set up to use. Do not send personal information you would not want in an ordinary email.</p>
+      <p><a href="/about/">About the site</a> · <a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
+    </div>
+  </main>
+</Base>

@@ -1,0 +1,81 @@
+---
+import Base from '../layouts/Base.astro';
+import { GRASSES } from '../lib/grasses.ts';
+
+const checked = '27 October 2026';
+const sources = [
+  { name: 'Iowa State University Extension: How to Calculate Fertilizer Rates for the Lawn (reviewed April 2026)',
+    url: 'https://yardandgarden.extension.iastate.edu/how-to/how-calculate-fertilizer-rates-lawn' },
+  { name: 'Rutgers Cooperative Extension FS839: How to Calculate the Amount of Fertilizer Needed for Your Lawn',
+    url: 'https://extension.rutgers.edu/fs839' },
+  { name: 'NC State Extension AG-931: Tall Fescue, Hard (Fine) Fescue, and Kentucky Bluegrass Home Lawn Calendar',
+    url: 'https://content.ces.ncsu.edu/tall-fescue-hard-fine-fescue-and-kentucky-bluegrass-home-lawn-calendar' },
+  { name: 'University of Florida IFAS ENH1089/EP353: Urban Turf Fertilizer Rule for Home Lawn Fertilization',
+    url: 'https://ask.ifas.ufl.edu/publication/ep353' },
+  { name: 'University of Nebraska–Lincoln Water: Nutritional Value for the Landscape',
+    url: 'https://water.unl.edu/article/lawns-gardens-landscapes/nutritional-value-landscape/' },
+];
+const jsonLd = [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+  { '@type': 'ListItem', position: 1, name: 'Calculator', item: new URL('/', Astro.site).href },
+  { '@type': 'ListItem', position: 2, name: 'Method & sources', item: new URL('/method/', Astro.site).href },
+] }];
+---
+<Base title="Method & Sources: How the Lawn Fertilizer Calculator Works | Lawn Numbers"
+  description="The formulas, feeding-rate limits and grass-by-grass nitrogen ranges behind the Lawn Numbers fertilizer calculator, with the university extension sources for each."
+  path="/method/" jsonLd={jsonLd}>
+  <main id="main">
+    <section class="page-hero">
+      <div class="shell">
+        <p class="eyebrow on-dark">Method &amp; sources</p>
+        <h1>How the numbers are worked out</h1>
+        <p>Every result on Lawn Numbers comes from published university extension guidance. This page shows the formulas, the limits we use and where each one comes from.</p>
+        <p class="updated">Sources checked {checked}</p>
+      </div>
+    </section>
+    <div class="shell prose">
+      <h2>Pounds of product per 1,000 sq ft</h2>
+      <p>Fertilizer labels list nutrients as percentages by weight. To deliver a chosen amount of nitrogen, divide that amount by the nitrogen share of the product:</p>
+      <p class="formula">product per 1,000 sq ft = lb of nitrogen ÷ (first bag number ÷ 100)</p>
+      <p>Iowa State's example: 1 lb of nitrogen from a 32-0-4 product needs 1 ÷ 0.32 = 3.125 lb per 1,000 sq ft. Rutgers gives the same method, and NC State's shortcut (100 ÷ the first number for 1 lb of nitrogen) is the same formula.</p>
+      <h2>Your whole lawn and the bags to buy</h2>
+      <p class="formula">total product = product per 1,000 sq ft × lawn area ÷ 1,000</p>
+      <p class="formula">bags = total product ÷ bag weight, rounded up</p>
+      <p>We always round up to whole bags, so you never come home short. The calculator shows what is left in the last bag.</p>
+      <h2>How much in one feeding</h2>
+      <p>Rutgers notes a typical limit of 1 lb of nitrogen per 1,000 sq ft for a single application of soluble (quick-release) nitrogen; slow-release products may be labeled for more. Florida's fertilizer rule caps quick-release nitrogen at 0.7 lb per application. The gauge on the calculator uses these bands:</p>
+      <ul>
+        <li><strong>Light, up to 0.5 lb:</strong> a gentle feeding, common for extra or summer applications.</li>
+        <li><strong>Standard, 0.5 to 1 lb:</strong> the usual range for one feeding.</li>
+        <li><strong>Heavy, over 1 lb:</strong> more quick-release nitrogen than one feeding should carry. Split it, or use a slow-release product labeled for that rate.</li>
+      </ul>
+      <h2 id="grasses">Yearly nitrogen by grass</h2>
+      <p>Grasses need very different amounts each year. These are typical ranges in lb of nitrogen per 1,000 sq ft per year; your state or county extension guide takes priority.</p>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Yearly nitrogen by grass">
+        <table>
+          <thead><tr><th scope="col">Grass</th><th scope="col">Season</th><th scope="col">lb N / 1,000 sq ft / year</th><th scope="col">Notes</th></tr></thead>
+          <tbody>
+            {GRASSES.map((grass) => (
+              <tr><th scope="row">{grass.name}</th><td>{grass.season === 'cool' ? 'Cool' : 'Warm'}</td>
+                <td>{grass.annual[0]}–{grass.annual[1]}</td><td>{grass.note.split('. ').slice(-1)[0]}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p>Cool-season ranges follow the University of Nebraska's low, medium and high maintenance levels (1–2, 2–3 and 3–4 lb), and NC State's calendar of September, November and February feedings. Warm-season ranges use the North Florida column of UF/IFAS's table; the warmer south of Florida runs higher, which the calculator's notes point out.</p>
+      <h2>Feeding months</h2>
+      <p>Cool-season grasses are fed mainly in fall (NC State: mid-September and November). Nebraska's schedule adds light feedings in late April and early June; NC State adds February in the transition zone. Warm-season grasses are fed after spring green-up and through summer, stopping by early fall. These are typical windows, not rules: local weather and your state guide come first.</p>
+      <h2>What this calculator does not do</h2>
+      <ul>
+        <li>It does not replace a soil test, which is the only way to know whether your lawn needs phosphorus or potassium.</li>
+        <li>It does not know your state's rules. The <a href="/states/">state pages</a> list what could be verified for twelve Gulf and Southeast states. Where a blackout or a rate cap was not verified, those pages say to check the county. A city can be stricter than the state, except where the statute says local rules are preempted.</li>
+        <li>It does not give spreader dial settings, which differ by spreader model. Use the "spreader target" with your spreader's chart.</li>
+        <li>Liquid products and fertilizers sold by coverage only need a different calculation.</li>
+      </ul>
+      <h2>Sources</h2>
+      <ol>
+        {sources.map((source) => <li><a href={source.url}>{source.name}</a></li>)}
+      </ol>
+      <p><a href="/">Back to the calculator</a></p>
+    </div>
+  </main>
+</Base>

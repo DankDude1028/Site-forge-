@@ -1,0 +1,50 @@
+---
+import { CONTACT_EMAIL } from '../../contact.mjs';
+import { BAG_GUIDES, GRASS_GUIDES, RANGE_GUIDES, SEASON_GUIDES, STATE_GUIDES, TOOL_GUIDES } from '../lib/site.ts';
+
+const { mode } = Astro.props;
+---
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div class="footer-brand">
+      <strong>Lawn Numbers</strong>
+      <span>Lawn fertilizer calculator{mode === 'preview' ? ' (preview)' : ''}</span>
+      <p class="footer-note">Results are estimates from university extension formulas. Your product label and your state&apos;s rules come first. What you type into a calculator stays in your browser.</p>
+      <p class="footer-note"><a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a></p>
+    </div>
+    <nav aria-label="Tools and grass">
+      <h2>Guides</h2>
+      <ul>
+        {TOOL_GUIDES.map((page) => <li><a href={page.path}>{page.title}</a></li>)}
+        {GRASS_GUIDES.map((page) => <li><a href={page.path}>{page.title.replace(' fertilizer guide', '')}</a></li>)}
+      </ul>
+    </nav>
+    <nav aria-label="Size and season">
+      <h2>Sizes and seasons</h2>
+      <ul>
+        <li><a href="/lawn-size/">Lawn size guide</a></li>
+        {RANGE_GUIDES.map((page) => <li><a href={page.path}>{page.title.replace('Fertilizer for lawns ', '')}</a></li>)}
+        <li><a href="/bags/">Bag sizes</a></li>
+        {BAG_GUIDES.map((page) => <li><a href={page.path}>{page.title.replace('How far a ', '').replace(' goes', '')}</a></li>)}
+        {SEASON_GUIDES.map((page) => <li><a href={page.path}>{page.title.replace(' lawn fertilizer', '')}</a></li>)}
+      </ul>
+    </nav>
+    <nav aria-label="States">
+      <h2>States</h2>
+      <ul class="footer-states">
+        {STATE_GUIDES.map((page) => <li><a href={page.path}>{page.title.replace(' lawn fertilizer rules', '')}</a></li>)}
+      </ul>
+    </nav>
+    <nav aria-label="About this site">
+      <h2>The site</h2>
+      <ul>
+        <li><a href="/about/">About</a></li>
+        <li><a href="/contact/">Contact</a></li>
+        <li><a href="/method/">Method &amp; sources</a></li>
+        <li><a href="/credits/">Photo credits</a></li>
+        <li><a href="/privacy/">Privacy</a></li>
+        <li><a href="/terms/">Terms &amp; disclaimer</a></li>
+      </ul>
+    </nav>
+  </div>
+</footer>

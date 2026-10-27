@@ -1,0 +1,74 @@
+name: SiteForge checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  python:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: {POSTGRES_DB: siteforge_test, POSTGRES_USER: siteforge, POSTGRES_PASSWORD: fixture-ci-password}
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U siteforge -d siteforge_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      SITEFORGE_TEST_POSTGRES_URL: postgresql+psycopg://siteforge:fixture-ci-password@localhost:5432/siteforge_test
+      SITEFORGE_TEST_PG_BIN: /usr/lib/postgresql/16/bin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12', cache: pip}
+      - run: pip install -r requirements.lock
+      - name: Install matching PostgreSQL backup clients
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client-16
+      - run: python -m ruff check siteforge benchmarks tests
+      - run: python -m mypy siteforge --ignore-missing-imports
+      - run: python -m pytest -q --junitxml=runtime/pytest.xml
+      - run: python -m pip_audit -r requirements.lock
+      - run: python scripts/check_secrets.py
+      - run: python -m pip_audit -r requirements.lock --format cyclonedx-json --output runtime/sbom.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: python-evidence
+          path: |
+            runtime/*.xml
+            runtime/sbom.json
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24', cache: npm, cache-dependency-path: 'apps/dashboard/package-lock.json'}
+      - run: npm ci
+        working-directory: apps/dashboard
+      - run: npm run build && npm test
+        working-directory: apps/dashboard
+      - run: npx playwright install --with-deps chromium
+        working-directory: apps/dashboard
+      - run: npm run e2e
+        working-directory: apps/dashboard
+      - run: npm audit --audit-level=high
+        working-directory: apps/dashboard
+      - run: npm ci && npm test && npm run typecheck && npm run build && npm run e2e && npm audit --audit-level=high
+        working-directory: packages/site-templates/label-roll-planner
+      - run: npm ci && npm test && npm run typecheck && npm run build && npm run e2e && npm audit --audit-level=high
+        working-directory: packages/site-templates/lawn-fertilizer
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: dashboard-preview, path: apps/dashboard/dist}
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --file infrastructure/docker/Dockerfile --tag siteforge:ci .
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install pytest==9.1.1
+      - name: Exercise actual offline sandbox boundary
+        run: |
+          docker pull python:3.12-slim
+          export SITEFORGE_TEST_DOCKER_IMAGE=$(docker image inspect python:3.12-slim --format '{{index .RepoDigests 0}}')
+          python -m pytest tests/integration/test_docker_sandbox.py -q

@@ -1,0 +1,38 @@
+---
+const { mode } = Astro.props;
+const links = [
+  { href: '/#planner', label: 'Calculator' },
+  { href: '/guides/', label: 'Guides' },
+  { href: '/states/', label: 'States' },
+  { href: '/seasons/', label: 'Seasons' },
+  { href: '/about/', label: 'About' },
+];
+---
+<header class="site-header">
+  <div class="shell header-row">
+    <a class="brand" href="/">
+      <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false">
+        <circle cx="20" cy="20" r="18" fill="currentColor" opacity=".14" />
+        <path d="M12 31c1-7 3-12 7-16M20 31c0-8 1-14 3-20M28 31c-1-6-3-10-6-13" fill="none" stroke="currentColor"
+          stroke-width="2.6" stroke-linecap="round" />
+        <circle cx="23" cy="9" r="2.4" fill="var(--sun)" />
+      </svg>
+      <span>Lawn Numbers</span>
+    </a>
+    <nav class="nav-desktop" aria-label="Main">
+      <ul class="nav">
+        {links.map((link) => <li><a href={link.href}>{link.label}</a></li>)}
+      </ul>
+    </nav>
+    <details class="nav-drawer">
+      <summary>Menu</summary>
+      <nav aria-label="Main, compact">
+        <ul class="nav nav-stack">
+          {links.map((link) => <li><a href={link.href}>{link.label}</a></li>)}
+          <li><a href="/contact/">Contact</a></li>
+        </ul>
+      </nav>
+    </details>
+    {mode === 'preview' && <span class="proof">Proof · not published</span>}
+  </div>
+</header>

@@ -1,0 +1,165 @@
+{
+  "source_commit": "992735c08c92685b5c773eebb343a062bdd37b59",
+  "followup_test_only_commit": "6ef15a0cf86cebd7eeb50d0801389825bb490fca",
+  "followup_source_diff": [
+    "packages/site-templates/label-roll-planner/tests/build-modes.test.mjs"
+  ],
+  "scope": "One bounded authenticated HTTP/WindowsWorker/E4B native portfolio proposal; synthetic inputs, no market validation, scheduling or seven-role autonomy",
+  "captured_at": "2026-10-21T20:40:00.550558+00:00",
+  "task_id": "26ab3ce7-07bd-4fe2-8b79-e3df3044f156",
+  "status": "completed",
+  "implementation_sha256": "308b1a56e12e4436d43a4bcbd416c518dfb698b5def7a25949b6921183f2eddd",
+  "source_unchanged_during_run": true,
+  "model_routing": {
+    "external_effects": [],
+    "identity_error": null,
+    "identity_verified_after": true,
+    "model_auto_load": false,
+    "model_selection": {
+      "benchmark_route": {
+        "context": 8192,
+        "dataset_version": "1.3.0",
+        "evidence": "benchmarks\\results\\results.json",
+        "inference_identifier": "siteforge-benchmark",
+        "model": "google/gemma-4-e4b",
+        "quantization": "Q4_K_M",
+        "role": "primary",
+        "samples": 40,
+        "success_per_hour": 1167.5607429990127,
+        "success_rate": 0.85
+      },
+      "execution_scope": "bounded_internal_tools",
+      "loaded_model": {
+        "context": 8192,
+        "inference_identifier": "siteforge-benchmark",
+        "parallel": 1,
+        "quantization": "Q4_K_M",
+        "selected_variant": "google/gemma-4-e4b@q4_k_m",
+        "source_model": "google/gemma-4-e4b"
+      },
+      "measured_routing_required": true,
+      "model_auto_load": false,
+      "paid_fallback": false,
+      "qualification_bypassed_for_draft_only": false,
+      "requested_model": "google/gemma-4-e4b",
+      "required_context": 8192,
+      "role": "primary",
+      "selection": "measured_role_winner",
+      "supplied_model": null
+    },
+    "output_accepted": true,
+    "paid_fallback": false,
+    "retained_artifacts_require_review": false,
+    "status": "completed"
+  },
+  "actions": [
+    {
+      "basis": "configured task supplied scores; demand remains unverified",
+      "opportunity_id": "fixture-label-planner",
+      "weighted_score": "66.00"
+    },
+    {
+      "opportunity_id": "fixture-label-planner",
+      "scheduled": false,
+      "status": "proposed",
+      "steps": [
+        "research",
+        "developer",
+        "quality"
+      ]
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "retryable": false,
+    "error_code": "none",
+    "artifacts": [
+      {
+        "kind": "json",
+        "uri": ".tool-audit/26ab3ce7-07bd-4fe2-8b79-e3df3044f156/01-score_opportunities-2d2705147d8a-started.json",
+        "sha256": "ef92fb97c5fb205a6e594103daf542f2c28ee1e6b04cd21300fa933b0687c7c4",
+        "bytes": 303
+      },
+      {
+        "kind": "json",
+        "uri": "actions/26ab3ce7-07bd-4fe2-8b79-e3df3044f156/7cc6af5b301d41bbfe1ae86d70047d3c6c034bfa86689d0e1348098f22cbb3a9.json",
+        "sha256": "39df1f0d2d9b205785a82650760e96e6f8799a9bfc25d2dcae2c3b5ec37b2b6a",
+        "bytes": 150
+      },
+      {
+        "kind": "json",
+        "uri": ".tool-audit/26ab3ce7-07bd-4fe2-8b79-e3df3044f156/01-score_opportunities-2d2705147d8a-completed.json",
+        "sha256": "2f443d632717b133bc8842e87c51dfdc7a7b3161323d2e3fa43704835dfd9568",
+        "bytes": 305
+      },
+      {
+        "kind": "json",
+        "uri": ".tool-audit/26ab3ce7-07bd-4fe2-8b79-e3df3044f156/02-propose_workflow-2d2705147d8a-started.json",
+        "sha256": "0e28eb6dd47bd30c16f43a0c5c330e2942e5cb4c84387b21bb8cfd67c0d091a6",
+        "bytes": 300
+      },
+      {
+        "kind": "json",
+        "uri": "actions/26ab3ce7-07bd-4fe2-8b79-e3df3044f156/7cf50591da1c124c0b28e04c405c9a760221eb846db2b8155469d14a3abc23f6.json",
+        "sha256": "d74400351d27f883be7635210cc04202172af0f702a09cf4e56515ab167e24f3",
+        "bytes": 159
+      },
+      {
+        "kind": "json",
+        "uri": ".tool-audit/26ab3ce7-07bd-4fe2-8b79-e3df3044f156/02-propose_workflow-2d2705147d8a-completed.json",
+        "sha256": "3785eef59caf58041d87750c194b12282208f12d1b0e4683605b9ca3738a8888",
+        "bytes": 302
+      },
+      {
+        "kind": "json",
+        "uri": ".tool-audit/26ab3ce7-07bd-4fe2-8b79-e3df3044f156/03-finish-2b6c60634c90-completed.json",
+        "sha256": "73cd4c1d782a5ae8f53ac66966e29bdfcf856f199d8256c605fa47deb6b94d9a",
+        "bytes": 292
+      },
+      {
+        "kind": "json",
+        "uri": "routing/26ab3ce7-07bd-4fe2-8b79-e3df3044f156.json",
+        "sha256": "4ece263d4ad1c37caed3ca21e1de0819c7ae53d2e50858e55fb4f33f7902cf5b",
+        "bytes": 1275
+      },
+      {
+        "kind": "json",
+        "uri": "audit/26ab3ce7-07bd-4fe2-8b79-e3df3044f156.json",
+        "sha256": "6363adec59fa80feb5b2ebc918f8fde1b34ee817f505441d729daafe026d20e7",
+        "bytes": 3161
+      }
+    ],
+    "evidence": [],
+    "costs": "0",
+    "confidence": 0.9,
+    "risks": [
+      "Bounded internal actions only; production publication and external spending are unavailable.",
+      "Synthetic sources are assumptions; no verified market demand or actual revenue is established.",
+      "The opportunity 'fixture-label-planner' was scored with a weighted score of 66.00. The scoring utilized configured task scores, noting that demand remains unverified. A comprehensive workflow has been proposed for this opportunity, outlining the necessary steps in sequence: research, developer, and quality assurance."
+    ],
+    "next_actions": [
+      "Owner review of artifacts and unresolved checks"
+    ]
+  },
+  "artifact_byte_hashes_verified": true,
+  "artifact_count": 9,
+  "previous_successful_application_rechecks": [
+    {
+      "captured_at": "2026-10-21T20:25:49.559696+00:00",
+      "source_hash_before": "ef84e433aadd46d8f7e6c4263d1ee1c79068b52a82ec2cb13dc15b4326d80dc1",
+      "source_hash_after": "ef84e433aadd46d8f7e6c4263d1ee1c79068b52a82ec2cb13dc15b4326d80dc1",
+      "task_id": "39e80fd8-51c7-4337-b5d3-da47948147a3",
+      "status": "completed"
+    },
+    {
+      "captured_at": "2026-10-21T20:29:16.791518+00:00",
+      "source_hash_before": "8f9f08015c17206d11cdf55c0a1d8d641275a191ecf511fcb7a050015a504703",
+      "source_hash_after": "8f9f08015c17206d11cdf55c0a1d8d641275a191ecf511fcb7a050015a504703",
+      "task_id": "c4af9668-7dac-43ec-9abf-4ac39360c0e3",
+      "status": "completed"
+    }
+  ],
+  "original_sdk_failure_history": "native-agent.json",
+  "external_effects": [],
+  "paid_api_calls": 0
+}

@@ -1,0 +1,44 @@
+---
+import Base from '../../layouts/Base.astro';
+import GuideHero from '../../components/GuideHero.astro';
+import { BAGS } from '../../content/bags.ts';
+import { bagsFor, productPounds } from '../../lib/sizes.ts';
+import { pounds } from '../../lib/format.ts';
+
+const jsonLd = [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+  { '@type': 'ListItem', position: 1, name: 'Calculator', item: new URL('/', Astro.site).href },
+  { '@type': 'ListItem', position: 2, name: 'Bag sizes', item: new URL('/bags/', Astro.site).href },
+] }];
+---
+<Base title="Fertilizer by Bag Size: 15, 25, 40, and 50 lb | Lawn Numbers"
+  description="How many pounds a 15, 25, 40, or 50 lb bag covers in a worked example. Each page uses a different lawn and a different analysis."
+  path="/bags/" jsonLd={jsonLd}>
+  <main id="main">
+    <GuideHero eyebrow="Bag sizes" title="How far one bag goes"
+      lede="Bag weight is not the nitrogen rate. A heavier bag is not a heavier feeding. Each page below uses a different lawn and a different set of bag numbers so the examples are not copies."
+      crumbs={[{ name: 'Calculator', path: '/' }, { name: 'Bag sizes' }]}>
+      <p slot="art" class="state-mark" aria-hidden="true">lb</p>
+    </GuideHero>
+    <section class="hub">
+      <div class="shell">
+        <ul class="hub-grid">
+          {BAGS.map((bag) => {
+            const product = productPounds(bag.area, bag.nitrogen, bag.rate);
+            const count = bagsFor(product, bag.weight);
+            return (
+              <li class="hub-card reveal">
+                <a href={`/bags/${bag.slug}/`}>
+                  <span class="hub-kicker">{bag.analysis}</span>
+                  <strong>{bag.label}</strong>
+                  <span class="hub-range">{count} {count === 1 ? 'bag' : 'bags'} for {bag.area.toLocaleString('en-US')} sq ft · {pounds(product)} lb</span>
+                  <span class="hub-blurb">{bag.blurb}</span>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+        <p class="section-intro">The lawn’s size is a different question. <a href="/lawn-size/">Start from the area</a>, then come back to the bag you can actually buy.</p>
+      </div>
+    </section>
+  </main>
+</Base>

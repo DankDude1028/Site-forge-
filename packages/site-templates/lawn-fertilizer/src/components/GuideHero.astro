@@ -1,0 +1,20 @@
+---
+interface Props { eyebrow: string; title: string; lede: string; crumbs: { name: string; path?: string }[]; artHidden?: boolean }
+const { eyebrow, title, lede, crumbs, artHidden = true } = Astro.props;
+---
+<section class="guide-hero">
+  <div class="hero-stripes" aria-hidden="true"></div>
+  <div class="shell guide-hero-grid">
+    <div class="guide-hero-copy">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <ol>
+          {crumbs.map((crumb) => <li>{crumb.path ? <a href={crumb.path}>{crumb.name}</a> : <span aria-current="page">{crumb.name}</span>}</li>)}
+        </ol>
+      </nav>
+      <p class="eyebrow on-dark">{eyebrow}</p>
+      <h1>{title}</h1>
+      <p class="lede">{lede}</p>
+    </div>
+    <div class="guide-hero-art" aria-hidden={artHidden ? 'true' : undefined}><slot name="art" /></div>
+  </div>
+</section>
