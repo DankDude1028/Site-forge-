@@ -26,7 +26,7 @@ const faqs = [
   },
   {
     q: 'How much extra allowance should I add for setup and misprints?',
-    a: 'Hand-applied batches usually need 2% to 3% for crooked placement. Tabletop label dispensers and semi-automatic applicators commonly need 5% to 8% for web threading, splice leaders and registration checks.',
+    a: 'There is no single percentage for every shop. Hand-applied runs mainly lose occasional crooked or wrinkled labels, while printers and applicators also use a fixed length of label web each time you thread the rollers and align registration. On a short batch, that fixed setup strip is a larger share of the run than on a long batch—check how many labels your setup typically uses and set the allowance % to cover it.',
   },
   {
     q: 'What if I have a partly used roll on the shelf?',
@@ -34,7 +34,7 @@ const faqs = [
   },
   {
     q: 'Does changing roll size affect how many spare labels are left over?',
-    a: 'Yes. Smaller rolls (250 or 500 labels) leave fewer spare labels sitting on the shelf after a small batch, while larger rolls (1,000 or 2,500) often lower the price per label on high-volume runs. Check the live Roll Size Comparison table above to compare both.',
+    a: 'Yes. When your batch total is not an exact multiple of the roll capacity, rounding up to a whole roll leaves spare labels on the final roll. Use the Roll-Size Optimizer above to compare how different roll capacities change your order count and leftover labels—just confirm your printer or dispenser accepts the physical roll diameter.',
   },
 ];
 
@@ -456,7 +456,7 @@ const jsonLd = [
                 <path d="M16 14h24M28 24h12M28 34h12" />
               </svg>
               <h3>Account for web threading</h3>
-              <p>Tabletop applicators and thermal transfer printers need 15 to 40 labels just to thread the rollers and lock registration. Keep at least 3% to 5% extra allowance on short runs.</p>
+              <p>Printers, dispensers and applicators consume extra labels whenever you thread the rollers, calibrate the gap sensor or check registration. How many labels that takes depends on your machine's web path and label height—check your manual and set an allowance that covers setup.</p>
             </li>
             <li class="guide-card reveal">
               <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
@@ -464,7 +464,7 @@ const jsonLd = [
                 <path d="M16 20h16M16 28h10" /><circle cx="34" cy="28" r="3" />
               </svg>
               <h3>Count every placement</h3>
-              <p>A jar with a front label, nutrition back panel and tamper-evident lid seal uses 3 labels per item. If they share the same roll artwork, set Labels per item to 3.</p>
+              <p>If one container gets a front label, a back panel and a tamper seal from the same roll, set Labels per item to 3. If those placements use separate artwork on different rolls, calculate each roll separately.</p>
             </li>
             <li class="guide-card reveal">
               <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
@@ -472,7 +472,7 @@ const jsonLd = [
                 <path d="M24 4v6M24 38v6M4 24h6M38 24h6" />
               </svg>
               <h3>Verify core &amp; outer diameter</h3>
-              <p>A 2,500-label roll often requires a 3-inch core and an 8-inch unwinder, while desktop printers usually take 1-inch cores and 5-inch rolls (250 to 500 labels).</p>
+              <p>Suppliers wind the same label count onto different core sizes and roll diameters depending on label length. Check your printer or applicator spec sheet for its core inner diameter and maximum roll outer diameter before ordering larger rolls.</p>
             </li>
             <li class="guide-card reveal">
               <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
@@ -480,7 +480,7 @@ const jsonLd = [
                 <path d="M12 14l12 6 12-6M24 20v22" />
               </svg>
               <h3>Rotate shelf stock first</h3>
-              <p>Pressure-sensitive adhesives age best within 12 months. Count only sealed, full rolls in your on-hand stock and load your oldest rolls onto the dispenser first.</p>
+              <p>Pressure-sensitive adhesives have a finite shelf life that depends on the material datasheet, temperature and humidity. Count only sealed, full rolls in your on-hand stock, store spares wrapped away from heat and moisture, and use older rolls first.</p>
             </li>
           </ul>
         </div>
