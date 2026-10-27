@@ -1,28 +1,50 @@
 ---
 import Base from '../layouts/Base.astro';
+import { CONTACT_EMAIL } from '../../contact.mjs';
 
-const updated = '26 October 2026';
+const updated = '27 October 2026';
 ---
 <Base title="Terms & Disclaimer | Lawn Numbers"
-  description="The Lawn Numbers fertilizer calculator gives planning estimates. Product labels and local rules come first."
+  description="Plain-language terms for Lawn Numbers: planning estimates, the product label comes first, no professional advice, and how corrections and outside links work."
   path="/terms/">
   <main id="main">
     <section class="page-hero">
       <div class="shell">
         <p class="eyebrow on-dark">Terms &amp; disclaimer</p>
         <h1>Estimates, not instructions</h1>
+        <p>These terms are the rules for using Lawn Numbers. They are written in plain language. The product label on the bag you buy still outranks every sentence here.</p>
         <p class="updated">Last updated {updated}</p>
       </div>
     </section>
     <div class="shell prose">
-      <h2>A planning aid</h2>
-      <p>Lawn Numbers works out quantities from the numbers you enter and from published university extension formulas. The results are estimates to help you plan and shop. They are not professional advice.</p>
-      <h2>Your label and your local rules come first</h2>
-      <p>Always read and follow the label on the product you use. If the label's rate, timing or warnings differ from anything on this site, the label is right. Some states and towns limit phosphorus or restrict when lawn fertilizer can be applied; check with your local extension office.</p>
-      <h2>No warranty</h2>
-      <p>We work to keep the formulas and ranges accurate and cite our <a href="/method/">sources</a>, but we cannot promise the site is free of errors or suited to your lawn, climate or product. You use it at your own risk.</p>
-      <h2>Independent</h2>
-      <p>Lawn Numbers is not affiliated with any fertilizer maker or retailer. Product names, if mentioned, belong to their owners.</p>
+      <h2>Using the site</h2>
+      <p>You may read the pages and use the calculators to plan a lawn feeding or a seed purchase for yourself. You may link to any public page. You may not scrape the site in a way that breaks it, present the pages as your own, or use the site to mislead someone about a product, a rate, or a law.</p>
+      <p>The calculators run in your browser. What you type is covered on the <a href="/privacy/">privacy page</a>.</p>
+
+      <h2>Accuracy, and the label comes first</h2>
+      <p>Results are planning estimates. They apply the formulas on the <a href="/method/">method page</a> to the numbers you enter, and the grass, season, and state pages cite university extension or official sources for the ranges and rules they state. Where those sources disagree, the page says so. Where a statewide rule was not verified, the page says to check your county instead of inventing one.</p>
+      <p>Always read and follow the label on the product you use. If the label’s rate, timing, or warning differs from anything on this site, the label is right. A soil test, your state’s current rule, and your city’s ordinance can all override a typical range printed here.</p>
+
+      <h2>Not professional advice</h2>
+      <p>Nothing on this site is professional agronomy, legal, or environmental advice, and it is not a recommendation to buy a particular brand. The site does not visit your lawn, does not test your soil, and does not know a city ordinance that was not checked for the state page you are reading. For a lawn that is failing, or a rule that could bring a fine, ask your local extension office or the office that wrote the rule.</p>
+
+      <h2>Limitation of liability</h2>
+      <p>The site is offered as a planning aid. To the extent the law allows, the operator is not liable for lost grass, a wrong purchase, a fine, or any other loss that comes from using or being unable to use the site, including a number that turns out to be wrong. Some places do not allow that limit. In those places, the limit applies only as far as the law there allows. This paragraph does not exclude liability the law does not let a site operator exclude.</p>
+
+      <h2>Third-party links</h2>
+      <p>Pages link to university extension publications, statutes, and agency sites. Those sites are not run by Lawn Numbers. Their content, their uptime, and their privacy practices are theirs. A link is a citation, not an endorsement of every sentence on the other side, and not a sign that the other site endorses this one.</p>
+
+      <h2>Independence</h2>
+      <p>Lawn Numbers is not a fertilizer maker, a retailer, or an extension service. Product names, if a page mentions one, belong to their owners. The site does not show affiliate links today. If that changes, the <a href="/privacy/">privacy page</a> and these terms will say so.</p>
+
+      <h2>Changes</h2>
+      <p>The pages, the formulas, and these terms can change. The date at the top of this page changes when these terms change. Continuing to use the site after that date means the new terms apply to new use. Calculator formulas are the ones on the method page at the time you use them.</p>
+
+      <h2>Governing law</h2>
+      <p>These terms are governed by the laws that apply to the site operator, without this page naming a courthouse or a state. If a dispute has to be heard somewhere, it is heard in a court that already has authority over the operator. Nothing here chooses a venue the law would not already allow, and nothing here takes away a right a consumer statute says cannot be waived.</p>
+
+      <h2>Contact</h2>
+      <p>Questions about these terms, and corrections to a page: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. A reply is not promised by a particular day. See the <a href="/contact/">contact page</a> for what to include.</p>
       <p><a href="/">Back to the calculator</a></p>
     </div>
   </main>

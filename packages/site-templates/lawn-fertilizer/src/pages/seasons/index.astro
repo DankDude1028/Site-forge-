@@ -1,0 +1,37 @@
+---
+import Base from '../../layouts/Base.astro';
+import GuideHero from '../../components/GuideHero.astro';
+import { SEASONS } from '../../content/seasons.ts';
+
+const jsonLd = [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+  { '@type': 'ListItem', position: 1, name: 'Calculator', item: new URL('/', Astro.site).href },
+  { '@type': 'ListItem', position: 2, name: 'Seasons', item: new URL('/seasons/', Astro.site).href },
+] }];
+---
+<Base title="When to Fertilize a Lawn, by Season | Lawn Numbers"
+  description="Spring and summer feed warm-season grasses. Fall feeds tall fescue and Kentucky bluegrass. Winter is mostly a pause. Regions and state rules differ."
+  path="/seasons/" jsonLd={jsonLd}>
+  <main id="main">
+    <GuideHero eyebrow="Seasons" title="When the feeding actually happens"
+      lede="Fall is the prominent season for cool-season grass. Spring and summer are the ones that matter for bermudagrass, St. Augustine, zoysia, and centipede. A Gulf Coast lawn and a Kentucky lawn are not on the same month."
+      crumbs={[{ name: 'Calculator', path: '/' }, { name: 'Seasons' }]}>
+      <p slot="art" class="state-mark" aria-hidden="true">Yr</p>
+    </GuideHero>
+    <section class="hub">
+      <div class="shell">
+        <ul class="hub-grid">
+          {SEASONS.map((season) => (
+            <li class="hub-card reveal">
+              <a href={`/seasons/${season.slug}/`}>
+                <span class="hub-kicker">{season.kicker}</span>
+                <strong>{season.name}</strong>
+                <span class="hub-blurb">{season.lede}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+        <p class="section-intro">Pair a season with a <a href="/guides/">grass</a> and a <a href="/states/">state</a>. The state page says whether a date is a law or only a habit.</p>
+      </div>
+    </section>
+  </main>
+</Base>

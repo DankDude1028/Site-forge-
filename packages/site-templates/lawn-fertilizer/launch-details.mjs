@@ -1,4 +1,6 @@
 /** Public operator details for the privacy page. Previews never invent them; production fails closed. */
+import { CONTACT_EMAIL } from './contact.mjs';
+
 export function getLaunchDetails(mode, environment = process.env) {
   const host = environment.SITEFORGE_HOST_NAME?.trim() || null;
   const hostPrivacyUrl = environment.SITEFORGE_HOST_PRIVACY_URL?.trim() || null;
@@ -14,6 +16,9 @@ export function getLaunchDetails(mode, environment = process.env) {
   }
   if (contactEmail && !/^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(contactEmail)) {
     throw new Error('Contact email must be a plain email address');
+  }
+  if (contactEmail && contactEmail !== CONTACT_EMAIL) {
+    throw new Error('SITEFORGE_CONTACT_EMAIL must match the site contact address');
   }
   return { host, hostPrivacyUrl, contactEmail };
 }

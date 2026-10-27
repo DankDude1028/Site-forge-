@@ -67,7 +67,27 @@
 .calc-card span:last-child { color: rgb(246 242 232 / 82%); }
 .hub { padding-block: 80px 20px; }
 .tools-hub { padding-bottom: 110px; }
+.hub-photo { width: 100%; height: 148px; object-fit: cover; border-radius: 12px; }
 .hub-card .year-strip { margin: 6px 0; }
+.grass-figure { margin: 0; width: min(100%, 520px); }
+.grass-figure img { width: 100%; height: auto; max-height: 420px; object-fit: cover; border-radius: 22px;
+  box-shadow: 0 30px 50px -28px rgb(0 0 0 / 55%); }
+.grass-figure figcaption { margin-top: 10px; font-size: 0.88rem; line-height: 1.45; color: rgb(246 242 232 / 75%); max-width: 52ch; }
+.grass-figure figcaption a { color: var(--sprout); }
+.grass-figure.on-paper figcaption { color: var(--muted); }
+.grass-figure.on-paper figcaption a { color: var(--turf-700); }
+.grass-article section + section { margin-top: 8px; }
+.state-mark { margin: 0; font: 700 clamp(4.2rem, 12vw, 7.4rem)/0.85 var(--display); color: var(--sprout); letter-spacing: -0.04em; }
+.credit-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 36px; }
+.credit-list > li { display: grid; grid-template-columns: minmax(0, 280px) minmax(0, 1fr); gap: 22px; align-items: start;
+  padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+.credit-list h2 { font-size: 1.7rem; margin: 0 0 8px; }
+.species { padding-block: 72px 10px; }
+.species-grid { list-style: none; padding: 0; margin: 28px 0 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+.species-grid a { display: grid; gap: 8px; color: var(--ink); text-decoration: none; font: 640 1.05rem/1.2 var(--display); overflow: hidden; }
+.species-grid img { width: 100%; height: 120px; object-fit: cover; border-radius: 16px; transition: transform .35s var(--spring); }
+.species-grid a:hover img { transform: scale(1.03); }
+.prose .btn-big { margin: 8px 0 18px; }
 .hub-card .year-strip li { background: var(--off); color: var(--muted); }
 .hub-card .year-strip li[data-feed="main"] { background: var(--turf-600); color: #fff; }
 .hub-card .year-strip li[data-feed="light"] { background: var(--turf-200); color: var(--turf-800); }
@@ -250,6 +270,8 @@
   .step-cards, .glance-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 860px) {
+  .species-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .credit-list > li { grid-template-columns: minmax(0, 1fr); }
   .guide-hero-grid, .measure-grid, .bag-tool-grid, .cal-grid, .notes-grid { grid-template-columns: minmax(0, 1fr); gap: 28px; }
   .guide-hero-art { min-height: 0; }
   .measure-result { position: static; }
@@ -257,6 +279,7 @@
   .turf-card { transform: none; max-width: 320px; }
 }
 @media (max-width: 560px) {
+  .species-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .glance-grid, .two-up, .nutrients, .step-cards { grid-template-columns: minmax(0, 1fr); }
   .shape-row { grid-template-columns: minmax(0, 1fr) 36px; }
   .shape-icon { display: none; }

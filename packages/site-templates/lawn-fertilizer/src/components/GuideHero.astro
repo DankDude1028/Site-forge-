@@ -1,6 +1,6 @@
 ---
-interface Props { eyebrow: string; title: string; lede: string; crumbs: { name: string; path?: string }[] }
-const { eyebrow, title, lede, crumbs } = Astro.props;
+interface Props { eyebrow: string; title: string; lede: string; crumbs: { name: string; path?: string }[]; artHidden?: boolean }
+const { eyebrow, title, lede, crumbs, artHidden = true } = Astro.props;
 ---
 <section class="guide-hero">
   <div class="hero-stripes" aria-hidden="true"></div>
@@ -15,6 +15,6 @@ const { eyebrow, title, lede, crumbs } = Astro.props;
       <h1>{title}</h1>
       <p class="lede">{lede}</p>
     </div>
-    <div class="guide-hero-art" aria-hidden="true"><slot name="art" /></div>
+    <div class="guide-hero-art" aria-hidden={artHidden ? 'true' : undefined}><slot name="art" /></div>
   </div>
 </section>

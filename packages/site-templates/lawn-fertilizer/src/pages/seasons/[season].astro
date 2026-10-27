@@ -1,0 +1,60 @@
+---
+import Base from '../../layouts/Base.astro';
+import GuideHero from '../../components/GuideHero.astro';
+import RelatedGuides from '../../components/RelatedGuides.astro';
+import SourceList from '../../components/SourceList.astro';
+import { SEASONS, type SeasonGuide } from '../../content/seasons.ts';
+
+export function getStaticPaths() {
+  return SEASONS.map((season) => ({ params: { season: season.slug }, props: { season } }));
+}
+
+interface Props { season: SeasonGuide }
+const { season } = Astro.props;
+const path = `/seasons/${season.slug}/`;
+const plain = (html: string) => html.replace(/<[^>]+>/g, '');
+const jsonLd = [
+  { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Calculator', item: new URL('/', Astro.site).href },
+    { '@type': 'ListItem', position: 2, name: 'Seasons', item: new URL('/seasons/', Astro.site).href },
+    { '@type': 'ListItem', position: 3, name: season.name, item: new URL(path, Astro.site).href },
+  ] },
+  { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: season.faqs.map((item) => (
+    { '@type': 'Question', name: item.q, acceptedAnswer: { '@type': 'Answer', text: plain(item.a) } })) },
+];
+---
+<Base title={`${season.title} | Lawn Numbers`} description={season.lede} path={path} jsonLd={jsonLd}>
+  <main id="main">
+    <GuideHero eyebrow={season.kicker} title={season.title} lede={season.lede}
+      crumbs={[{ name: 'Calculator', path: '/' }, { name: 'Seasons', path: '/seasons/' }, { name: season.name }]}>
+      <p slot="art" class="state-mark" aria-hidden="true">{season.name.slice(0, 2)}</p>
+    </GuideHero>
+    <article class="guide-body">
+      <div class="shell prose-wide">
+        {season.sections.map((section) => (
+          <section aria-labelledby={`${section.id}-title`}>
+            <h2 id={`${section.id}-title`}>{section.heading}</h2>
+            {section.paragraphs.map((paragraph) => <p set:html={paragraph} />)}
+          </section>
+        ))}
+        <ul class="size-chips">
+          {SEASONS.map((other) => (
+            <li><a class={other.slug === season.slug ? 'size-chip is-current' : 'size-chip'} href={`/seasons/${other.slug}/`}
+              aria-current={other.slug === season.slug ? 'page' : undefined}>{other.name}</a></li>
+          ))}
+          <li><a class="size-chip" href="/states/">State rules</a></li>
+        </ul>
+      </div>
+    </article>
+    <section class="faq" aria-labelledby="faq-title">
+      <div class="shell faq-grid">
+        <div><p class="eyebrow">Questions</p><h2 id="faq-title">{season.name}</h2></div>
+        <div class="faq-list">
+          {season.faqs.map((item) => <details class="faq-item"><summary><h3>{item.q}</h3></summary><p set:html={item.a} /></details>)}
+        </div>
+      </div>
+    </section>
+    <div class="shell"><SourceList keys={['ncstate', 'nebraska', 'ufRule']} /></div>
+    <RelatedGuides current={path} />
+  </main>
+</Base>

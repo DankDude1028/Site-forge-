@@ -61,7 +61,9 @@ a:hover { color: var(--turf-600); }
   font: 700 1.5rem/1 var(--display); font-variation-settings: 'SOFT' 100, 'WONK' 1; letter-spacing: -0.02em; }
 .brand:hover { color: var(--sprout); }
 .brand-mark { width: 36px; height: 36px; color: var(--sprout); }
-.nav { display: flex; gap: 4px; list-style: none; margin: 0 0 0 auto; padding: 0; }
+.nav-desktop { margin-left: auto; }
+.nav { display: flex; gap: 4px; list-style: none; margin: 0; padding: 0; }
+.nav-drawer { display: none; }
 .nav a { color: rgb(246 242 232 / 86%); text-decoration: none; font: 600 1rem/1 var(--cond); letter-spacing: 0.06em;
   text-transform: uppercase; padding: 10px 12px; border-radius: 999px; transition: background-color .2s, color .2s; }
 .nav a:hover { background: rgb(166 216 111 / 14%); color: var(--sprout); }
@@ -382,14 +384,19 @@ tr:last-child td { border-bottom: 0; }
 .updated { font: 600 0.9rem/1 var(--cond); letter-spacing: 0.1em; text-transform: uppercase; color: var(--sprout); margin-top: 18px !important; }
 
 /* Footer */
-.site-footer { background: var(--turf-950); color: rgb(246 242 232 / 82%); padding-block: 44px; }
+.site-footer { background: var(--turf-950); color: rgb(246 242 232 / 82%); padding-block: 48px 56px; }
+.footer-grid { display: grid; grid-template-columns: minmax(220px, 1.35fr) repeat(4, minmax(0, 1fr)); gap: 28px 22px; align-items: start; }
 .footer-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 32px; align-items: center; }
-.footer-brand { display: grid; gap: 4px; }
+.footer-brand { display: grid; gap: 6px; }
 .footer-brand strong { font: 700 1.4rem/1 var(--display); color: var(--chalk); }
 .footer-brand span { font-size: 0.92rem; }
-.footer-note { font-size: 0.95rem; max-width: 60ch; }
-.footer-links { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
-.footer-links a { color: var(--sprout); }
+.footer-note { font-size: 0.95rem; max-width: 42ch; margin-top: 8px; }
+.site-footer h2 { font-family: var(--cond); font-size: 0.82rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--sprout); margin: 0 0 12px; }
+.site-footer ul, .footer-links { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.site-footer a, .footer-links a { color: var(--sprout); }
+.site-footer a:hover { color: var(--chalk); }
+.footer-states { grid-template-columns: 1fr 1fr; column-gap: 12px; }
 
 /* Motion: everything here is decoration and switches off for reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
@@ -428,13 +435,24 @@ tr:last-child td { border-bottom: 0; }
 
 /* Layout breakpoints */
 @media (max-width: 1080px) {
+  .footer-grid { grid-template-columns: 1fr 1fr; }
   .instrument { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .viz { grid-column: 1 / -1; grid-row: 2; border-left: 0 !important; border-top: 1.5px dashed var(--line); }
   .tip-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 860px) {
-  .nav { display: none; }
-  .proof { margin-left: auto; }
+  .nav-desktop { display: none; }
+  .nav-drawer { display: block; margin-left: auto; position: relative; }
+  .nav-drawer summary { list-style: none; cursor: pointer; color: var(--chalk); font: 700 0.95rem/1 var(--cond);
+    letter-spacing: 0.12em; text-transform: uppercase; padding: 10px 14px; border: 1.5px solid rgb(246 242 232 / 35%);
+    border-radius: 999px; }
+  .nav-drawer summary::-webkit-details-marker { display: none; }
+  .nav-drawer[open] summary { background: rgb(166 216 111 / 14%); color: var(--sprout); }
+  .nav-drawer .nav-stack { display: grid; position: absolute; right: 0; top: calc(100% + 8px); min-width: 220px;
+    background: var(--turf-900); border: 1.5px solid rgb(246 242 232 / 16%); border-radius: 16px; padding: 8px;
+    box-shadow: var(--shadow); z-index: 6; }
+  .footer-grid { grid-template-columns: minmax(0, 1fr); }
+  .proof { margin-left: 8px; }
   .hero { padding-top: 36px; }
   .hero-head, .calendar-grid, .bag-grid, .faq-grid { grid-template-columns: minmax(0, 1fr); gap: 28px; }
   .instrument { grid-template-columns: minmax(0, 1fr); }

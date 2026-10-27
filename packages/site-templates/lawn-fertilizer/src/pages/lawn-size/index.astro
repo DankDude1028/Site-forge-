@@ -1,0 +1,45 @@
+---
+import Base from '../../layouts/Base.astro';
+import GuideHero from '../../components/GuideHero.astro';
+import { RANGES } from '../../content/ranges.ts';
+import { SIZES, productPounds } from '../../lib/sizes.ts';
+import { pounds } from '../../lib/format.ts';
+
+const jsonLd = [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+  { '@type': 'ListItem', position: 1, name: 'Calculator', item: new URL('/', Astro.site).href },
+  { '@type': 'ListItem', position: 2, name: 'Lawn size', item: new URL('/lawn-size/', Astro.site).href },
+] }];
+---
+<Base title="Fertilizer by Lawn Size | Lawn Numbers"
+  description="Fertilizer amounts for exact lawn sizes and for four size bands, from under 2,000 sq ft to more than 10,000. Each page has its own worked example."
+  path="/lawn-size/" jsonLd={jsonLd}>
+  <main id="main">
+    <GuideHero eyebrow="Lawn size" title="Pick the lawn you actually have"
+      lede="Exact sizes are measured areas: 1,000 sq ft through one acre. The four bands are for when you only know the neighborhood of the number. The worked examples are not the same lawn repeated."
+      crumbs={[{ name: 'Calculator', path: '/' }, { name: 'Lawn size' }]}>
+      <p slot="art" class="state-mark" aria-hidden="true">ft²</p>
+    </GuideHero>
+    <section class="hub" aria-labelledby="band-title">
+      <div class="shell">
+        <h2 id="band-title">By band</h2>
+        <ul class="hub-grid">
+          {RANGES.map((range) => (
+            <li class="hub-card reveal"><a href={`/lawn-size/${range.slug}/`}><span class="hub-kicker">Band</span><strong>{range.label}</strong><span class="hub-blurb">{range.lede}</span></a></li>
+          ))}
+        </ul>
+      </div>
+    </section>
+    <section class="hub" aria-labelledby="exact-title">
+      <div class="shell">
+        <h2 id="exact-title">Exact areas</h2>
+        <ul class="size-chips hub-sizes">
+          {SIZES.map((size) => (
+            <li><a class="size-chip big" href={`/lawn-size/${size.slug}/`}><strong>{size.label}</strong>
+              <span>{pounds(productPounds(size.area, 29, 1))} lb of 29-0-4</span></a></li>
+          ))}
+        </ul>
+        <p class="section-intro">Measure first if you are guessing. The <a href="/guides/measure-your-lawn/">measuring tool</a> hands the area to the calculator. Bag weight is on the <a href="/bags/">bag-size pages</a>.</p>
+      </div>
+    </section>
+  </main>
+</Base>

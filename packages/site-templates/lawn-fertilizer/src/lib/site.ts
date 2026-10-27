@@ -1,4 +1,8 @@
 /** Every page on the site in one place, so the navigation, guide hub, related links and sitemap never drift apart. */
+import { BAGS } from '../content/bags.ts';
+import { RANGES } from '../content/ranges.ts';
+import { SEASONS } from '../content/seasons.ts';
+import { STATES } from '../content/states.ts';
 import { GRASSES, type Grass } from './grasses.ts';
 import { SIZES } from './sizes.ts';
 
@@ -29,5 +33,41 @@ export const SIZE_GUIDES: readonly PageLink[] = SIZES.map((size) => ({
   blurb: `Pounds, bags and yearly nitrogen for ${size.label} (${size.shape}).`,
 }));
 
-export const ROUTES: readonly string[] = ['/', '/guides/', ...TOOL_GUIDES.map((page) => page.path),
-  ...GRASS_GUIDES.map((page) => page.path), ...SIZE_GUIDES.map((page) => page.path), '/method/', '/privacy/', '/terms/'];
+export const RANGE_GUIDES: readonly PageLink[] = RANGES.map((range) => ({
+  path: `/lawn-size/${range.slug}/`, title: `Fertilizer for lawns ${range.label}`,
+  blurb: range.lede,
+}));
+
+export const BAG_GUIDES: readonly PageLink[] = BAGS.map((bag) => ({
+  path: `/bags/${bag.slug}/`, title: `How far a ${bag.label} goes`,
+  blurb: bag.blurb,
+}));
+
+export const SEASON_GUIDES: readonly PageLink[] = SEASONS.map((season) => ({
+  path: `/seasons/${season.slug}/`, title: season.title, blurb: season.lede,
+}));
+
+export const STATE_GUIDES: readonly PageLink[] = STATES.map((state) => ({
+  path: `/states/${state.slug}/`, title: `${state.name} lawn fertilizer rules`, blurb: state.summary,
+}));
+
+export const SITE_PAGES: readonly PageLink[] = [
+  { path: '/about/', title: 'About', blurb: 'Who runs Lawn Numbers, where the numbers come from, and how a correction gets onto the page.' },
+  { path: '/contact/', title: 'Contact', blurb: 'How to send a correction or a question, and what a reply does and does not promise.' },
+  { path: '/credits/', title: 'Photo credits', blurb: 'Photographer, source, and license for every grass photograph on the site.' },
+  { path: '/method/', title: 'Method and sources', blurb: 'The formulas and the university extension sources behind the calculator.' },
+  { path: '/privacy/', title: 'Privacy', blurb: 'What the site collects today, and what would have to be said before ads or analytics are added.' },
+  { path: '/terms/', title: 'Terms and disclaimer', blurb: 'The label comes first. These are planning estimates, not professional advice.' },
+];
+
+export const ROUTES: readonly string[] = [
+  '/', '/guides/', '/lawn-size/', '/bags/', '/seasons/', '/states/',
+  ...TOOL_GUIDES.map((page) => page.path),
+  ...GRASS_GUIDES.map((page) => page.path),
+  ...SIZE_GUIDES.map((page) => page.path),
+  ...RANGE_GUIDES.map((page) => page.path),
+  ...BAG_GUIDES.map((page) => page.path),
+  ...SEASON_GUIDES.map((page) => page.path),
+  ...STATE_GUIDES.map((page) => page.path),
+  ...SITE_PAGES.map((page) => page.path),
+];

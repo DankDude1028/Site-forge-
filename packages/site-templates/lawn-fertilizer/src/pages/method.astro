@@ -2,7 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { GRASSES } from '../lib/grasses.ts';
 
-const checked = '26 October 2026';
+const checked = '27 October 2026';
 const sources = [
   { name: 'Iowa State University Extension: How to Calculate Fertilizer Rates for the Lawn (reviewed April 2026)',
     url: 'https://yardandgarden.extension.iastate.edu/how-to/how-calculate-fertilizer-rates-lawn' },
@@ -67,7 +67,7 @@ const jsonLd = [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', i
       <h2>What this calculator does not do</h2>
       <ul>
         <li>It does not replace a soil test, which is the only way to know whether your lawn needs phosphorus or potassium.</li>
-        <li>It does not know your state's rules. Some states limit phosphorus or set dates when lawn fertilizer cannot be applied.</li>
+        <li>It does not know your state's rules. The <a href="/states/">state pages</a> list what could be verified for twelve Gulf and Southeast states. Where a blackout or a rate cap was not verified, those pages say to check the county. A city can be stricter than the state, except where the statute says local rules are preempted.</li>
         <li>It does not give spreader dial settings, which differ by spreader model. Use the "spreader target" with your spreader's chart.</li>
         <li>Liquid products and fertilizers sold by coverage only need a different calculation.</li>
       </ul>

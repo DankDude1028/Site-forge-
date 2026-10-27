@@ -2,9 +2,14 @@
 import { planFertilizer } from '../lib/fertilizer.ts';
 import { DEFAULTS, amount, fixed, gaugeAngle, pounds, tileColumns, tileLayout, whole } from '../lib/format.ts';
 
-interface Props { rate?: number; area?: number }
-const { rate = DEFAULTS.rate, area = DEFAULTS.area } = Astro.props;
-const initial = { ...DEFAULTS, rate, area };
+interface Props {
+  rate?: number; area?: number; nitrogen?: number; phosphorus?: number; potassium?: number; bagWeight?: number;
+}
+const {
+  rate = DEFAULTS.rate, area = DEFAULTS.area, nitrogen = DEFAULTS.nitrogen,
+  phosphorus = DEFAULTS.phosphorus, potassium = DEFAULTS.potassium, bagWeight = DEFAULTS.bagWeight,
+} = Astro.props;
+const initial = { ...DEFAULTS, rate, area, nitrogen, phosphorus, potassium, bagWeight };
 const result = planFertilizer(initial);
 if (!result.ok) throw new Error('Default calculator inputs must be valid');
 const plan = result.plan;

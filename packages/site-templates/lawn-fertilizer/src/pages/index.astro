@@ -4,6 +4,8 @@ import Planner from '../components/Planner.astro';
 import Calendar from '../components/Calendar.astro';
 import { planFertilizer } from '../lib/fertilizer.ts';
 import { DEFAULTS, amount, fixed, pounds } from '../lib/format.ts';
+import { GRASSES } from '../lib/grasses.ts';
+import { GRASS_PHOTOS } from '../lib/photos.ts';
 
 const result = planFertilizer(DEFAULTS);
 if (!result.ok) throw new Error('Default calculator inputs must be valid');
@@ -141,8 +143,27 @@ const jsonLd = [
           <li class="tip reveal">
             <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M24 6l14 6v10c0 9-6 16-14 20-8-4-14-11-14-20V12z" /><path d="M18 24l4 4 8-9" /></svg>
             <h3>Check your state</h3>
-            <p>Some states limit phosphorus or set dates when lawn fertilizer cannot go down. Your extension office knows the local rules.</p>
+            <p>Some states limit phosphorus or set dates when lawn fertilizer cannot go down. The <a href="/states/">state pages</a> cover twelve Gulf and Southeast states and say to check the county wherever a rule was not verified.</p>
           </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="species" aria-labelledby="species-title">
+      <div class="shell">
+        <p class="eyebrow">Six grasses</p>
+        <h2 id="species-title">Pick the grass you actually have</h2>
+        <p class="section-intro">Each photo is the species named on the file. Feeding months and nitrogen are on the guide, not in the picture. <a href="/seasons/fall/">Fall</a> is the main season for the cool-season grasses. <a href="/seasons/summer/">Summer</a> is the main season for bermudagrass.</p>
+        <ul class="species-grid">
+          {GRASSES.map((grass) => (
+            <li>
+              <a href={`/grass/${grass.id}/`}>
+                <img src={`/images/grass/${grass.id}-800.webp`} alt={GRASS_PHOTOS[grass.id].alt}
+                  width={GRASS_PHOTOS[grass.id].width} height={GRASS_PHOTOS[grass.id].height} loading="lazy" decoding="async" />
+                <strong>{grass.name}</strong>
+              </a>
+            </li>
+          ))}
         </ul>
       </div>
     </section>

@@ -3,7 +3,8 @@ import Base from '../../layouts/Base.astro';
 import GuideHero from '../../components/GuideHero.astro';
 import YearStrip from '../../components/YearStrip.astro';
 import { GRASSES } from '../../lib/grasses.ts';
-import { TOOL_GUIDES } from '../../lib/site.ts';
+import { GRASS_PHOTOS } from '../../lib/photos.ts';
+import { BAG_GUIDES, RANGE_GUIDES, SEASON_GUIDES, STATE_GUIDES, TOOL_GUIDES } from '../../lib/site.ts';
 import { SIZES, productPounds } from '../../lib/sizes.ts';
 import { pounds } from '../../lib/format.ts';
 
@@ -19,7 +20,7 @@ const jsonLd = [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', i
 ] }];
 ---
 <Base title="Lawn Fertilizer Guides: Grass Types, Bags and Spreaders | Lawn Numbers"
-  description="Fertilizer guides for six lawn grasses and seven lawn sizes, plus tools to measure your lawn, read a fertilizer bag, calibrate your spreader and work out grass seed."
+  description="Fertilizer guides for six lawn grasses, lawn sizes, bag weights, seasons, and twelve Southeast states, plus tools to measure, read a bag, calibrate a spreader, and work out seed."
   path="/guides/" jsonLd={jsonLd}>
   <main id="main">
     <GuideHero eyebrow="Guides" title="Everything behind a well-fed lawn"
@@ -38,6 +39,8 @@ const jsonLd = [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', i
           {GRASSES.map((grass) => (
             <li class={`hub-card reveal ${grass.season}`}>
               <a href={`/grass/${grass.id}/`}>
+                <img class="hub-photo" src={`/images/grass/${grass.id}-800.webp`} alt={GRASS_PHOTOS[grass.id].alt}
+                  width={GRASS_PHOTOS[grass.id].width} height={GRASS_PHOTOS[grass.id].height} loading="lazy" decoding="async" />
                 <span class="hub-kicker">{grass.season === 'cool' ? 'Cool season' : 'Warm season'}</span>
                 <strong>{grass.name}</strong>
                 <span class="hub-range">{grass.annual[0]}–{grass.annual[1]} lb N a year</span>
@@ -54,7 +57,12 @@ const jsonLd = [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', i
       <div class="shell">
         <p class="eyebrow">By lawn size</p>
         <h2 id="size-title">How much fertilizer for your lawn's size</h2>
+        <p class="section-intro">Bands for a rough area, then an exact size. Bag weights are on the <a href="/bags/">bag-size guide</a>.</p>
         <ul class="size-chips hub-sizes">
+          {RANGE_GUIDES.map((page) => (
+            <li class="reveal"><a class="size-chip big" href={page.path}><strong>{page.title.replace('Fertilizer for lawns ', '')}</strong>
+              <span>Worked example</span></a></li>
+          ))}
           {SIZES.map((size) => (
             <li class="reveal"><a class="size-chip big" href={`/lawn-size/${size.slug}/`}><strong>{size.label}</strong>
               <span>{pounds(productPounds(size.area, 29, 1))} lb of 29-0-4</span></a></li>
@@ -76,6 +84,19 @@ const jsonLd = [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', i
                 <span>{page.blurb}</span>
               </a>
             </li>
+          ))}
+        </ul>
+        <h2 id="more-title">Seasons, bags, and states</h2>
+        <ul class="hub-grid">
+          {SEASON_GUIDES.map((page) => (
+            <li class="hub-card reveal"><a href={page.path}><span class="hub-kicker">Season</span><strong>{page.title}</strong><span class="hub-blurb">{page.blurb}</span></a></li>
+          ))}
+          {BAG_GUIDES.map((page) => (
+            <li class="hub-card reveal"><a href={page.path}><span class="hub-kicker">Bag</span><strong>{page.title}</strong><span class="hub-blurb">{page.blurb}</span></a></li>
+          ))}
+          <li class="hub-card reveal"><a href="/states/"><span class="hub-kicker">Rules</span><strong>Fertilizer rules by state</strong><span class="hub-blurb">Twelve Gulf and Southeast states. Unverified rules say to check the county.</span></a></li>
+          {STATE_GUIDES.slice(0, 3).map((page) => (
+            <li class="hub-card reveal"><a href={page.path}><span class="hub-kicker">State</span><strong>{page.title.replace(' lawn fertilizer rules', '')}</strong><span class="hub-blurb">{page.blurb}</span></a></li>
           ))}
         </ul>
       </div>

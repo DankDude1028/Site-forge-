@@ -1,14 +1,16 @@
 ---
 import Base from '../../layouts/Base.astro';
 import GuideHero from '../../components/GuideHero.astro';
+import GrassFigure from '../../components/GrassFigure.astro';
 import Calendar from '../../components/Calendar.astro';
 import Planner from '../../components/Planner.astro';
 import SourceList from '../../components/SourceList.astro';
 import RelatedGuides from '../../components/RelatedGuides.astro';
-import YearStrip from '../../components/YearStrip.astro';
+import { GRASS_ARTICLES } from '../../content/grass-articles.ts';
 import { GRASSES, MONTHS, feedingsPerYear, type Grass } from '../../lib/grasses.ts';
 import { planFertilizer } from '../../lib/fertilizer.ts';
 import { fixed, pounds } from '../../lib/format.ts';
+import { GRASS_PHOTOS } from '../../lib/photos.ts';
 import { inline } from '../../lib/site.ts';
 import type { SourceKey } from '../../lib/sources.ts';
 
@@ -18,6 +20,10 @@ export function getStaticPaths() {
 
 interface Props { grass: Grass }
 const { grass } = Astro.props;
+const article = GRASS_ARTICLES[grass.id];
+if (!article) throw new Error(`Missing article for ${grass.id}`);
+const photo = GRASS_PHOTOS[grass.id];
+if (!photo) throw new Error(`Missing photo for ${grass.id}`);
 const name = inline(grass);
 const path = `/grass/${grass.id}/`;
 const FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November',
@@ -26,37 +32,23 @@ const monthsOf = (kind: string) => Object.entries(grass.months).filter(([, feed]
 const list = (months: number[]) => months.map((month) => FULL[month])
   .reduce((text, item, index, all) => index === 0 ? item : `${text}${index === all.length - 1 ? ' and ' : ', '}${item}`, '');
 const main = list(monthsOf('main'));
-// Short form for the glance card: "May–Aug" for a run of months, "Sep & Nov" otherwise.
 const mainMonths = monthsOf('main');
 const consecutive = mainMonths.every((month, index) => index === 0 || month === mainMonths[index - 1] + 1);
 const mainShort = mainMonths.length > 1 && consecutive
   ? `${MONTHS[mainMonths[0]]}–${MONTHS[mainMonths.at(-1)!]}` : mainMonths.map((month) => MONTHS[month]).join(' & ');
-const light = list(monthsOf('light'));
 const [fewest, most] = feedingsPerYear(grass, grass.rate);
 const range = `${grass.annual[0]}–${grass.annual[1]}`;
 const cool = grass.season === 'cool';
 const rate = fixed(grass.rate, grass.rate === 0.75 ? 2 : 1);
+const plain = (html: string) => html.replace(/<[^>]+>/g, '');
 
-// Worked examples at this grass's starting rate, for a 5,000 sq ft lawn.
 const examples = [[29, 0, 4], [16, 4, 8], [10, 10, 10], [46, 0, 0]].map(([nitrogen, phosphorus, potassium]) => {
   const result = planFertilizer({ area: 5000, nitrogen, phosphorus, potassium, rate: grass.rate, bagWeight: 50 });
   if (!result.ok) throw new Error('Example inputs must be valid');
   return { label: `${nitrogen}-${phosphorus}-${potassium}`, per: fixed(result.plan.productPerThousand, 1), total: pounds(result.plan.productTotal) };
 });
-const accents: Record<string, string> = {
-  'kentucky-bluegrass': '#2f6573', 'tall-fescue': '#2f6b45', bermudagrass: '#5a7023', 'st-augustinegrass': '#2d5f3a',
-  zoysiagrass: '#2a6b50', centipedegrass: '#66751c',
-};
-const sources: SourceKey[] = cool ? ['nebraska', 'ncstate', 'iowa', 'rutgers'] : ['ufRule', 'iowa', 'rutgers'];
-const faqs = [
-  { q: `How much nitrogen does ${name} need a year?`,
-    a: `Typical university guidance is ${range} lb of nitrogen per 1,000 sq ft a year. ${grass.note.split('. ').slice(-1)[0]}` },
-  { q: `When should I fertilize ${name}?`,
-    a: `The main feedings fall in ${main}.${light ? ` Light or regional feedings: ${light}.` : ''} ${cool
-      ? 'For cool-season grass, the fall feedings matter most.' : 'Start after spring green-up and stop by early fall.'}` },
-  { q: `How much fertilizer do I need for 5,000 sq ft of ${name}?`,
-    a: `At ${rate} lb of nitrogen per 1,000 sq ft, a 29-0-4 product needs ${examples[0].per} lb per 1,000 sq ft, so ${examples[0].total} lb for 5,000 sq ft in one feeding. Use the calculator on this page for your own lawn and bag.` },
-];
+const sources: SourceKey[] = cool ? ['nebraska', 'ncstate', 'ncLawns', 'iowa', 'rutgers'] : ['ufRule', 'ncLawns', 'iowa', 'rutgers'];
+const faqs = article.faqs;
 const jsonLd = [
   { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
     { '@type': 'ListItem', position: 1, name: 'Calculator', item: new URL('/', Astro.site).href },
@@ -64,22 +56,17 @@ const jsonLd = [
     { '@type': 'ListItem', position: 3, name: `${grass.name} fertilizer guide`, item: new URL(path, Astro.site).href },
   ] },
   { '@context': 'https://schema.org', '@type': 'FAQPage',
-    mainEntity: faqs.map((item) => ({ '@type': 'Question', name: item.q, acceptedAnswer: { '@type': 'Answer', text: item.a } })) },
+    mainEntity: faqs.map((item) => ({ '@type': 'Question', name: item.q, acceptedAnswer: { '@type': 'Answer', text: plain(item.a) } })) },
 ];
 ---
 <Base title={`${grass.name} Fertilizer Guide: How Much and When to Feed | Lawn Numbers`}
   description={`How much fertilizer ${name} needs (${range} lb of nitrogen per 1,000 sq ft a year), when to feed it, and a calculator set up for ${name}.`}
-  path={path} jsonLd={jsonLd}>
-  <main id="main" style={`--accent:${accents[grass.id]}`}>
+  path={path} image={`/og/${grass.id}.jpg`} imageAlt={photo.alt} jsonLd={jsonLd}>
+  <main id="main">
     <GuideHero eyebrow={cool ? 'Cool-season grass' : 'Warm-season grass'} title={`How to fertilize ${name}`}
-      lede={`${grass.intro} Here is how much it needs, when to feed it, and a calculator already set up for it.`}
-      crumbs={[{ name: 'Calculator', path: '/' }, { name: 'Guides', path: '/guides/' }, { name: grass.name }]}>
-      <div slot="art" class="turf-card">
-        <span class="turf-season">{cool ? 'Cool season' : 'Warm season'}</span>
-        <span class="turf-name">{grass.name}</span>
-        <span class="turf-range">{range}<small> lb N / 1,000 sq ft / yr</small></span>
-        <YearStrip grass={grass} />
-      </div>
+      lede={`${grass.intro} The feeding months, the yearly nitrogen, and a calculator already set to this grass are below. The label on your bag still wins.`}
+      crumbs={[{ name: 'Calculator', path: '/' }, { name: 'Guides', path: '/guides/' }, { name: grass.name }]} artHidden={false}>
+      <GrassFigure slot="art" photo={photo} priority />
     </GuideHero>
 
     <section class="glance" aria-labelledby="glance-title">
@@ -87,12 +74,23 @@ const jsonLd = [
         <h2 id="glance-title" class="sr-only">{grass.name} at a glance</h2>
         <ul class="glance-grid">
           <li class="glance-card reveal"><span class="glance-label">Nitrogen a year</span><strong>{range} lb</strong><span>per 1,000 sq ft</span></li>
-          <li class="glance-card reveal"><span class="glance-label">Main feedings</span><strong>{mainShort}</strong><span>{cool ? 'fall matters most' : 'after green-up'}</span></li>
+          <li class="glance-card reveal"><span class="glance-label">Main feedings</span><strong>{mainShort || main}</strong><span>{cool ? 'fall matters most' : 'after green-up'}</span></li>
           <li class="glance-card reveal"><span class="glance-label">Per feeding</span><strong>{rate} lb N</strong><span>usual band 0.5–1 lb</span></li>
           <li class="glance-card reveal"><span class="glance-label">Feedings a year</span><strong>{fewest === most ? fewest : `${fewest}–${most}`}</strong><span>at {rate} lb each</span></li>
         </ul>
       </div>
     </section>
+
+    <article class="guide-body">
+      <div class="shell prose-wide grass-article">
+        {article.sections.map((section) => (
+          <section id={section.id} aria-labelledby={`${section.id}-title`}>
+            <h2 id={`${section.id}-title`}>{section.heading}</h2>
+            {section.paragraphs.map((paragraph) => <p set:html={paragraph} />)}
+          </section>
+        ))}
+      </div>
+    </article>
 
     <Calendar grass={grass.id} locked rate={grass.rate} heading={`When to feed ${name}`} eyebrow="Feeding calendar" />
 
@@ -100,7 +98,7 @@ const jsonLd = [
       <div class="shell">
         <p class="eyebrow">Calculator</p>
         <h2 id="calc-title">How much to spread on your {name}</h2>
-        <p class="section-intro">It starts at {rate} lb of nitrogen per 1,000 sq ft on a 5,000 sq ft lawn. Change the numbers to match your lawn and your bag.</p>
+        <p class="section-intro">It starts at {rate} lb of nitrogen per 1,000 sq ft on a 5,000 sq ft lawn. Change the numbers to match your lawn and your bag. Nothing you type is sent anywhere.</p>
         <Planner rate={grass.rate} area={5000} />
       </div>
     </section>
@@ -109,27 +107,14 @@ const jsonLd = [
       <div class="shell">
         <p class="eyebrow">Worked examples</p>
         <h2 id="examples-title">One feeding on 5,000 sq ft of {name}</h2>
-        <p class="section-intro">At {rate} lb of nitrogen per 1,000 sq ft, with four common bag numbers.</p>
+        <p class="section-intro">At {rate} lb of nitrogen per 1,000 sq ft. These four analyses are the same products as the size pages, so you can compare grasses instead of comparing formulas.</p>
         <div class="table-wrap" tabindex="0" role="region" aria-label={`Worked examples for ${name}`}>
           <table>
             <thead><tr><th scope="col">Bag numbers</th><th scope="col">Per 1,000 sq ft</th><th scope="col">For 5,000 sq ft</th></tr></thead>
             <tbody>{examples.map((row) => <tr><th scope="row">{row.label}</th><td>{row.per} lb</td><td>{row.total} lb</td></tr>)}</tbody>
           </table>
         </div>
-      </div>
-    </section>
-
-    <section class="notes" aria-labelledby="notes-title">
-      <div class="shell notes-grid">
-        <div>
-          <p class="eyebrow">Good to know</p>
-          <h2 id="notes-title">Feeding {name} well</h2>
-        </div>
-        <div class="notes-copy">
-          <p>{grass.note}</p>
-          <p>Keep any single feeding to about 1 lb of quick-release nitrogen per 1,000 sq ft or less. Slow-release products may be labeled for more. Florida limits quick-release nitrogen to 0.7 lb per feeding.</p>
-          <p>The product label has the final say on rate and timing, and some states limit phosphorus or set dates when lawn fertilizer cannot go down. <a href="/method/">See how these numbers are worked out</a>.</p>
-        </div>
+        <p class="section-intro">Other areas: <a href="/lawn-size/">lawn size guide</a>. Other bag weights: <a href="/bags/">15, 25, 40, and 50 lb</a>. State rules: <a href="/states/">Gulf and Southeast</a>.</p>
       </div>
     </section>
 
@@ -140,7 +125,7 @@ const jsonLd = [
           <h2 id="faq-title">{grass.name}, answered</h2>
         </div>
         <div class="faq-list">
-          {faqs.map((item) => <details class="faq-item"><summary><h3>{item.q}</h3></summary><p>{item.a}</p></details>)}
+          {faqs.map((item) => <details class="faq-item"><summary><h3>{item.q}</h3></summary><p set:html={item.a} /></details>)}
         </div>
       </div>
     </section>

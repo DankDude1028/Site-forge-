@@ -1,0 +1,45 @@
+---
+import Base from '../layouts/Base.astro';
+import GrassFigure from '../components/GrassFigure.astro';
+import { GRASSES } from '../lib/grasses.ts';
+import { GRASS_PHOTOS } from '../lib/photos.ts';
+
+const jsonLd = [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+  { '@type': 'ListItem', position: 1, name: 'Calculator', item: new URL('/', Astro.site).href },
+  { '@type': 'ListItem', position: 2, name: 'Photo credits', item: new URL('/credits/', Astro.site).href },
+] }];
+---
+<Base title="Photo Credits | Lawn Numbers"
+  description="Photographer, source, and license for every grass photograph on Lawn Numbers, including the share image."
+  path="/credits/" jsonLd={jsonLd}>
+  <main id="main">
+    <section class="page-hero">
+      <div class="shell">
+        <p class="eyebrow on-dark">Credits</p>
+        <h1>Photographs and licenses</h1>
+        <p>Each grass page uses a photograph whose file title or description names that species. The notes below record the limits of those labels.</p>
+      </div>
+    </section>
+    <div class="shell prose prose-wide credits">
+      <ul class="credit-list">
+        {GRASSES.map((grass) => {
+          const photo = GRASS_PHOTOS[grass.id];
+          return (
+            <li>
+              <GrassFigure photo={photo} paper />
+              <div>
+                <h2>{grass.name}</h2>
+                <p>{photo.photographer}. <a href={photo.sourceUrl}>{photo.sourceName}</a>. License: <a href={photo.licenseUrl}>{photo.license}</a>.</p>
+                {photo.note && <p>{photo.note}</p>}
+                <p><a href={`/grass/${grass.id}/`}>Fertilizer guide</a></p>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      <h2>Share image</h2>
+      <p>The default share image, <code>/og/lawn-numbers.jpg</code>, is a 1200 by 630 composite made for this site from the six photographs above. It is a derivative. The strictest license among those files is CC BY-SA 4.0, so the composite is offered under <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>. Attribution is the list on this page. Grass pages use a cropped share image of that grass alone, under the same license as the source photo.</p>
+      <p>No changes were made to the photographs except resizing, compression, and, for the share images, a crop or a labeled tile.</p>
+    </div>
+  </main>
+</Base>

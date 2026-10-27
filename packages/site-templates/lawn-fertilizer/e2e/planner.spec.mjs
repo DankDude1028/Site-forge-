@@ -74,11 +74,11 @@ test('calculator updates live, flags the exact invalid field, and sends no input
 });
 
 test('every page passes automated accessibility and its configured crawl controls', async ({ page, request }) => {
-  test.setTimeout(150_000); // axe on every page in the sitemap
+  test.setTimeout(600_000); // axe on every page in the sitemap
   // The sitemap is the list of pages, so a page missing from it fails here too.
   const sitemap = await (await request.get('/sitemap.xml')).text();
   const paths = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => new URL(match[1]).pathname);
-  expect(paths.length).toBe(22);
+  expect(paths.length).toBe(53);
   for (const path of paths) {
     await page.goto(path);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', config.robots);
