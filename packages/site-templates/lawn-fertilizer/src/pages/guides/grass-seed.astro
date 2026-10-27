@@ -1,0 +1,142 @@
+---
+import Base from '../../layouts/Base.astro';
+import GuideHero from '../../components/GuideHero.astro';
+import RelatedGuides from '../../components/RelatedGuides.astro';
+import SourceList from '../../components/SourceList.astro';
+import { SEED_GRASSES, seedPlan } from '../../lib/seed.ts';
+import { seedPounds, whole } from '../../lib/format.ts';
+
+const START = { area: 5000, grass: 'tall-fescue', mode: 'new' as const, bag: 25 };
+const plan = seedPlan(START.area, START.grass, START.mode, START.bag);
+if (!plan || !plan.seedable) throw new Error('The starting seed plan must be seedable');
+const range = (pair: readonly [number, number], format: (value: number) => string) =>
+  pair[0] === pair[1] ? format(pair[0]) : `${format(pair[0])}–${format(pair[1])}`;
+// Seed dots for the lawn drawing: a fixed scatter, revealed in proportion to the seeding rate.
+let seed = 11;
+const random = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+const dots = Array.from({ length: 160 }, (_, index) => ({ x: (random() * 96 + 2).toFixed(1), y: (random() * 96 + 2).toFixed(1), index }));
+const shown = (rate: number) => Math.round(Math.min(1, rate / 6) * dots.length);
+const path = '/guides/grass-seed/';
+const faqs = [
+  { q: 'How much grass seed do I need per 1,000 sq ft?',
+    a: 'It depends on the grass. NC State Extension gives about 6 lb for tall fescue, 1 to 2 lb for Kentucky bluegrass, bermudagrass and zoysiagrass, and a quarter to half a pound for centipedegrass, for a new lawn.' },
+  { q: 'How much seed do I need to overseed?',
+    a: 'Less than for a new lawn. When seeding into an existing lawn, NC State suggests a rate 25 to 50 percent lower than the new-lawn rate.' },
+  { q: 'Can I grow St. Augustinegrass from seed?',
+    a: 'No. St. Augustinegrass seed is not available, so lawns are planted from sod or plugs. Hybrid bermudagrass is the same.' },
+  { q: 'When is the best time to sow grass seed?',
+    a: 'Cool-season grasses such as tall fescue and Kentucky bluegrass are sown in late summer to early fall. Warm-season grasses such as bermudagrass, zoysiagrass and centipedegrass are sown in spring to early summer.' },
+];
+const jsonLd = [
+  { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Calculator', item: new URL('/', Astro.site).href },
+    { '@type': 'ListItem', position: 2, name: 'Guides', item: new URL('/guides/', Astro.site).href },
+    { '@type': 'ListItem', position: 3, name: 'Grass seed calculator', item: new URL(path, Astro.site).href },
+  ] },
+  { '@context': 'https://schema.org', '@type': 'FAQPage',
+    mainEntity: faqs.map((item) => ({ '@type': 'Question', name: item.q, acceptedAnswer: { '@type': 'Answer', text: item.a } })) },
+];
+---
+<Base title="Grass Seed Calculator: How Much Seed for a New Lawn or Overseeding | Lawn Numbers"
+  description="How much grass seed you need for a new lawn or for overseeding, by grass type, with bags to buy and the best time to sow. Rates from NC State Extension."
+  path={path} jsonLd={jsonLd}>
+  <main id="main">
+    <GuideHero eyebrow="Tool" title="Grass seed calculator"
+      lede="How much seed a new lawn or an overseeding takes, by grass type, with the bags to buy and the best time to sow."
+      crumbs={[{ name: 'Calculator', path: '/' }, { name: 'Guides', path: '/guides/' }, { name: 'Grass seed calculator' }]}>
+      <div slot="art" class="seed-packet">
+        <span class="packet-top"></span>
+        <span class="packet-name">Grass seed</span>
+        <span class="packet-rate">6 lb</span>
+        <span class="packet-sub">per 1,000 sq ft · tall fescue</span>
+        <span class="packet-seeds" aria-hidden="true">{Array.from({ length: 18 }, (_, index) => <i style={`--i:${index}`}></i>)}</span>
+      </div>
+    </GuideHero>
+
+    <section class="bag-tool" aria-labelledby="seed-title">
+      <div class="shell">
+        <p class="eyebrow">Seed calculator</p>
+        <h2 id="seed-title">How much seed for your lawn</h2>
+        <div class="bag-tool-grid">
+          <form id="seedform" class="tool-card-big" novalidate aria-label="Grass seed calculator">
+            <div class="field">
+              <div class="field-head"><label for="s-area">Lawn size</label><span class="unit">sq ft</span></div>
+              <input id="s-area" class="big-input" inputmode="decimal" autocomplete="off" value={whole(START.area)} aria-describedby="s-error" />
+              <p class="hint"><a href="/guides/measure-your-lawn/">Measure your lawn</a> if you are not sure.</p>
+            </div>
+            <fieldset class="field">
+              <legend>Grass</legend>
+              <div class="grass-picker seed-picker">
+                {SEED_GRASSES.map((grass) => (
+                  <label class="grass-chip">
+                    <input type="radio" name="s-grass" value={grass.id} checked={grass.id === START.grass} />
+                    <span>{grass.name}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset class="field">
+              <legend>Job</legend>
+              <div class="seg-toggle">
+                <label><input type="radio" name="s-mode" value="new" checked /> <span>New lawn or bare soil</span></label>
+                <label><input type="radio" name="s-mode" value="overseed" /> <span>Overseed an existing lawn</span></label>
+              </div>
+            </fieldset>
+            <div class="field">
+              <div class="field-head"><label for="s-bag">Seed bag size</label><span class="unit">lb</span></div>
+              <input id="s-bag" inputmode="decimal" autocomplete="off" value={START.bag} aria-describedby="s-error" />
+            </div>
+            <p class="error" id="s-error"></p>
+          </form>
+
+          <div class="bag-readout seed-readout" id="seed-readout">
+            <p class="zone-title">Sow this much</p>
+            <p class="total"><span id="s-total">{range(plan.pounds, seedPounds)}</span><span class="total-unit">lb of seed</span></p>
+            <p id="s-detail">That is <strong><span id="s-rate">{range(plan.perThousand, seedPounds)}</span> lb per 1,000 sq ft</strong>: <span id="s-bags">{range(plan.bags, String)} {plan.bags[1] === 1 ? 'bag' : 'bags'}</span> of <span id="s-bagsize">{START.bag} lb</span>.</p>
+            <div class="seed-lawn" aria-hidden="true">
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false">
+                {dots.map((dot) => <circle class="seed-dot" cx={dot.x} cy={dot.y} r="1.2" data-n={dot.index}
+                  style={`--i:${dot.index % 40}`} data-on={dot.index < shown(plan.perThousand[1]) ? 'true' : 'false'} />)}
+              </svg>
+              <span class="seed-lawn-label" id="s-density">Seed density at this rate</span>
+            </div>
+            <p class="season-note" id="s-season">Best time to sow: <strong>{plan.season}</strong>.</p>
+            <p class="grass-note" id="s-note">{SEED_GRASSES.find((grass) => grass.id === START.grass)!.note}</p>
+            <p class="sr-only" id="s-announce" aria-live="polite"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-body" aria-labelledby="rates-title">
+      <div class="shell prose-wide">
+        <h2 id="rates-title">Seeding rates by grass</h2>
+        <p>Rates for a new lawn from NC State Extension's Carolina Lawns guide. For overseeding into an existing lawn, use 25 to 50 percent less.</p>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Seeding rates by grass">
+          <table>
+            <thead><tr><th scope="col">Grass</th><th scope="col">New lawn, lb per 1,000 sq ft</th><th scope="col">When to sow</th></tr></thead>
+            <tbody>
+              {SEED_GRASSES.map((grass) => (
+                <tr><th scope="row">{grass.name}</th>
+                  <td>{grass.rate ? range(grass.rate, seedPounds) : 'Not grown from seed'}</td>
+                  <td>{grass.season ?? 'Plant sod or plugs'}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <h2>Why the rates differ so much</h2>
+        <p>Seed size. Kentucky bluegrass, bermudagrass and centipedegrass have tiny seeds, so a pound covers far more ground than a pound of large tall fescue seed. Stick to the rate for your grass, and follow the seed bag's label when it gives one.</p>
+        <div class="faq-list inline-faq">
+          {faqs.map((item) => <details class="faq-item"><summary><h3>{item.q}</h3></summary><p>{item.a}</p></details>)}
+        </div>
+        <SourceList keys={['ncLawns', 'ncstate']} />
+      </div>
+    </section>
+
+    <RelatedGuides current={path} />
+  </main>
+</Base>
+
+<script>
+  import '../../scripts/seed.ts';
+</script>

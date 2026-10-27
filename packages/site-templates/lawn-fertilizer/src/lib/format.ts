@@ -21,6 +21,11 @@ export function tileColumns(count: number): number {
   return Math.min(8, Math.max(3, Math.ceil(Math.sqrt(count * 1.6))));
 }
 
+/** Seed weights: small amounts keep two decimals (a quarter pound is 0.25), and trailing zeros drop ("6", "22.5"). */
+export function seedPounds(value: number): string {
+  return fixed(value, value < 10 ? 2 : 1).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+}
+
 export function whole(value: number): string {
   return Math.round(value).toLocaleString('en-US');
 }

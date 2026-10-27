@@ -1,0 +1,170 @@
+---
+import Base from '../../layouts/Base.astro';
+import GuideHero from '../../components/GuideHero.astro';
+import Planner from '../../components/Planner.astro';
+import SourceList from '../../components/SourceList.astro';
+import RelatedGuides from '../../components/RelatedGuides.astro';
+import { SIZES, PRODUCTS, bagsFor, productPounds, type LawnSize } from '../../lib/sizes.ts';
+import { GRASSES } from '../../lib/grasses.ts';
+import { fixed, pounds, tileColumns, tileLayout, whole } from '../../lib/format.ts';
+
+export function getStaticPaths() {
+  return SIZES.map((size) => ({ params: { size: size.slug }, props: { size } }));
+}
+
+interface Props { size: LawnSize }
+const { size } = Astro.props;
+const path = `/lawn-size/${size.slug}/`;
+const RATES = [0.5, 0.75, 1] as const;
+const nitrogen = size.area / 1000; // lb of nitrogen at 1 lb per 1,000 sq ft
+const lawnFood = productPounds(size.area, 29, 1);
+const tiles = tileLayout(size.area);
+const tileCount = tiles.full + (tiles.partial > 0 ? 1 : 0);
+const yearly = GRASSES.map((grass) => ({
+  name: grass.name, id: grass.id,
+  low: grass.annual[0] * size.area / 1000, high: grass.annual[1] * size.area / 1000,
+}));
+const capital = size.label[0].toUpperCase() + size.label.slice(1);
+const faqs = [
+  { q: `How much fertilizer do I need for ${size.label}?`,
+    a: `At the usual 1 lb of nitrogen per 1,000 sq ft, ${size.label} takes ${pounds(nitrogen)} lb of nitrogen. That is ${pounds(lawnFood)} lb of a 29-0-4 lawn food, ${pounds(productPounds(size.area, 16, 1))} lb of 16-4-8 or ${pounds(productPounds(size.area, 10, 1))} lb of 10-10-10.` },
+  { q: `How many bags of fertilizer for ${size.label}?`,
+    a: `With 29-0-4 at 1 lb of nitrogen per 1,000 sq ft, you need ${pounds(lawnFood)} lb: ${bagsFor(lawnFood, 15)} ${bagsFor(lawnFood, 15) === 1 ? 'bag' : 'bags'} of 15 lb or ${bagsFor(lawnFood, 50)} of 50 lb. Bags round up, so check what is left over in the calculator above.` },
+  { q: `How big is ${size.label}?`,
+    a: `${capital} is ${size.shape}. Measure your own lawn with the lawn measuring tool, leaving out the house, drive and beds.` },
+];
+const jsonLd = [
+  { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Calculator', item: new URL('/', Astro.site).href },
+    { '@type': 'ListItem', position: 2, name: 'Guides', item: new URL('/guides/', Astro.site).href },
+    { '@type': 'ListItem', position: 3, name: `Fertilizer for ${size.label}`, item: new URL(path, Astro.site).href },
+  ] },
+  { '@context': 'https://schema.org', '@type': 'FAQPage',
+    mainEntity: faqs.map((item) => ({ '@type': 'Question', name: item.q, acceptedAnswer: { '@type': 'Answer', text: item.a } })) },
+];
+---
+<Base title={`How Much Fertilizer for ${size.title}? Pounds & Bags | Lawn Numbers`}
+  description={`How much lawn fertilizer ${size.label} needs: pounds of 29-0-4, 16-4-8, 10-10-10 and urea at common rates, bags to buy, and nitrogen a year by grass type.`}
+  path={path} jsonLd={jsonLd}>
+  <main id="main">
+    <GuideHero eyebrow="By lawn size" title={`How much fertilizer for ${size.label}?`}
+      lede={`${capital} is ${size.shape}. At the usual 1 lb of nitrogen per 1,000 sq ft, that is ${pounds(nitrogen)} lb of nitrogen, or ${pounds(lawnFood)} lb of a 29-0-4 lawn food.`}
+      crumbs={[{ name: 'Calculator', path: '/' }, { name: 'Guides', path: '/guides/' }, { name: `Fertilizer for ${size.label}` }]}>
+      <div slot="art" class="size-art">
+        <span class="size-art-label">{whole(size.area)} sq ft</span>
+        <div class="tiles size-tiles" data-band="standard" style={`--cols:${tileColumns(tileCount)}`}>
+          {Array.from({ length: tiles.full }, (_, index) => <span class="tile sprout" style={`--i:${index}`}></span>)}
+          {tiles.partial > 0 && <span class="tile partial sprout" style={`--i:${tiles.full};--fill:${tiles.partial.toFixed(3)}`}></span>}
+        </div>
+        <span class="size-art-scale">1 tile = {whole(tiles.scale)} sq ft</span>
+      </div>
+    </GuideHero>
+
+    <section class="glance" aria-labelledby="answer-title">
+      <div class="shell">
+        <h2 id="answer-title" class="sr-only">The short answer</h2>
+        <ul class="glance-grid">
+          {PRODUCTS.map((product) => (
+            <li class="glance-card reveal">
+              <span class="glance-label">{product.name} {product.n}-{product.p}-{product.k}</span>
+              <strong>{pounds(productPounds(size.area, product.n, 1))} lb</strong>
+              <span>at 1 lb N per 1,000 sq ft</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    <section class="examples size-tables" aria-labelledby="rates-title">
+      <div class="shell">
+        <p class="eyebrow">Pounds to spread</p>
+        <h2 id="rates-title">Fertilizer for {size.label}, by rate</h2>
+        <p class="section-intro">One feeding usually carries 0.5 to 1 lb of nitrogen per 1,000 sq ft. Pick the row for your bag's first number.</p>
+        <div class="table-wrap" tabindex="0" role="region" aria-label={`Pounds of fertilizer for ${size.label}`}>
+          <table>
+            <thead><tr><th scope="col">Bag numbers</th>{RATES.map((rate) => <th scope="col">{fixed(rate, rate === 0.75 ? 2 : 1)} lb N / 1,000</th>)}</tr></thead>
+            <tbody>
+              {PRODUCTS.map((product) => (
+                <tr><th scope="row">{product.n}-{product.p}-{product.k} <span class="muted">{product.name.toLowerCase()}</span></th>
+                  {RATES.map((rate) => <td>{pounds(productPounds(size.area, product.n, rate))} lb</td>)}</tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <p class="eyebrow table-eyebrow">Bags to buy</p>
+        <h2>Whole bags at 1 lb of nitrogen</h2>
+        <div class="table-wrap" tabindex="0" role="region" aria-label={`Bags of fertilizer for ${size.label}`}>
+          <table>
+            <thead><tr><th scope="col">Bag numbers</th><th scope="col">15 lb bags</th><th scope="col">30 lb bags</th><th scope="col">50 lb bags</th></tr></thead>
+            <tbody>
+              {PRODUCTS.map((product) => {
+                const total = productPounds(size.area, product.n, 1);
+                return <tr><th scope="row">{product.n}-{product.p}-{product.k}</th>
+                  {[15, 30, 50].map((bag) => <td>{bagsFor(total, bag)}</td>)}</tr>;
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <p class="eyebrow table-eyebrow">A whole year</p>
+        <h2>Nitrogen a year for {size.label}, by grass</h2>
+        <p class="section-intro">Typical yearly ranges from university extension guides, multiplied out for {size.label}. Spread the total over several feedings.</p>
+        <div class="table-wrap" tabindex="0" role="region" aria-label={`Yearly nitrogen for ${size.label}`}>
+          <table>
+            <thead><tr><th scope="col">Grass</th><th scope="col">lb of nitrogen a year</th><th scope="col">lb of 29-0-4 a year</th></tr></thead>
+            <tbody>
+              {yearly.map((row) => (
+                <tr><th scope="row"><a href={`/grass/${row.id}/`}>{row.name}</a></th>
+                  <td>{pounds(row.low)}–{pounds(row.high)}</td>
+                  <td>{pounds(row.low / 0.29)}–{pounds(row.high / 0.29)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="planner-section" aria-labelledby="calc-title">
+      <div class="shell">
+        <p class="eyebrow">Calculator</p>
+        <h2 id="calc-title">Your bag, your rate</h2>
+        <p class="section-intro">The calculator starts at {size.label}. Type the numbers from your own bag for an exact answer.</p>
+        <Planner area={size.area} />
+      </div>
+    </section>
+
+    <section class="size-nav" aria-labelledby="sizes-title">
+      <div class="shell">
+        <p class="eyebrow">Other sizes</p>
+        <h2 id="sizes-title">Fertilizer by lawn size</h2>
+        <ul class="size-chips">
+          {SIZES.map((other) => (
+            <li><a class={other.slug === size.slug ? 'size-chip is-current' : 'size-chip'} href={`/lawn-size/${other.slug}/`}
+              aria-current={other.slug === size.slug ? 'page' : undefined}>{other.label}</a></li>
+          ))}
+          <li><a class="size-chip measure-chip" href="/guides/measure-your-lawn/">Measure my lawn</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="faq" aria-labelledby="faq-title">
+      <div class="shell faq-grid">
+        <div>
+          <p class="eyebrow">Questions</p>
+          <h2 id="faq-title">{capital}, answered</h2>
+        </div>
+        <div class="faq-list">
+          {faqs.map((item) => <details class="faq-item"><summary><h3>{item.q}</h3></summary><p>{item.a}</p></details>)}
+        </div>
+      </div>
+    </section>
+
+    <div class="shell"><SourceList keys={['iowa', 'rutgers', 'nebraska', 'ufRule']} /></div>
+    <RelatedGuides current={path} />
+  </main>
+</Base>
+
+<script>
+  import '../../scripts/planner.ts';
+</script>

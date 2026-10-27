@@ -4,11 +4,14 @@ import GuideHero from '../../components/GuideHero.astro';
 import YearStrip from '../../components/YearStrip.astro';
 import { GRASSES } from '../../lib/grasses.ts';
 import { TOOL_GUIDES } from '../../lib/site.ts';
+import { SIZES, productPounds } from '../../lib/sizes.ts';
+import { pounds } from '../../lib/format.ts';
 
 const icons: Record<string, string> = {
   '/guides/measure-your-lawn/': 'M8 38V10h32v28zM8 24h16v14M24 10v14h16',
   '/guides/fertilizer-numbers/': 'M14 8h20l4 8v26H10V16zM10 16h28M18 27h12M18 33h8',
   '/guides/spreader-calibration/': 'M10 30h28l-4 10H14zM24 30V12M16 18l8-6 8 6M6 44h36',
+  '/guides/grass-seed/': 'M24 40V22M24 22c0-8 6-12 12-12 0 8-6 12-12 12zM24 28c0-6-5-9-10-9 0 6 5 9 10 9M12 42h24',
 };
 const jsonLd = [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
   { '@type': 'ListItem', position: 1, name: 'Calculator', item: new URL('/', Astro.site).href },
@@ -16,7 +19,7 @@ const jsonLd = [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', i
 ] }];
 ---
 <Base title="Lawn Fertilizer Guides: Grass Types, Bags and Spreaders | Lawn Numbers"
-  description="Fertilizer guides for six lawn grasses, plus tools to measure your lawn, read a fertilizer bag and calibrate your spreader."
+  description="Fertilizer guides for six lawn grasses and seven lawn sizes, plus tools to measure your lawn, read a fertilizer bag, calibrate your spreader and work out grass seed."
   path="/guides/" jsonLd={jsonLd}>
   <main id="main">
     <GuideHero eyebrow="Guides" title="Everything behind a well-fed lawn"
@@ -42,6 +45,19 @@ const jsonLd = [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', i
                 <span class="hub-blurb">{grass.intro}</span>
               </a>
             </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    <section class="hub" aria-labelledby="size-title">
+      <div class="shell">
+        <p class="eyebrow">By lawn size</p>
+        <h2 id="size-title">How much fertilizer for your lawn's size</h2>
+        <ul class="size-chips hub-sizes">
+          {SIZES.map((size) => (
+            <li class="reveal"><a class="size-chip big" href={`/lawn-size/${size.slug}/`}><strong>{size.label}</strong>
+              <span>{pounds(productPounds(size.area, 29, 1))} lb of 29-0-4</span></a></li>
           ))}
         </ul>
       </div>

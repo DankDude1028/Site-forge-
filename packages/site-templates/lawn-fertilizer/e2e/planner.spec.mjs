@@ -74,10 +74,11 @@ test('calculator updates live, flags the exact invalid field, and sends no input
 });
 
 test('every page passes automated accessibility and its configured crawl controls', async ({ page, request }) => {
+  test.setTimeout(150_000); // axe on every page in the sitemap
   // The sitemap is the list of pages, so a page missing from it fails here too.
   const sitemap = await (await request.get('/sitemap.xml')).text();
   const paths = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => new URL(match[1]).pathname);
-  expect(paths.length).toBe(14);
+  expect(paths.length).toBe(22);
   for (const path of paths) {
     await page.goto(path);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', config.robots);
@@ -167,4 +168,31 @@ test('the spreader checker judges a pass against the target', async ({ page }) =
   await expect(page.locator('#c-after-label')).toHaveText('Swept up');
   await page.locator('#c-after').fill('0.4');
   await expect(page.locator('#c-verdict')).toHaveText('20% too light. Open the setting a step and test again.');
+});
+
+test('lawn size pages show the worked amounts and start the calculator at their size', async ({ page }) => {
+  await page.goto('/lawn-size/5000-sq-ft/');
+  await expect(page.locator('h1')).toHaveText('How much fertilizer for 5,000 sq ft?');
+  await expect(page.locator('.glance-card').first()).toContainText('17.2 lb'); // 1 ÷ 0.29 × 5
+  await expect(page.getByLabel('Lawn size', { exact: true })).toHaveValue('5,000');
+  await expect(page.locator('#total')).toHaveText('12.9'); // 0.75 ÷ 0.29 × 5
+  await page.goto('/lawn-size/one-acre/');
+  await expect(page.locator('.glance-card').last()).toContainText('94.7 lb'); // urea: 1 ÷ 0.46 × 43.56
+  await expect(page.locator('.size-chip.is-current')).toHaveText('one acre');
+});
+
+test('the grass seed calculator follows the NC State rates', async ({ page }) => {
+  await page.goto('/guides/grass-seed/');
+  await expect(page.locator('#s-total')).toHaveText('30'); // tall fescue, 6 lb per 1,000 sq ft, 5,000 sq ft
+  await page.getByRole('radio', { name: 'Overseed an existing lawn' }).check();
+  await expect(page.locator('#s-total')).toHaveText('15–22.5');
+  await page.getByRole('radio', { name: 'New lawn or bare soil' }).check();
+  await page.getByRole('radio', { name: 'Centipedegrass' }).check();
+  await expect(page.locator('#s-total')).toHaveText('1.25–2.5');
+  await expect(page.locator('#s-season')).toContainText('spring to early summer');
+  await page.getByRole('radio', { name: 'St. Augustinegrass' }).check();
+  await expect(page.locator('#s-total')).toHaveText('No seed');
+  await expect(page.locator('#s-detail')).toContainText('sod or plugs');
+  await page.getByLabel('Lawn size', { exact: true }).fill('');
+  await expect(page.locator('#s-error')).toContainText('lawn size');
 });

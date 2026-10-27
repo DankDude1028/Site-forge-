@@ -45,7 +45,7 @@ test('actual Astro preview and production outputs have separate complete SEO con
       const home = await readFile(join(out, 'index.html'), 'utf8');
       assert.ok(home.includes('"@type":"WebApplication"') && home.includes('"@type":"FAQPage"'), 'home carries structured data');
       assert.ok(home.includes('id="total">25.9<'), 'the default result is in the server-rendered HTML');
-      assert.equal(pages.length, 14, 'home, hub, three tools, six grasses, method, privacy and terms');
+      assert.equal(pages.length, 22, 'home, hub, four tools, six grasses, seven sizes, method, privacy and terms');
       const bermuda = await readFile(join(out, 'grass/bermudagrass/index.html'), 'utf8');
       assert.ok(bermuda.includes('id="total">17.2<') && bermuda.includes('data-grass="bermudagrass"'), 'grass pages start the calculator and calendar on their own grass');
       const robots = await readFile(join(out, 'robots.txt'), 'utf8');

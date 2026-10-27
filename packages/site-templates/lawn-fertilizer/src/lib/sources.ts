@@ -10,6 +10,8 @@ export const SOURCES = {
     url: 'https://ask.ifas.ufl.edu/publication/ep353' },
   ufSpreader: { name: 'University of Florida IFAS ENH62/LH024: How to Calibrate Your Fertilizer Spreader',
     url: 'https://ask.ifas.ufl.edu/publication/LH024' },
+  ncLawns: { name: 'NC State Extension AG-69: Carolina Lawns, A Guide to Maintaining Quality Turf in the Landscape (2021)',
+    url: 'https://content.ces.ncsu.edu/carolina-lawns' },
   nebraska: { name: 'University of Nebraska–Lincoln Water: Nutritional Value for the Landscape',
     url: 'https://water.unl.edu/article/lawns-gardens-landscapes/nutritional-value-landscape/' },
 } as const;

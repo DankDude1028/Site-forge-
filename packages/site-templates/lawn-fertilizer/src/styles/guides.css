@@ -265,3 +265,58 @@
   .mini-sack { width: 84px; }
   .guide-hero h1 { font-size: 2.4rem; }
 }
+
+/* Lawn size pages */
+.size-art { display: grid; justify-items: center; gap: 12px; width: min(100%, 360px); }
+.size-art-label { font: 700 2.2rem/1 var(--cond); color: var(--sun); }
+.size-art .size-tiles { width: 100%; max-width: 340px; }
+.size-art-scale { font: 600 0.85rem/1 var(--cond); letter-spacing: 0.08em; text-transform: uppercase; color: rgb(246 242 232 / 75%); }
+.size-tables { padding-top: 70px; }
+.size-tables h2 { margin-bottom: 4px; }
+.table-eyebrow { margin-top: 56px; }
+.muted { color: var(--muted); font-weight: 400; margin-left: 6px; text-transform: none; letter-spacing: 0; }
+.size-nav { padding-block: 20px 50px; }
+.size-chips { list-style: none; padding: 0; margin: 24px 0 0; display: flex; flex-wrap: wrap; gap: 10px; }
+.size-chip { display: inline-block; padding: 12px 18px; border-radius: 999px; border: 1.5px solid var(--line-strong); background: var(--paper);
+  color: var(--turf-800); text-decoration: none; font: 600 1rem/1 var(--body); transition: transform .2s var(--spring), border-color .2s, background-color .2s; }
+.size-chip:hover { transform: translateY(-2px); border-color: var(--turf-500); }
+.size-chip.is-current { background: var(--turf-800); border-color: var(--turf-800); color: var(--chalk); }
+.size-chip.measure-chip { background: var(--sun); border-color: var(--sun); color: var(--turf-950); }
+.size-chip.big { display: grid; gap: 6px; border-radius: 18px; padding: 16px 20px; min-width: 170px; }
+.size-chip.big strong { font: 640 1.25rem/1.1 var(--display); color: var(--ink); }
+.size-chip.big span { font: 600 0.9rem/1.2 var(--cond); letter-spacing: 0.04em; color: var(--muted); }
+
+/* Grass seed tool */
+.seed-packet { width: min(100%, 280px); aspect-ratio: 0.72; position: relative; display: grid; align-content: center; justify-items: center; gap: 8px;
+  padding: 50px 22px 30px; border-radius: 10px 10px 18px 18px; color: var(--turf-950); overflow: hidden; transform: rotate(-4deg);
+  background: linear-gradient(160deg, #f6e7c4, #eed7a1); box-shadow: 0 34px 50px -26px rgb(0 0 0 / 60%); }
+.packet-top { position: absolute; inset: 0 0 auto; height: 26px; background: repeating-linear-gradient(90deg, #d8b878 0 6px, #e6c98d 6px 12px); }
+.packet-name { font: 700 1.1rem/1 var(--cond); letter-spacing: 0.18em; text-transform: uppercase; }
+.packet-rate { font: 700 4.2rem/0.9 var(--cond); color: var(--turf-700); }
+.packet-sub { font: 600 0.82rem/1.2 var(--cond); letter-spacing: 0.08em; text-transform: uppercase; text-align: center; }
+.packet-seeds { position: absolute; inset: auto 0 18px; height: 40px; }
+.packet-seeds i { position: absolute; left: calc(8% + var(--i) * 4.8%); bottom: calc((var(--i) * 7) % 30 * 1px); width: 7px; height: 11px;
+  border-radius: 50%; background: #a7743a; transform: rotate(calc(var(--i) * 37deg)); }
+.seed-picker { margin: 0; }
+.seed-lawn { position: relative; border-radius: 16px; overflow: hidden; aspect-ratio: 2.4;
+  background: linear-gradient(180deg, #6b4a2f, #5b3d27); border: 2px solid rgb(255 255 255 / 10%); }
+.seed-lawn svg { width: 100%; height: 100%; display: block; }
+.seed-dot { fill: #f3dfb3; opacity: 0; transition: opacity .35s ease; }
+.seed-dot[data-on="true"] { opacity: 1; }
+.seed-lawn-label { position: absolute; left: 12px; bottom: 10px; font: 700 0.75rem/1 var(--cond); letter-spacing: 0.12em; text-transform: uppercase;
+  color: rgb(246 242 232 / 85%); background: rgb(0 0 0 / 35%); padding: 6px 8px; border-radius: 6px; }
+.season-note { color: rgb(246 242 232 / 88%); }
+.season-note strong { color: var(--sun); }
+.seed-readout .grass-note { color: rgb(246 242 232 / 75%); }
+.seed-readout.not-seedable .total { color: #e7a07c; }
+.seed-readout.not-seedable .seed-lawn { opacity: .4; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .seed-dot.fall { animation: seed-fall .5s ease-out both; animation-delay: calc(var(--i) * 12ms); }
+  .packet-seeds i { animation: bob 3s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -0.2s); }
+}
+@keyframes seed-fall { from { transform: translateY(-12px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (max-width: 560px) {
+  .size-chip.big { min-width: 0; flex: 1 1 140px; }
+  .packet-rate { font-size: 3.4rem; }
+}
